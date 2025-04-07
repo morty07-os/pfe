@@ -1,0 +1,49 @@
+Backend Overview:
+-----------------
+The backend of this project is built using Express and MongoDB. It provides APIs for user authentication, car management, booking, and rating functionality. Below is a detailed explanation of each backend file:
+
+1. **server.js**:
+   - The entry point of the backend application.
+   - Initializes the Express server and connects to MongoDB using `connectMongoDB`.
+   - Sets up middleware for JSON parsing, URL encoding, cookie parsing, and error handling.
+   - Mounts the `auth.routes.js` file to handle API routes.
+
+2. **routes/auth.routes.js**:
+   - Defines API endpoints for user authentication, car management, and booking operations.
+   - Includes routes for user login, signup, logout, and fetching user details.
+   - Provides CRUD operations for cars and bookings.
+
+3. **models**:
+   - Contains Mongoose schemas that define the structure of the database collections:
+     - `user.models.js`: Defines the user schema with fields like `username`, `email`, `password`, and `profileImg`.
+     - `car.models.js`: Represents car details such as `make`, `model`, `year`, `pricePerDay`, and `availability`.
+     - `booking.models.js`: Tracks booking information, including `userId`, `carId`, `startDate`, and `endDate`.
+     - `rating.models.js`: Stores user ratings and reviews for cars, including `userId`, `carId`, `rating`, and `review`.
+     - `payment.models.js`: Manages payment details like `userId`, `bookingId`, `amount`, and `status`.
+
+4. **controllers**:
+   - Implements the business logic for handling requests:
+     - `auth.controller.js`: Handles user signup, login, logout, and fetching user details.
+     - `car.controller.js`: Manages car-related operations like adding, updating, deleting, and fetching cars.
+     - `booking.controller.js`: Processes booking requests, updates bookings, and deletes bookings.
+     - `rating.controller.js`: Allows users to submit ratings and reviews for cars.
+
+5. **middleware**:
+   - Contains reusable middleware functions:
+     - `ProtectedRoute.js`: Verifies JWT tokens to ensure only authenticated users can access protected routes.
+     - `errorHandler.js`: A centralized error-handling middleware that formats and sends error responses.
+
+6. **utils**:
+   - Provides utility functions:
+     - `auth.utils.js`: Placeholder for authentication-related utilities.
+     - `generateToken.js`: Generates a JWT token for authenticated users and sets it as a cookie in the response.
+
+7. **validators**:
+   - Contains validation schemas to ensure incoming data meets the required format:
+     - `car.validator.js`: Validates car-related data, such as ensuring required fields like `make` and `model` are present.
+
+8. **db/connectMONGODB.js**:
+   - Establishes a connection to the MongoDB database using Mongoose.
+   - Logs the connection status or exits the process on failure.
+
+This backend structure ensures modularity, scalability, and maintainability for the application.
