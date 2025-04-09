@@ -47,3 +47,111 @@ The backend of this project is built using Express and MongoDB. It provides APIs
    - Logs the connection status or exits the process on failure.
 
 This backend structure ensures modularity, scalability, and maintainability for the application.
+=======================================
+The backend of this project is a Node.js application built using the Express framework and MongoDB as the database. It is designed to handle user authentication, car management, booking, rating, and payment functionalities. Below is a detailed explanation of its structure and how it functions:
+
+1. server.js
+Purpose: Acts as the entry point of the backend application.
+Key Features:
+Initializes the Express server.
+Loads environment variables using dotenv.
+Connects to MongoDB using the connectMongoDB utility.
+Sets up middleware for JSON parsing, URL encoding, cookie parsing, and error handling.
+Mounts the auth.routes.js file to handle API routes.
+Starts the server on the specified port.
+2. Routes (auth.routes.js)
+Purpose: Defines API endpoints for user authentication, car management, booking, and payment operations.
+Key Features:
+User Routes:
+POST /signup: Registers a new user.
+POST /login: Logs in a user and generates a JWT token.
+POST /logout: Logs out a user by clearing the JWT cookie.
+GET /me: Fetches the logged-in user's details (protected route).
+Car Routes:
+CRUD operations for cars (create, read, update, delete).
+Booking Routes:
+CRUD operations for bookings.
+Payment Route:
+Processes payments for bookings.
+3. Models
+Purpose: Defines the structure of the MongoDB collections using Mongoose schemas.
+Key Models:
+User Model (user.models.js):
+Stores user details like username, email, password, role, etc.
+Includes fields for profile image, phone number, referral codes, and verification status.
+Car Model (car.models.js):
+Represents car details such as make, model, year, pricePerDay, location, and availability.
+Tracks booked dates to prevent double bookings.
+Booking Model (booking.models.js):
+Tracks booking information, including userId, carId, startDate, and endDate.
+Rating Model (rating.models.js):
+Stores user ratings and reviews for cars.
+Payment Model (payment.models.js):
+Manages payment details like userId, bookingId, amount, and status.
+4. Controllers
+Purpose: Implements the business logic for handling requests.
+Key Controllers:
+Auth Controller (auth.controller.js):
+Handles user signup, login, logout, and fetching user details.
+Uses bcrypt for password hashing and JWT for authentication.
+Car Controller (car.controller.js):
+Manages car-related operations like adding, updating, deleting, and fetching cars.
+Supports filtering cars by location, price range, and availability.
+Booking Controller (booking.controller.js):
+Processes booking requests, updates bookings, and deletes bookings.
+Ensures cars are available for the selected dates before creating a booking.
+Rating Controller (rating.controller.js):
+Allows users to submit ratings and reviews for cars.
+Fetches all ratings with user and car details populated.
+Payment Controller (payment.controller.js):
+Processes payments and stores payment details in the database.
+5. Middleware
+Purpose: Contains reusable middleware functions.
+Key Middleware:
+ProtectedRoute (ProtectedRoute.js):
+Verifies JWT tokens to ensure only authenticated users can access protected routes.
+Optionally restricts access based on user roles (e.g., Admin, Customer).
+ErrorHandler (errorHandler.js):
+A centralized error-handling middleware that formats and sends error responses.
+6. Utilities
+Purpose: Provides helper functions for common tasks.
+Key Utilities:
+generateToken.js:
+Generates a JWT token for authenticated users and sets it as a cookie in the response.
+connectMongoDB.js:
+Establishes a connection to the MongoDB database using Mongoose.
+Logs the connection status or exits the process on failure.
+7. Validators
+Purpose: Ensures incoming data meets the required format.
+Key Validator:
+Car Validator (car.validator.js):
+Validates car-related data, such as ensuring required fields like make and model are present.
+8. How It Functions
+User Authentication:
+
+Users can sign up, log in, and log out.
+JWT tokens are used for session management, stored as HTTP-only cookies.
+Protected routes ensure only authenticated users can access certain endpoints.
+Car Management:
+
+Admins can add, update, or delete cars.
+Users can view available cars and filter them based on location, price, and availability.
+Booking System:
+
+Users can book cars for specific dates.
+The system checks car availability before confirming a booking.
+Booked dates are stored in the car model to prevent conflicts.
+Ratings and Reviews:
+
+Users can rate and review cars they have used.
+Ratings are linked to both the user and the car.
+Payments:
+
+Users can make payments for their bookings.
+Payment details are stored in the database, including the status (e.g., pending, completed).
+Error Handling:
+
+Centralized error handling ensures consistent responses for client-side errors and server-side issues.
+This modular structure ensures scalability, maintainability, and ease of development for the backend application.
+
+

@@ -39,6 +39,18 @@ const userSchema = new mongoose.Schema({
     referredBy: {
         type: String,
     },
+    role: {
+        type: String,
+        enum: ["Admin", "Customer"],
+        default: "Customer",
+    },
+    failedLoginAttempts: {
+        type: Number,
+        default: 0,
+    },
+    accountLockedUntil: {
+        type: Date,
+    },
   },
   { timestamps: true });
 

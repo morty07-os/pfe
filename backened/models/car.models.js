@@ -26,6 +26,12 @@ const carSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        bookedDates: [
+            {
+                startDate: { type: Date, required: true },
+                endDate: { type: Date, required: true },
+            },
+        ],
     },
     { timestamps: true }
 );

@@ -1,6 +1,7 @@
 import User from '../models/user.models.js';
 import bcrypt from 'bcryptjs';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
+import jwt from 'jsonwebtoken';
 
 export const signup = async (req, res) => {
     try {
@@ -94,6 +95,7 @@ try {
     res.status(500).json({ error: "server error" });
 }
 };
+
 export const getMe = async (req, res) => {
     try {
      const user = await User.findById(req.user._id).select("-password"); 
@@ -102,4 +104,31 @@ export const getMe = async (req, res) => {
         console.log("error in getMe controller", error.message);
         res.status(500).json({ error: "server error" });
         
-    }}
+    }
+};
+
+export const refreshToken = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).json({ error: "No refresh token provided" });
+        }
+
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, {
+            expiresIn: '15m',
+        });
+
+        res.cookie("jwt", newToken, {
+            maxAge: 15 * 60 * 1000,
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.NODE_ENV !== "development",
+        });
+
+        res.status(200).json({ message: "Token refreshed successfully" });
+    } catch (error) {
+        console.error("Error refreshing token:", error.message);
+        res.status(401).json({ error: "Invalid or expired refresh token" });
+    }
+};
