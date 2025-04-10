@@ -12,14 +12,12 @@ export const signup = async (req, res) => {
             return res.status(400).json({ error: "invalid email format" });
         }
 
-        const normalizedEmail = email.toLowerCase();
-
         const exisitngUser = await User.findOne({ username });
         if (exisitngUser) {
             return res.status(400).json({ error: "username already taken" });
         }
 
-        const exisitngEmail = await User.findOne({ email: normalizedEmail });
+        const exisitngEmail = await User.findOne({ email });
         if (exisitngEmail) {
             return res.status(400).json({ error: "email already taken" });
         }
@@ -32,10 +30,15 @@ export const signup = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashpassword = await bcrypt.hash(password, salt);
 
+        if (!process.env.JWT_SECRET) {
+            console.error("JWT_SECRET is not defined in environment variables");
+            return res.status(500).json({ error: "Server configuration error" });
+        }
+
         const newUser = new User({
             fullName,
             username,
-            email: normalizedEmail,
+            email,
             password: hashpassword
         });
 
@@ -62,8 +65,8 @@ export const login = async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        const normalizedUsername = username.toLowerCase();
-        const user = await User.findOne({ username: normalizedUsername });
+        // Correctly pass an object to findOne()
+        const user = await User.findOne({ username });
 
         // Check if user exists and validate the password
         const isPasswordCorrect = await bcrypt.compare(password, user?.password || "");
@@ -114,6 +117,11 @@ export const refreshToken = async (req, res) => {
         const refreshToken = req.cookies.refreshToken;
         if (!refreshToken) {
             return res.status(401).json({ error: "No refresh token provided" });
+        }
+
+        if (!process.env.JWT_SECRET) {
+            console.error("JWT_SECRET is not defined in environment variables");
+            return res.status(500).json({ error: "Server configuration error" });
         }
 
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
