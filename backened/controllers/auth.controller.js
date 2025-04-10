@@ -12,12 +12,14 @@ export const signup = async (req, res) => {
             return res.status(400).json({ error: "invalid email format" });
         }
 
+        const normalizedEmail = email.toLowerCase();
+
         const exisitngUser = await User.findOne({ username });
         if (exisitngUser) {
             return res.status(400).json({ error: "username already taken" });
         }
 
-        const exisitngEmail = await User.findOne({ email });
+        const exisitngEmail = await User.findOne({ email: normalizedEmail });
         if (exisitngEmail) {
             return res.status(400).json({ error: "email already taken" });
         }
@@ -33,7 +35,7 @@ export const signup = async (req, res) => {
         const newUser = new User({
             fullName,
             username,
-            email,
+            email: normalizedEmail,
             password: hashpassword
         });
 
@@ -60,8 +62,8 @@ export const login = async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        // Correctly pass an object to findOne()
-        const user = await User.findOne({ username });
+        const normalizedUsername = username.toLowerCase();
+        const user = await User.findOne({ username: normalizedUsername });
 
         // Check if user exists and validate the password
         const isPasswordCorrect = await bcrypt.compare(password, user?.password || "");
