@@ -1,0 +1,694 @@
+backened/
+├── controllers/
+│   ├── auth.controller.js
+│   ├── booking.controller.js
+│   ├── car.controller.js
+│   ├── payment.controller.js
+│   └── rating.controller.js
+├── db/
+│   └── connectMONGODB.js
+├── lib/
+│   └── utils/
+│       └── generateToken.js
+├── midleware/
+│   ├── ProtectedRoute.js
+│   └── errorHandler.js
+├── models/
+│   ├── booking.models.js
+│   ├── car.models.js
+│   ├── payment.models.js
+│   ├── rating.models.js
+│   └── user.models.js
+├── routes/
+│   └── auth.routes.js
+├── utils/
+│   └── auth.utils.js
+├── validators/
+│   └── car.validator.js
+├── server.js
+ //auth.controller.js:
+import User from '../models/user.models.js';
+import bcrypt from 'bcryptjs';
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
+import jwt from 'jsonwebtoken';
+
+export const signup = async (req, res) => {
+    try {
+        const { fullName, username, email, password } = req.body;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: "invalid email format" });
+        }
+
+        const exisitngUser = await User.findOne({ username });
+        if (exisitngUser) {
+            return res.status(400).json({ error: "username already taken" });
+        }
+
+        const exisitngEmail = await User.findOne({ email });
+        if (exisitngEmail) {
+            return res.status(400).json({ error: "email already taken" });
+        }
+
+        // hash password
+        if (password.length < 6) {
+            return res.status(400).json({ error: "password must be at least 6 characters long" });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashpassword = await bcrypt.hash(password, salt);
+
+        const newUser = new User({
+            fullName,
+            username,
+            email,
+            password: hashpassword
+        });
+
+        if (newUser) {
+            generateTokenAndSetCookie(newUser._id, res);
+            await newUser.save();
+            res.status(201).json({
+                _id: newUser._id,
+                fullName: newUser.fullName,
+                username: newUser.username,
+                email: newUser.email,
+                token: newUser.token,
+            });
+        } else {
+            res.status(400).json({ error: "invalid user data" });
+        }
+    } catch (error) {
+        console.log("error in signup controller", error.message);
+        res.status(500).json({ error: "server error" });
+    }
+};
+
+export const login = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // Correctly pass an object to findOne()
+        const user = await User.findOne({ username });
+
+        // Check if user exists and validate the password
+        const isPasswordCorrect = await bcrypt.compare(password, user?.password || "");
+        if (!user || !isPasswordCorrect) {
+            return res.status(400).json({ error: "invalid username or password" });
+        }
+
+        // Generate token and set it in the cookie
+        generateTokenAndSetCookie(user._id, res);
+
+        // Respond with user details
+        res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            username: user.username,
+            email: user.email,
+            token: user.token,
+        });
+    } catch (error) {
+        console.log("error in login controller", error.message);
+        res.status(500).json({ error: "server error" });
+    }
+};
+
+export const logout = async (req, res) => {
+try {
+    res.cookie("jwt","" , {maxAge:0});
+    res.status(200).json({ message: "user logged out successfully" });
+} catch (error) { 
+    console.log("error in logout controller", error.message);
+    res.status(500).json({ error: "server error" });
+}
+};
+
+export const getMe = async (req, res) => {
+    try {
+     const user = await User.findById(req.user._id).select("-password"); 
+     res.status(200).json(user);
+    } catch (error) {
+        console.log("error in getMe controller", error.message);
+        res.status(500).json({ error: "server error" });
+        
+    }
+};
+
+export const refreshToken = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).json({ error: "No refresh token provided" });
+        }
+
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, {
+            expiresIn: '15m',
+        });
+
+        res.cookie("jwt", newToken, {
+            maxAge: 15 * 60 * 1000,
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.NODE_ENV !== "development",
+        });
+
+        res.status(200).json({ message: "Token refreshed successfully" });
+    } catch (error) {
+        console.error("Error refreshing token:", error.message);
+        res.status(401).json({ error: "Invalid or expired refresh token" });
+    }
+};
+//booking.controller.js:
+import Booking from '../models/booking.models.js';
+import Car from '../models/car.models.js';
+
+export const createBooking = async (req, res) => {
+    try {
+        const { userId, carId, startDate, endDate } = req.body;
+        if (!userId || !carId || !startDate || !endDate) {
+            return res.status(400).send("Missing required fields: userId, carId, startDate, endDate");
+        }
+
+        const car = await Car.findById(carId);
+        if (!car) {
+            return res.status(404).send("Car not found");
+        }
+
+        const isAvailable = car.bookedDates.every(
+            (date) =>
+                new Date(endDate) < new Date(date.startDate) ||
+                new Date(startDate) > new Date(date.endDate)
+        );
+
+        if (!isAvailable) {
+            return res.status(400).send("Car is not available for the selected dates");
+        }
+
+        const newBooking = new Booking({ userId, carId, startDate, endDate });
+        await newBooking.save();
+
+        car.bookedDates.push({ startDate, endDate });
+        await car.save();
+
+        res.status(201).json(newBooking);
+    } catch (error) {
+        console.error("Error creating booking:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+export const getBookings = async (req, res) => {
+    try {
+        const bookings = await Booking.find();
+        res.status(200).json(bookings);
+    } catch (error) {
+        console.error("Error fetching bookings:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+export const updateBooking = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId, carId, startDate, endDate } = req.body;
+        const updatedBooking = await Booking.findByIdAndUpdate(
+            id,
+            { userId, carId, startDate, endDate },
+            { new: true }
+        );
+        if (!updatedBooking) {
+            return res.status(404).send("Booking not found");
+        }
+        res.status(200).json(updatedBooking);
+    } catch (error) {
+        console.error("Error updating booking:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+export const deleteBooking = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedBooking = await Booking.findByIdAndDelete(id);
+        if (!deletedBooking) {
+            return res.status(404).send("Booking not found");
+        }
+        res.status(200).send("Booking deleted successfully");
+    } catch (error) {
+        console.error("Error deleting booking:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+// car.controller.js:
+import Car from '../models/car.models.js';
+
+export const createCar = async (req, res) => {
+    try {
+        const { make, model, year, pricePerDay, location } = req.body;
+        if (!make || !model || !year || !pricePerDay || !location) {
+            return res.status(400).send("Missing required fields: make, model, year, pricePerDay, location");
+        }
+        const newCar = new Car({ make, model, year, pricePerDay, location });
+        await newCar.save();
+        res.status(201).json(newCar);
+    } catch (error) {
+        console.error("Error creating car:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+export const getCars = async (req, res) => {
+    try {
+        const { location, minPrice, maxPrice, available } = req.query;
+        const query = {};
+        if (location) query.location = location;
+        if (minPrice) query.pricePerDay = { $gte: minPrice };
+        if (maxPrice) query.pricePerDay = { ...query.pricePerDay, $lte: maxPrice };
+        if (available) query.availability = available === "true";
+
+        const cars = await Car.find(query);
+        res.status(200).json(cars);
+    } catch (error) {
+        console.error("Error fetching cars:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+export const updateCar = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { make, model, year, pricePerDay, location } = req.body;
+        const updatedCar = await Car.findByIdAndUpdate(
+            id,
+            { make, model, year, pricePerDay, location },
+            { new: true }
+        );
+        if (!updatedCar) {
+            return res.status(404).send("Car not found");
+        }
+        res.status(200).json(updatedCar);
+    } catch (error) {
+        console.error("Error updating car:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+export const deleteCar = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedCar = await Car.findByIdAndDelete(id);
+        if (!deletedCar) {
+            return res.status(404).send("Car not found");
+        }
+        res.status(200).send("Car deleted successfully");
+    } catch (error) {
+        console.error("Error deleting car:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+//payment.controller.js:
+import Payment from "../models/payment.models.js";
+
+export const processPayment = async (req, res) => {
+    try {
+        const { userId, bookingId, amount } = req.body;
+        if (!userId || !bookingId || !amount) {
+            return res.status(400).send("Missing required fields: userId, bookingId, amount");
+        }
+
+        const newPayment = new Payment({ userId, bookingId, amount, status: "completed" });
+        await newPayment.save();
+
+        res.status(201).json(newPayment);
+    } catch (error) {
+        console.error("Error processing payment:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+//rating.controller.js:
+import Rating from '../models/rating.models.js';
+
+export const createRating = async (req, res) => {
+    try {
+        const { userId, carId, rating, review } = req.body;
+        if (!userId || !carId || !rating) {
+            return res.status(400).send("Missing required fields: userId, carId, rating");
+        }
+        const newRating = new Rating({ userId, carId, rating, review });
+        await newRating.save();
+        res.status(201).json(newRating);
+    } catch (error) {
+        console.error("Error creating rating:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+export const getRatings = async (req, res) => {
+    try {
+        const ratings = await Rating.find().populate('userId', 'username').populate('carId', 'make model');
+        res.status(200).json(ratings);
+    } catch (error) {
+        console.error("Error fetching ratings:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+// connectMONGODB.js:
+import mongoose from "mongoose";
+
+const connectMongoDB = async () => {
+    try {
+        const conn = await mongoose.connect(process.env.MONGO_URI);
+        console.log(`MongoDB connected: ${conn.connection.host}`);
+    } catch (error) {
+        console.error(`Cannot connect to MongoDB: ${error.message}`);
+        process.exit(1);
+    }
+};
+
+export default connectMongoDB;
+//generateToken.js:
+import jwt from 'jsonwebtoken';
+
+export const generateTokenAndSetCookie = (userId, res) => {
+    const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
+        expiresIn: '15m', // Short-lived access token
+    });
+    const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
+        expiresIn: '7d', // Long-lived refresh token
+    });
+
+    res.cookie("jwt", token, {
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV !== "development",
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV !== "development",
+    });
+};
+//ProtectedRoute.js:
+import User from "../models/user.models.js";
+import jwt from "jsonwebtoken";
+
+export const ProtectedRoute = (roles = []) => async (req, res, next) => {
+    try {
+        const token = req.cookies.jwt;
+        if (!token) {
+            return res.status(401).json({ error: "Not authorized: no token provided" });
+        }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!decoded) {
+            return res.status(401).json({ error: "Not authorized: invalid token" });
+        }
+        const user = await User.findById(decoded.userId).select("-password");
+        if (!user || (roles.length && !roles.includes(user.role))) {
+            return res.status(403).json({ error: "Access denied" });
+        }
+        req.user = user;
+        next();
+    } catch (err) {
+        if (err.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Token expired, please log in again" });
+        }
+        console.error("Error in ProtectedRoute middleware:", err.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+//errorHandler.js:
+export const errorHandler = (err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.status || 500).json({ error: err.message || "Server Error" });
+};
+//booking.models.js:
+import mongoose from "mongoose";
+
+const bookingSchema = new mongoose.Schema(
+    {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
+        carId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Car",
+            required: true,
+        },
+        startDate: {
+            type: Date,
+            required: true,
+        },
+        endDate: {
+            type: Date,
+            required: true,
+        },
+    },
+    { timestamps: true }
+);
+
+const Booking = mongoose.model("Booking", bookingSchema);
+export default Booking;
+//car.models.js:
+import mongoose from "mongoose";
+
+const carSchema = new mongoose.Schema(
+    {
+        make: {
+            type: String,
+            required: true,
+        },
+        model: {
+            type: String,
+            required: true,
+        },
+        year: {
+            type: Number,
+            required: true,
+        },
+        pricePerDay: {
+            type: Number,
+            required: true,
+        },
+        location: {
+            type: String,
+            required: true,
+        },
+        availability: {
+            type: Boolean,
+            default: true,
+        },
+        bookedDates: [
+            {
+                startDate: { type: Date, required: true },
+                endDate: { type: Date, required: true },
+            },
+        ],
+    },
+    { timestamps: true }
+);
+
+const Car = mongoose.model("Car", carSchema);
+export default Car;
+//payment.models.js:
+import mongoose from "mongoose";
+
+const paymentSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
+    bookingId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Booking",
+        required: true,
+    },
+    amount: {
+        type: Number,
+        required: true,
+    },
+    status: {
+        type: String,
+        enum: ["pending", "completed", "failed"],
+        default: "pending",
+    },
+}, { timestamps: true });
+
+const Payment = mongoose.model("Payment", paymentSchema);
+export default Payment;
+//rating.models.js:
+import mongoose from "mongoose";
+
+const ratingSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
+    carId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Car",
+        required: true,
+    },
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+        required: true,
+    },
+    review: {
+        type: String,
+    },
+}, { timestamps: true });
+
+const Rating = mongoose.model("Rating", ratingSchema);
+export default Rating;
+//user.models.js:
+import mongoose from "mongoose";
+
+const userSchema = new mongoose.Schema({
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    fullName: {
+      type: String,
+      required: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      minLength: 6,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    profileImg: {
+        type: String,
+        default: "",
+    },
+    verified: {
+        type: Boolean,
+        default: false,
+    },
+    phoneNumber: {
+        type: String,
+        unique: true,
+    },
+    referralCode: {
+        type: String,
+        unique: true,
+    },
+    referredBy: {
+        type: String,
+    },
+    role: {
+        type: String,
+        enum: ["Admin", "Customer"],
+        default: "Customer",
+    },
+    failedLoginAttempts: {
+        type: Number,
+        default: 0,
+    },
+    accountLockedUntil: {
+        type: Date,
+    },
+  },
+  { timestamps: true });
+
+const User = mongoose.model("User", userSchema);
+export default User;
+//auth.routes.js:
+import express from "express";
+import { login, signup , logout, getMe, refreshToken } from "../controllers/auth.controller.js";
+import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
+import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
+import { createBooking, getBookings, updateBooking, deleteBooking } from "../controllers/booking.controller.js";
+import { processPayment } from "../controllers/payment.controller.js";
+
+const router = express.Router();
+
+// User routes
+router.get("/me", ProtectedRoute, getMe);
+router.post("/signup", signup);
+router.post("/login", login);
+router.post("/logout", logout);
+router.post("/refresh-token", refreshToken);
+
+// Car routes
+router.post("/cars", ProtectedRoute, createCar);
+router.get("/cars", ProtectedRoute, getCars);
+router.put("/cars/:id", ProtectedRoute, updateCar);
+router.delete("/cars/:id", ProtectedRoute, deleteCar);
+
+// Booking routes
+router.post("/bookings", ProtectedRoute, createBooking);
+router.get("/bookings", ProtectedRoute, getBookings);
+router.put("/bookings/:id", ProtectedRoute, updateBooking);
+router.delete("/bookings/:id", ProtectedRoute, deleteBooking);
+
+// Payment route
+router.post("/payments", ProtectedRoute, processPayment);
+
+export default router;
+//── utils/
+│   └── auth.utils.js:
+////////////
+//car.validator.js:
+import Joi from 'joi';
+
+export const carSchema = Joi.object({
+    make: Joi.string().required(),
+    model: Joi.string().required(),
+    year: Joi.number().integer().min(1886).required(),
+});
+//server.js:
+import express from "express";
+import authRoutes from "./routes/auth.routes.js";
+import dotenv from "dotenv";
+import connectMongoDB from './db/connectMONGODB.js'; 
+import cookieParser from "cookie-parser";
+import { ProtectedRoute } from "./midleware/ProtectedRoute.js";
+import { errorHandler } from './midleware/errorHandler.js';
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 5001;
+
+// Security headers
+app.use(helmet());
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use("/api/auth", authRoutes);
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+    console.log(`server is running on port: ${PORT}`);
+    connectMongoDB();
+});
+
+
