@@ -8,7 +8,7 @@ export const signup = async (req, res) => {
         const { fullName, username, email, password } = req.body;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if (!emailRegex.test(email)) {
+        if (!emailRegex.test(email.toLowerCase())) {
             return res.status(400).json({ error: "invalid email format" });
         }
 
@@ -17,7 +17,7 @@ export const signup = async (req, res) => {
             return res.status(400).json({ error: "username already taken" });
         }
 
-        const exisitngEmail = await User.findOne({ email });
+        const exisitngEmail = await User.findOne({ email: email.toLowerCase() });
         if (exisitngEmail) {
             return res.status(400).json({ error: "email already taken" });
         }
@@ -38,7 +38,7 @@ export const signup = async (req, res) => {
         const newUser = new User({
             fullName,
             username,
-            email,
+            email: email.toLowerCase(),
             password: hashpassword
         });
 
