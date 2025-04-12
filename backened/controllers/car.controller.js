@@ -1,4 +1,5 @@
 import Car from '../models/car.models.js';
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; // Updated path
 
 // Function to create a new car
 export const createCar = async (req, res) => {
@@ -15,7 +16,23 @@ export const createCar = async (req, res) => {
         const newCar = new Car({ make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity });
         await newCar.save();
 
-        res.status(201).json(newCar);
+        // Generate token and set it in the cookie
+        generateTokenAndSetCookie(newCar._id, res);
+
+        // Respond with car details
+        res.status(201).json({
+            _id: newCar._id,
+            make: newCar.make,
+            model: newCar.model,
+            year: newCar.year,
+            pricePerDay: newCar.pricePerDay,
+            location: newCar.location,
+            description: newCar.description,
+            color: newCar.color,
+            fuelType: newCar.fuelType,
+            seatingCapacity: newCar.seatingCapacity,
+            token: newCar.token,
+        });
     } catch (error) {
         console.error("Error creating car:", error.message);
         res.status(500).json({ error: "Server error" });

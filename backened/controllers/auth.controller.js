@@ -1,6 +1,6 @@
 import User from '../models/user.models.js';
 import bcrypt from 'bcryptjs';
-import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; // Updated path
 import jwt from 'jsonwebtoken';
 
 // Handles user signup
