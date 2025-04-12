@@ -1,5 +1,5 @@
 import express from "express";
-import { login, signup , logout, getMe, refreshToken } from "../controllers/auth.controller.js";
+import { login, signup, logout, getMe, refreshToken } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 import { createBooking, getBookings, updateBooking, deleteBooking } from "../controllers/booking.controller.js";
@@ -8,25 +8,25 @@ import { processPayment } from "../controllers/payment.controller.js";
 const router = express.Router();
 
 // User routes
-router.get("/me", ProtectedRoute, getMe);
-router.post("/signup", signup);
-router.post("/login", login);
-router.post("/logout", logout);
-router.post("/refresh-token", refreshToken);
+router.get("/me", ProtectedRoute, getMe); // Get details of the logged-in user
+router.post("/signup", signup); // Register a new user
+router.post("/login", login); // Log in a user
+router.post("/logout", logout); // Log out a user
+router.post("/refresh-token", refreshToken); // Refresh JWT token
 
 // Car routes
-router.post("/cars", ProtectedRoute, createCar);
-router.get("/cars", ProtectedRoute, getCars);
-router.put("/cars/:id", ProtectedRoute, updateCar);
-router.delete("/cars/:id", ProtectedRoute, deleteCar);
+router.post("/cars", ProtectedRoute, createCar); // Add a new car
+router.get("/cars", ProtectedRoute, getCars); // Get a list of cars
+router.put("/cars/:id", ProtectedRoute, updateCar); // Update car details
+router.delete("/cars/:id", ProtectedRoute, deleteCar); // Delete a car
 
 // Booking routes
-router.post("/bookings", ProtectedRoute, createBooking);
-router.get("/bookings", ProtectedRoute, getBookings);
-router.put("/bookings/:id", ProtectedRoute, updateBooking);
-router.delete("/bookings/:id", ProtectedRoute, deleteBooking);
+router.post("/bookings", ProtectedRoute, createBooking); // Create a new booking
+router.get("/bookings", ProtectedRoute, getBookings); // Get all bookings
+router.put("/bookings/:id", ProtectedRoute, updateBooking); // Update a booking
+router.delete("/bookings/:id", ProtectedRoute, deleteBooking); // Delete a booking
 
 // Payment route
-router.post("/payments", ProtectedRoute, processPayment);
+router.post("/payments", ProtectedRoute, processPayment); // Process a payment
 
 export default router;

@@ -3,15 +3,19 @@ import bcrypt from 'bcryptjs';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 
+// Handles user signup
 export const signup = async (req, res) => {
     try {
+        // Extract user details from the request body
         const { fullName, username, email, password } = req.body;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+        // Validate email format
         if (!emailRegex.test(email.toLowerCase())) {
             return res.status(400).json({ error: "invalid email format" });
         }
 
+        // Check if username or email already exists
         const exisitngUser = await User.findOne({ username });
         if (exisitngUser) {
             return res.status(400).json({ error: "username already taken" });
@@ -22,19 +26,22 @@ export const signup = async (req, res) => {
             return res.status(400).json({ error: "email already taken" });
         }
 
-        // hash password
+        // Validate password length
         if (password.length < 6) {
             return res.status(400).json({ error: "password must be at least 6 characters long" });
         }
 
+        // Hash the password
         const salt = await bcrypt.genSalt(10);
         const hashpassword = await bcrypt.hash(password, salt);
 
+        // Ensure JWT_SECRET is defined
         if (!process.env.JWT_SECRET) {
             console.error("JWT_SECRET is not defined in environment variables");
             return res.status(500).json({ error: "Server configuration error" });
         }
 
+        // Create a new user
         const newUser = new User({
             fullName,
             username,
@@ -42,6 +49,7 @@ export const signup = async (req, res) => {
             password: hashpassword
         });
 
+        // Save the user and generate a token
         if (newUser) {
             generateTokenAndSetCookie(newUser._id, res);
             await newUser.save();
@@ -61,14 +69,16 @@ export const signup = async (req, res) => {
     }
 };
 
+// Handles user login
 export const login = async (req, res) => {
     try {
+        // Extract username and password from the request body
         const { username, password } = req.body;
 
-        // Correctly pass an object to findOne()
+        // Find the user by username
         const user = await User.findOne({ username });
 
-        // Check if user exists and validate the password
+        // Validate user existence and password correctness
         const isPasswordCorrect = await bcrypt.compare(password, user?.password || "");
         if (!user || !isPasswordCorrect) {
             return res.status(400).json({ error: "invalid username or password" });
@@ -91,44 +101,52 @@ export const login = async (req, res) => {
     }
 };
 
+// Handles user logout
 export const logout = async (req, res) => {
-try {
-    res.cookie("jwt","" , {maxAge:0});
-    res.status(200).json({ message: "user logged out successfully" });
-} catch (error) { 
-    console.log("error in logout controller", error.message);
-    res.status(500).json({ error: "server error" });
-}
-};
-
-export const getMe = async (req, res) => {
     try {
-     const user = await User.findById(req.user._id).select("-password"); 
-     res.status(200).json(user);
+        // Clear the JWT cookie
+        res.cookie("jwt", "", { maxAge: 0 });
+        res.status(200).json({ message: "user logged out successfully" });
     } catch (error) {
-        console.log("error in getMe controller", error.message);
+        console.log("error in logout controller", error.message);
         res.status(500).json({ error: "server error" });
-        
     }
 };
 
+// Fetches details of the logged-in user
+export const getMe = async (req, res) => {
+    try {
+        // Find the user by ID and exclude the password field
+        const user = await User.findById(req.user._id).select("-password");
+        res.status(200).json(user);
+    } catch (error) {
+        console.log("error in getMe controller", error.message);
+        res.status(500).json({ error: "server error" });
+    }
+};
+
+// Refreshes the JWT token
 export const refreshToken = async (req, res) => {
     try {
+        // Retrieve the refresh token from cookies
         const refreshToken = req.cookies.refreshToken;
         if (!refreshToken) {
             return res.status(401).json({ error: "No refresh token provided" });
         }
 
+        // Ensure JWT_SECRET is defined
         if (!process.env.JWT_SECRET) {
             console.error("JWT_SECRET is not defined in environment variables");
             return res.status(500).json({ error: "Server configuration error" });
         }
 
+        // Verify the refresh token and generate a new access token
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
         const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, {
             expiresIn: '15m',
         });
 
+        // Set the new token in the cookie
         res.cookie("jwt", newToken, {
             maxAge: 15 * 60 * 1000,
             httpOnly: true,
