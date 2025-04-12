@@ -15,10 +15,10 @@ router.post("/logout", logout); // Log out a user
 router.post("/refresh-token", refreshToken); // Refresh JWT token
 
 // Car routes
-router.post("/cars", ProtectedRoute, createCar); // Add a new car
-router.get("/cars", ProtectedRoute, getCars); // Get a list of cars
-router.put("/cars/:id", ProtectedRoute, updateCar); // Update car details
-router.delete("/cars/:id", ProtectedRoute, deleteCar); // Delete a car
+router.post("/addcars", ProtectedRoute, createCar); // Add a new car
+router.get("/listcars", ProtectedRoute, getCars); // Get a list of cars
+router.put("/updatecars/:id", ProtectedRoute, updateCar); // Update car details
+router.delete("/deletecars/:id", ProtectedRoute, deleteCar); // Delete a car
 
 // Booking routes
 router.post("/bookings", ProtectedRoute, createBooking); // Create a new booking
