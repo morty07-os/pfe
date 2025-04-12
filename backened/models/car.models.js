@@ -32,6 +32,23 @@ const carSchema = new mongoose.Schema(
                 endDate: { type: Date, required: true },
             },
         ],
+        description: {
+            type: String,
+            default: "",
+        },
+        color: {
+            type: String,
+            required: true,
+        },
+        fuelType: {
+            type: String,
+            enum: ["Petrol", "Diesel", "Electric", "Hybrid"],
+            required: true,
+        },
+        seatingCapacity: {
+            type: Number,
+            required: true,
+        },
     },
     { timestamps: true }
 );

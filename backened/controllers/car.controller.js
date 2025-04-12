@@ -4,15 +4,15 @@ import Car from '../models/car.models.js';
 export const createCar = async (req, res) => {
     try {
         // Extract car details from the request body
-        const { make, model, year, pricePerDay, location } = req.body;
+        const { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity } = req.body;
 
         // Validate required fields
-        if (!make || !model || !year || !pricePerDay || !location) {
-            return res.status(400).send("Missing required fields: make, model, year, pricePerDay, location");
+        if (!make || !model || !year || !pricePerDay || !location || !color || !fuelType || !seatingCapacity) {
+            return res.status(400).send("Missing required fields: make, model, year, pricePerDay, location, color, fuelType, seatingCapacity");
         }
 
         // Create and save the new car
-        const newCar = new Car({ make, model, year, pricePerDay, location });
+        const newCar = new Car({ make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity });
         await newCar.save();
 
         res.status(201).json(newCar);
@@ -49,12 +49,12 @@ export const updateCar = async (req, res) => {
     try {
         // Extract car ID from request parameters
         const { id } = req.params;
-        const { make, model, year, pricePerDay, location } = req.body;
+        const { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity } = req.body;
 
         // Update the car with the provided data
         const updatedCar = await Car.findByIdAndUpdate(
             id,
-            { make, model, year, pricePerDay, location },
+            { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity },
             { new: true } // Return the updated document
         );
 
