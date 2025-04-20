@@ -1,24 +1,42 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-    username: {
-      type: String,
-      required: true,
-      unique: true,
+    firstName: {
+        type: String,
+        required: true,
     },
-    fullName: {
-      type: String,
-      required: true,
+    lastName: {
+        type: String,
+        required: true,
+    },
+    birthDate: {
+        type: Date,
+        required: true,
+    },
+    phone: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    residence: {
+        type: String,
+        required: true,
+    },
+    licenceFront: {
+        type: String, // Store file path
+    },
+    licenceBack: {
+        type: String, // Store file path
     },
     password: {
-      type: String,
-      required: true,
-      minLength: 6,
+        type: String,
+        required: true,
+        minLength: 6,
     },
     email: {
-      type: String,
-      required: true,
-      unique: true,
+        type: String,
+        required: true,
+        unique: true,
     },
     profileImg: {
         type: String,
@@ -27,17 +45,6 @@ const userSchema = new mongoose.Schema({
     verified: {
         type: Boolean,
         default: false,
-    },
-    phoneNumber: {
-        type: String,
-        unique: true,
-    },
-    referralCode: {
-        type: String,
-        unique: true,
-    },
-    referredBy: {
-        type: String,
     },
     role: {
         type: String,
@@ -51,8 +58,7 @@ const userSchema = new mongoose.Schema({
     accountLockedUntil: {
         type: Date,
     },
-  },
-  { timestamps: true });
+}, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);
 export default User;

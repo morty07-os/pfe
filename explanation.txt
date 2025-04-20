@@ -1,157 +1,3132 @@
-Backend Overview:
------------------
-The backend of this project is built using Express and MongoDB. It provides APIs for user authentication, car management, booking, and rating functionality. Below is a detailed explanation of each backend file:
 
-1. **server.js**:
-   - The entry point of the backend application.
-   - Initializes the Express server and connects to MongoDB using `connectMongoDB`.
-   - Sets up middleware for JSON parsing, URL encoding, cookie parsing, and error handling.
-   - Mounts the `auth.routes.js` file to handle API routes.
+in pages file :
+AllOffersPage.js:
+import React from 'react';
+import Navbar from '../components/Navbar';
+import { Link } from 'react-router-dom';
+import QuickSearch from '../components/QuickSearch';
+import { Box, Grid, Card, CardContent, CardMedia, Typography, TextField, InputAdornment, IconButton, Button } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import EventSeatIcon from '@mui/icons-material/EventSeat';
+import DoorFrontIcon from '@mui/icons-material/DoorFront';
+import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { useLocation } from 'react-router-dom';
+import dayjs from 'dayjs';
+import SidebarFilters from './SidebarFilters';
 
-2. **routes/auth.routes.js**:
-   - Defines API endpoints for user authentication, car management, and booking operations.
-   - Includes routes for user login, signup, logout, and fetching user details.
-   - Provides CRUD operations for cars and bookings.
+// Helper to format YYYY-MM-DD to DD-MM-YYYY
+function formatDateDMY(dateStr) {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-');
+  return `${day}-${month}-${year}`;
+}
 
-3. **models**:
-   - Contains Mongoose schemas that define the structure of the database collections:
-     - `user.models.js`: Defines the user schema with fields like `username`, `email`, `password`, and `profileImg`.
-     - `car.models.js`: Represents car details such as `make`, `model`, `year`, `pricePerDay`, and `availability`.
-     - `booking.models.js`: Tracks booking information, including `userId`, `carId`, `startDate`, and `endDate`.
-     - `rating.models.js`: Stores user ratings and reviews for cars, including `userId`, `carId`, `rating`, and `review`.
-     - `payment.models.js`: Manages payment details like `userId`, `bookingId`, `amount`, and `status`.
+// Sample data for demonstration
+const offers = [
+  {
+    id: 1,
+    title: 'Toyota Yaris 2020',
+    brand: 'Toyota',
+    price: 40,
+    location: 'Algiers',
+    image: 'https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg',
+    seats: 5,
+    doors: 4,
+    energy: 'Essence',
+    transmission: 'Automatic',
+  },
+  {
+    id: 2,
+    title: 'Renault Clio 2019',
+    brand: 'Renault',
+    price: 35,
+    location: 'Oran',
+    image: 'https://images.pexels.com/photos/170782/pexels-photo-170782.jpeg',
+    seats: 5,
+    doors: 4,
+    energy: 'Diesel',
+    transmission: 'Manual',
+  },
+  {
+    id: 3,
+    title: 'Hyundai Tucson 2021',
+    brand: 'Hyundai',
+    price: 60,
+    location: 'Constantine',
+    image: 'https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg',
+    seats: 5,
+    doors: 5,
+    energy: 'Essence',
+    transmission: 'Automatic',
+  },
+];
 
-4. **controllers**:
-   - Implements the business logic for handling requests:
-     - `auth.controller.js`: Handles user signup, login, logout, and fetching user details.
-     - `car.controller.js`: Manages car-related operations like adding, updating, deleting, and fetching cars.
-     - `booking.controller.js`: Processes booking requests, updates bookings, and deletes bookings.
-     - `rating.controller.js`: Allows users to submit ratings and reviews for cars.
 
-5. **middleware**:
-   - Contains reusable middleware functions:
-     - `ProtectedRoute.js`: Verifies JWT tokens to ensure only authenticated users can access protected routes.
-     - `errorHandler.js`: A centralized error-handling middleware that formats and sends error responses.
+export default function AllOffersPage() {
+  const [search, setSearch] = React.useState('');
+  const [sidebarFilters, setSidebarFilters] = React.useState({});
+  const locationObj = useLocation();
+  const query = React.useMemo(() => {
+    const params = new URLSearchParams(locationObj.search);
+    return {
+      wilaya: params.get('wilaya'),
+      startDate: params.get('startDate'),
+      endDate: params.get('endDate')
+    };
+  }, [locationObj.search]);
 
-6. **utils**:
-   - Provides utility functions:
-     - `auth.utils.js`: Placeholder for authentication-related utilities.
-     - `generateToken.js`: Generates a JWT token for authenticated users and sets it as a cookie in the response.
+  // Helper to check if two date ranges overlap
+  function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
+    if (!offerFrom || !offerTo) return true;
+    const offerStart = dayjs(offerFrom);
+    const offerEnd = dayjs(offerTo);
+    const selStart = dayjs(selectedFrom);
+    const selEnd = dayjs(selectedTo);
+    return offerEnd.isAfter(selStart) && offerStart.isBefore(selEnd);
+  }
 
-7. **validators**:
-   - Contains validation schemas to ensure incoming data meets the required format:
-     - `car.validator.js`: Validates car-related data, such as ensuring required fields like `make` and `model` are present.
+  // Sidebar filter logic
+  function matchesSidebarFilters(offer) {
+    const f = sidebarFilters;
+    if (f.brand && offer.brand !== f.brand) return false;
+    if (f.energy && offer.energy !== f.energy) return false;
+    if (f.transmission && offer.transmission !== f.transmission) return false;
+    if (f.wilaya && offer.location !== f.wilaya) return false;
+    if (f.seats && Number(offer.seats) !== Number(f.seats)) return false;
+    if (f.doors && Number(offer.doors) !== Number(f.doors)) return false;
+    if (f.priceRange && (offer.price < f.priceRange[0] || offer.price > f.priceRange[1])) return false;
+    if (f.availableFrom && dayjs(offer.availableFrom || '2025-05-01').isBefore(dayjs(f.availableFrom))) return false;
+    if (f.availableTo && dayjs(offer.availableTo || '2025-05-10').isAfter(dayjs(f.availableTo))) return false;
+    return true;
+  }
 
-8. **db/connectMONGODB.js**:
-   - Establishes a connection to the MongoDB database using Mongoose.
-   - Logs the connection status or exits the process on failure.
+  // Filter offers by search query, query params, and sidebar filters
+  const filteredOffers = offers.filter(offer => {
+    // Text search
+    const matchesSearch =
+      offer.title.toLowerCase().includes(search.toLowerCase()) ||
+      offer.brand.toLowerCase().includes(search.toLowerCase()) ||
+      offer.location.toLowerCase().includes(search.toLowerCase());
+    // Wilaya/location filter
+    const matchesWilaya = !query.wilaya || offer.location === query.wilaya;
+    // Date filter
+    const matchesDate =
+      !query.startDate || !query.endDate ||
+      isDateRangeOverlap(
+        offer.availableFrom || '2025-05-01',
+        offer.availableTo || '2025-05-10',
+        query.startDate,
+        query.endDate
+      );
+    // Sidebar filters
+    const matchesSidebar = matchesSidebarFilters(offer);
+    return matchesSearch && matchesWilaya && matchesDate && matchesSidebar;
+  });
 
-This backend structure ensures modularity, scalability, and maintainability for the application.
-=======================================
-The backend of this project is a Node.js application built using the Express framework and MongoDB as the database. It is designed to handle user authentication, car management, booking, rating, and payment functionalities. Below is a detailed explanation of its structure and how it functions:
+  return (
+    <React.Fragment>
+      <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+      <Box sx={{ p: 0, pt: 0, mx: 0, px: 0, width: '100vw', maxWidth: '100vw', boxSizing: 'border-box', bgcolor: '#fff', background: '#fff' }}>
+        {/* Homepage-style Search Bar */}
+        <QuickSearch noBackground sx={{ mt: 0, mb: 3, bgcolor: 'none', background: 'none' }} />
 
-1. server.js
-Purpose: Acts as the entry point of the backend application.
-Key Features:
-Initializes the Express server.
-Loads environment variables using dotenv.
-Connects to MongoDB using the connectMongoDB utility.
-Sets up middleware for JSON parsing, URL encoding, cookie parsing, and error handling.
-Mounts the auth.routes.js file to handle API routes.
-Starts the server on the specified port.
-2. Routes (auth.routes.js)
-Purpose: Defines API endpoints for user authentication, car management, booking, and payment operations.
-Key Features:
-User Routes:
-POST /signup: Registers a new user.
-POST /login: Logs in a user and generates a JWT token.
-POST /logout: Logs out a user by clearing the JWT cookie.
-GET /me: Fetches the logged-in user's details (protected route).
-Car Routes:
-CRUD operations for cars (create, read, update, delete).
-Booking Routes:
-CRUD operations for bookings.
-Payment Route:
-Processes payments for bookings.
-3. Models
-Purpose: Defines the structure of the MongoDB collections using Mongoose schemas.
-Key Models:
-User Model (user.models.js):
-Stores user details like username, email, password, role, etc.
-Includes fields for profile image, phone number, referral codes, and verification status.
-Car Model (car.models.js):
-Represents car details such as make, model, year, pricePerDay, location, and availability.
-Tracks booked dates to prevent double bookings.
-Booking Model (booking.models.js):
-Tracks booking information, including userId, carId, startDate, and endDate.
-Rating Model (rating.models.js):
-Stores user ratings and reviews for cars.
-Payment Model (payment.models.js):
-Manages payment details like userId, bookingId, amount, and status.
-4. Controllers
-Purpose: Implements the business logic for handling requests.
-Key Controllers:
-Auth Controller (auth.controller.js):
-Handles user signup, login, logout, and fetching user details.
-Uses bcrypt for password hashing and JWT for authentication.
-Car Controller (car.controller.js):
-Manages car-related operations like adding, updating, deleting, and fetching cars.
-Supports filtering cars by location, price range, and availability.
-Booking Controller (booking.controller.js):
-Processes booking requests, updates bookings, and deletes bookings.
-Ensures cars are available for the selected dates before creating a booking.
-Rating Controller (rating.controller.js):
-Allows users to submit ratings and reviews for cars.
-Fetches all ratings with user and car details populated.
-Payment Controller (payment.controller.js):
-Processes payments and stores payment details in the database.
-5. Middleware
-Purpose: Contains reusable middleware functions.
-Key Middleware:
-ProtectedRoute (ProtectedRoute.js):
-Verifies JWT tokens to ensure only authenticated users can access protected routes.
-Optionally restricts access based on user roles (e.g., Admin, Customer).
-ErrorHandler (errorHandler.js):
-A centralized error-handling middleware that formats and sends error responses.
-6. Utilities
-Purpose: Provides helper functions for common tasks.
-Key Utilities:
-generateToken.js:
-Generates a JWT token for authenticated users and sets it as a cookie in the response.
-connectMongoDB.js:
-Establishes a connection to the MongoDB database using Mongoose.
-Logs the connection status or exits the process on failure.
-7. Validators
-Purpose: Ensures incoming data meets the required format.
-Key Validator:
-Car Validator (car.validator.js):
-Validates car-related data, such as ensuring required fields like make and model are present.
-8. How It Functions
-User Authentication:
+        <Box sx={{ display: 'flex', flexDirection: 'row', mt: 5, width: '100vw' }}>
+          {/* Sidebar Filters */}
+          <Box sx={{
+            minWidth: 240,
+            maxWidth: 280,
+            ml: 0,
+            pl: 0,
+            marginLeft: 0,
+            paddingLeft: 0,
+            pr: 0,
+            position: 'relative',
+            bgcolor: 'transparent',
+            borderRadius: '0 1.25rem 1.25rem 0',
+            boxShadow: '0 2px 12px 0 #607d8b11',
+            p: 3.5,
+            height: 'fit-content',
+            display: { xs: 'none', md: 'block' },
+            fontFamily: 'Segoe UI, Arial, sans-serif',
+            position: 'sticky',
+            left: 0,
+            zIndex: 10,
+            borderRight: '1px solid #e3e8ee',
+            background: 'none',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            overflow: 'hidden',
+            alignSelf: 'flex-start',
+            transition: 'box-shadow 0.22s, border-color 0.22s',
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+              <SettingsIcon sx={{ fontSize: 32, color: '#607d8b', mr: 1, opacity: 0.9 }} />
+              <span style={{ fontWeight: 900, fontSize: 22, color: '#3f51b5', letterSpacing: 0.5, fontFamily: 'Segoe UI, Arial, sans-serif' }}>Filters</span>
+            </Box>
+            <SidebarFilters onFilterChange={setSidebarFilters} filters={sidebarFilters} stylish />
+          </Box>
+          <Box sx={{ width: { xs: 0, md: 280 }, display: { xs: 'none', md: 'block' } }} />
 
-Users can sign up, log in, and log out.
-JWT tokens are used for session management, stored as HTTP-only cookies.
-Protected routes ensure only authenticated users can access certain endpoints.
-Car Management:
+          {/* Offers Grid */}
+          <Grid container spacing={4} direction="column" sx={{ mx: 'auto', width: '100%', maxWidth: 900, alignItems: 'flex-start', ml: 0, pl: 0, px: 0 }} >
+            {filteredOffers.length === 0 && (
+              <Box sx={{ mt: 8, color: '#607d8b', fontWeight: 600, fontSize: 22 }}>No offers match your filters.</Box>
+            )}
+            {filteredOffers.map(offer => (
+              <Grid item xs={12} key={offer.id} sx={{ width: '100%', maxWidth: 400 }}>
+                <Card sx={{
+                  borderRadius: 5,
+                  boxShadow: '0 4px 24px 0 #607d8b22',
+                  border: '1.5px solid #e3e8ee',
+                  background: '#fff',
+                  position: 'relative',
+                  overflow: 'visible',
+                  p: 0,
+                  transition: 'all 0.22s cubic-bezier(.4,2,.6,1)',
+                  ':before': {
+                    content: '""',
+                    display: 'block',
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: 5,
+                    height: '100%',
+                    borderTopLeftRadius: 20,
+                    borderBottomLeftRadius: 20,
+                    background: '#607d8b',
+                    zIndex: 2
+                  },
+                  ':hover': {
+                    boxShadow: '0 10px 40px 0 #607d8b33',
+                    transform: 'translateY(-4px) scale(1.025)',
+                    borderColor: '#b0bec5',
+                    background: '#f8fafc',
+                  },
+                  mb: 3
+                }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch', width: '100%' }}>
+                    {/* Image */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', pl: 2, pr: 0, py: 2 }}>
+                      <CardMedia
+                        component="img"
+                        image={offer.image}
+                        alt={offer.title}
+                        sx={{ objectFit: 'cover', borderRadius: 3, width: 100, height: 100, boxShadow: '0 3px 18px #607d8b22', border: '1px solid #e3e8ee', minWidth: 100 }}
+                      />
+                    </Box>
+                    {/* Content */}
+                    <CardContent sx={{ flex: 1, p: 2.1, pt: 1.2, pb: '16px !important', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <Typography variant="h6" fontWeight={900} sx={{ color: '#263238', mb: 0.6, fontSize: 20, letterSpacing: 0.18, lineHeight: 1.18, fontFamily: 'Segoe UI, Arial, sans-serif' }}>
+                        {offer.title}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <LocationOnIcon sx={{ fontSize: 18, color: '#607d8b', mr: 0.5 }} />
+                        <Typography variant="body2" color="#607d8b" sx={{ fontWeight: 700, fontSize: 15, letterSpacing: 0.1, fontFamily: 'Segoe UI, Arial, sans-serif' }}>
+                          {offer.location}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ width: '100%', height: 1, bgcolor: '#e3e8ee', my: 1, borderRadius: 2 }} />
+                      <Box sx={{ display: 'flex', gap: 2, mb: 1, mt: 0.5, justifyContent: 'flex-start' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <EventSeatIcon sx={{ fontSize: 16, color: '#90a4ae' }} />
+                          <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 500, color: '#607d8b' }}>{offer.seats}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <DoorFrontIcon sx={{ fontSize: 16, color: '#90a4ae' }} />
+                          <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 500, color: '#607d8b' }}>{offer.doors}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <LocalGasStationIcon sx={{ fontSize: 16, color: '#90a4ae' }} />
+                          <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 500, color: '#607d8b' }}>{offer.energy}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <SettingsIcon sx={{ fontSize: 16, color: '#90a4ae' }} />
+                          <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 500, color: '#607d8b' }}>{offer.transmission}</Typography>
+                        </Box>
+                      </Box>
+                      <Button
+                        component={Link}
+                        to={`/offer/${offer.id}`}
+                        variant="contained"
+                        sx={{
+                          borderRadius: 99,
+                          background: '#607d8b',
+                          color: '#fff',
+                          fontWeight: 700,
+                          py: 1.15,
+                          fontSize: 15,
+                          mt: 1.2,
+                          boxShadow: '0 2px 10px #607d8b33',
+                          letterSpacing: 0.3,
+                          textTransform: 'none',
+                          fontFamily: 'Segoe UI, Arial, sans-serif',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 1,
+                          transition: 'all 0.18s',
+                          ':hover': {
+                            background: '#455a64',
+                            color: '#fff',
+                            boxShadow: '0 8px 28px #607d8b33',
+                            transform: 'scale(1.035)'
+                          }
+                        }}
+                      >
+                        <DirectionsCarIcon sx={{ fontSize: 20, mr: 1, color: '#fff' }} />
+                        View Details
+                      </Button>
+                    </CardContent>
+                    {/* Price Badge on the right with vertical divider */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', pr: 3, pl: 2, minWidth: 100, height: '100%' }}>
+                      <Box sx={{
+                        width: 1,
+                        height: 54,
+                        bgcolor: '#e3e8ee',
+                        borderRadius: 2,
+                        mx: 2,
+                      }} />
+                      <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                      }}>
+                        <Box sx={{
+                          bgcolor: '#f1f5f9',
+                          color: '#607d8b',
+                          borderRadius: 2,
+                          fontWeight: 900,
+                          fontSize: 20,
+                          boxShadow: '0 2px 8px 0 #607d8b22',
+                          border: '1.5px solid #b0bec5',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textAlign: 'center',
+                          letterSpacing: 0.2,
+                          minWidth: 90,
+                          height: 54,
+                          px: 3,
+                          py: 0.5,
+                          fontFamily: 'Segoe UI, Arial, sans-serif',
+                          transition: 'box-shadow 0.18s',
+                        }}>
+                          €{offer.price}
+                          <Box component="span" sx={{ fontSize: 13, fontWeight: 500, ml: 0.5, opacity: 0.85 }}>/day</Box>
+                        </Box>
+                        {/* Extra details under price */}
+                        <Box sx={{ mt: 1.2, textAlign: 'center' }}>
+                          <Box sx={{ fontSize: 13, color: '#607d8b', fontWeight: 600, mb: 0.3 }}>
+                            {offer.year ? `Year: ${offer.year}` : 'Year: 2022'}
+                          </Box>
+                          <Box sx={{ fontSize: 13, color: '#90a4ae', fontWeight: 500, mb: 0.1 }}>
+                            {offer.availableFrom ? `From: ${formatDateDMY(offer.availableFrom)}` : 'From: 01-05-2025'}
+                          </Box>
+                          <Box sx={{ fontSize: 13, color: '#90a4ae', fontWeight: 500 }}>
+                            {offer.availableTo ? `To: ${formatDateDMY(offer.availableTo)}` : 'To: 10-05-2025'}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Box>
+    </React.Fragment>
+  );
+} 
+ChatPage.js :
+import React from 'react';
+import { Box, Typography, Paper, Avatar, Button } from '@mui/material';
+import { useLocation, useParams } from 'react-router-dom';
 
-Admins can add, update, or delete cars.
-Users can view available cars and filter them based on location, price, and availability.
-Booking System:
+export default function ChatPage() {
+  const { posterName } = useParams();
+  const location = useLocation();
+  const autoMessage = location.state?.autoMessage;
+  const offerId = location.state?.offerId;
 
-Users can book cars for specific dates.
-The system checks car availability before confirming a booking.
-Booked dates are stored in the car model to prevent conflicts.
-Ratings and Reviews:
+  // Dummy chat messages
+  const [messages, setMessages] = React.useState([
+    ...(autoMessage ? [{ from: 'me', text: autoMessage }] : [])
+  ]);
+  const [input, setInput] = React.useState('');
 
-Users can rate and review cars they have used.
-Ratings are linked to both the user and the car.
-Payments:
+  const handleSend = () => {
+    if (input.trim()) {
+      setMessages([...messages, { from: 'me', text: input }]);
+      setInput('');
+    }
+  };
 
-Users can make payments for their bookings.
-Payment details are stored in the database, including the status (e.g., pending, completed).
-Error Handling:
+  return (
+    <Box sx={{ maxWidth: 500, mx: 'auto', my: 4, p: 2 }}>
+      <Typography variant="h5" sx={{ fontWeight: 900, mb: 2, color: '#1976d2' }}>Chat with {posterName}</Typography>
+      <Paper sx={{ minHeight: 240, mb: 2, p: 2, bgcolor: '#f5f7fa', borderRadius: 3 }}>
+        {messages.length === 0 && <Typography color="text.secondary">No messages yet.</Typography>}
+        {messages.map((msg, idx) => (
+          <Box key={idx} sx={{ display: 'flex', justifyContent: msg.from === 'me' ? 'flex-end' : 'flex-start', mb: 1 }}>
+            <Box sx={{ bgcolor: msg.from === 'me' ? '#1976d2' : '#eceff1', color: msg.from === 'me' ? '#fff' : '#263238', px: 2, py: 1, borderRadius: 2, maxWidth: '75%' }}>
+              {msg.text}
+            </Box>
+          </Box>
+        ))}
+      </Paper>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Type your message..."
+          style={{ flex: 1, borderRadius: 8, border: '1px solid #b0bec5', padding: 10, fontSize: 16 }}
+          onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+        />
+        <Button variant="contained" color="primary" onClick={handleSend} sx={{ fontWeight: 700, borderRadius: 2 }}>
+          Send
+        </Button>
+      </Box>
+    </Box>
+  );
+} 
+MapPage_new.js :
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Container, 
+  Typography, 
+  Paper, 
+  Grid, 
+  Button,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  useTheme,
+  useMediaQuery,
+  Card,
+  CardContent
+} from '@mui/material';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import Navbar from '../components/Navbar';
+import QuickSearch from '../components/QuickSearch';
+import { useNavigate, useParams } from 'react-router-dom';
 
-Centralized error handling ensures consistent responses for client-side errors and server-side issues.
-This modular structure ensures scalability, maintainability, and ease of development for the backend application.
+const MapPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate();
+  const { wilaya } = useParams();
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  
+  // Sample locations for the selected wilaya
+  const locations = [
+    { 
+      id: 1, 
+      name: 'Downtown', 
+      address: `Central ${wilaya}, Main Street`, 
+      availableCars: 8,
+      openHours: '24/7',
+      hasParking: true
+    },
+    { 
+      id: 2, 
+      name: 'Airport', 
+      address: `${wilaya} International Airport, Terminal 1`, 
+      availableCars: 12,
+      openHours: '24/7',
+      hasParking: true
+    },
+    { 
+      id: 3, 
+      name: 'Shopping Mall', 
+      address: `${wilaya} Mall, Commercial District`, 
+      availableCars: 5,
+      openHours: '9:00 AM - 10:00 PM',
+      hasParking: true
+    },
+    { 
+      id: 4, 
+      name: 'Train Station', 
+      address: `${wilaya} Central Station, Railway Avenue`, 
+      availableCars: 7,
+      openHours: '6:00 AM - 11:00 PM',
+      hasParking: true
+    }
+  ];
 
+  const handleGoBack = () => {
+    navigate('/');
+  };
+
+  const handleLocationSelect = (location) => {
+    setSelectedLocation(location);
+  };
+
+  return (
+    <Box sx={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <Navbar />
+      <QuickSearch />
+      
+      <Box sx={{ 
+        flexGrow: 1,
+        position: 'relative'
+      }}>
+        <Container maxWidth="xl" sx={{ pt: 2 }}>
+          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button 
+              variant="outlined" 
+              startIcon={<ArrowBackIcon />}
+              onClick={handleGoBack}
+              sx={{
+                borderColor: '#475569',
+                color: '#475569',
+                '&:hover': {
+                  borderColor: '#334155',
+                  bgcolor: 'rgba(71, 85, 105, 0.04)'
+                }
+              }}
+            >
+              Back to City Selection
+            </Button>
+            <Typography variant="h5" component="h1" sx={{ fontWeight: 600, color: '#1e293b' }}>
+              {wilaya} Rental Locations
+            </Typography>
+          </Box>
+          
+          <Grid container spacing={4} direction={{ xs: 'column-reverse', md: 'row' }}>
+            {/* Location list */}
+            <Grid item xs={12} md={3}>
+              <Paper 
+                elevation={2} 
+                sx={{ 
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  height: '100%',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <Box sx={{ 
+                  background: 'linear-gradient(90deg, #475569 0%, #334155 100%)', 
+                  color: 'white',
+                  p: 2
+                }}>
+                  <Typography variant="h6">
+                    Available Pickup Locations
+                  </Typography>
+                </Box>
+                
+                <List sx={{ p: 0 }}>
+                  {locations.map((location, index) => (
+                    <React.Fragment key={location.id}>
+                      {index > 0 && <Divider />}
+                      <ListItem 
+                        button
+                        selected={selectedLocation?.id === location.id}
+                        onClick={() => handleLocationSelect(location)}
+                        sx={{
+                          p: 2,
+                          transition: 'all 0.2s ease',
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(71, 85, 105, 0.1)',
+                            '&:hover': {
+                              bgcolor: 'rgba(71, 85, 105, 0.15)',
+                            }
+                          },
+                          '&:hover': {
+                            bgcolor: 'rgba(71, 85, 105, 0.05)',
+                          }
+                        }}
+                      >
+                        <ListItemIcon>
+                          <LocationOnIcon sx={{ 
+                            color: selectedLocation?.id === location.id ? '#e11d48' : '#475569',
+                            fontSize: 28
+                          }} />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={
+                            <Typography variant="subtitle1" sx={{ 
+                              fontWeight: selectedLocation?.id === location.id ? 700 : 600,
+                              color: '#1e293b'
+                            }}>
+                              {location.name}
+                            </Typography>
+                          }
+                          secondary={
+                            <Box sx={{ mt: 0.5 }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                {location.address}
+                              </Typography>
+                              <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <DirectionsCarIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {location.availableCars} cars
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <AccessTimeIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {location.openHours}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    </React.Fragment>
+                  ))}
+                </List>
+                
+                {selectedLocation && (
+                  <Box sx={{ p: 3, bgcolor: 'rgba(71, 85, 105, 0.05)' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
+                      Selected Location Details
+                    </Typography>
+                    
+                    <Card elevation={0} sx={{ mb: 2, bgcolor: 'white', borderRadius: 2 }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 600, mb: 1 }}>
+                          {selectedLocation.name}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
+                          {selectedLocation.address}
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <DirectionsCarIcon sx={{ color: '#475569' }} />
+                              <Box>
+                                <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                                  Available Cars
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  {selectedLocation.availableCars}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <AccessTimeIcon sx={{ color: '#475569' }} />
+                              <Box>
+                                <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                                  Open Hours
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  {selectedLocation.openHours}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
+                    
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{
+                        bgcolor: '#475569',
+                        color: 'white',
+                        py: 1.2,
+                        borderRadius: 2,
+                        boxShadow: '0 4px 14px rgba(71, 85, 105, 0.4)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          bgcolor: '#334155',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 6px 20px rgba(71, 85, 105, 0.5)'
+                        }
+                      }}
+                    >
+                      Select This Location
+                    </Button>
+                  </Box>
+                )}
+              </Paper>
+            </Grid>
+            
+            {/* Map */}
+            <Grid item xs={12} md={9}>
+              <Paper 
+                elevation={2} 
+                sx={{ 
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  height: '100%',
+                  minHeight: 800,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <Box sx={{ 
+                  position: 'relative',
+                  height: '100%',
+                  minHeight: 500
+                }}>
+                  {/* Map header */}
+                  <Box sx={{ 
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 10,
+                    background: 'linear-gradient(90deg, #475569 0%, #334155 100%)', 
+                    color: 'white',
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <LocationOnIcon /> 
+                    <Typography variant="h6">
+                      {wilaya}, Algeria
+                    </Typography>
+                  </Box>
+                  
+                  {/* Map - Using OpenStreetMap which doesn't require API key */}
+                  <Box sx={{ 
+                    height: '100%',
+                    background: '#e5e7eb',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <iframe 
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=0,30,10,40&layer=mapnik&marker=36.7,3.05`}
+                      frameBorder="0"
+                      style={{ 
+                        border: 'none', 
+                        width: '100%', 
+                        height: '100%' 
+                      }}
+                      title="Map of Algeria"
+                      allowFullScreen
+                    />
+                    {/* Map markers */}
+                    {locations.map((location, index) => (
+                      <Box 
+                        key={location.id}
+                        sx={{ 
+                          position: 'absolute',
+                          top: `${20 + (index * 15)}%`,
+                          left: `${20 + (index * 15)}%`,
+                          transform: 'translate(-50%, -100%)',
+                          color: selectedLocation?.id === location.id ? '#e11d48' : '#475569',
+                          animation: selectedLocation?.id === location.id ? 'pulse 1.5s infinite' : 'none',
+                          cursor: 'pointer',
+                          zIndex: selectedLocation?.id === location.id ? 2 : 1,
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translate(-50%, -110%)',
+                            color: '#e11d48'
+                          }
+                        }}
+                        onClick={() => handleLocationSelect(location)}
+                      >
+                        <LocationOnIcon sx={{ 
+                          fontSize: selectedLocation?.id === location.id ? 48 : 36,
+                          filter: selectedLocation?.id === location.id ? 'drop-shadow(0 0 8px rgba(225, 29, 72, 0.5))' : 'none'
+                        }} />
+                        {selectedLocation?.id === location.id && (
+                          <Paper 
+                            elevation={3} 
+                            sx={{ 
+                              p: 1.5, 
+                              borderRadius: 2, 
+                              mt: -0.5,
+                              minWidth: 150,
+                              textAlign: 'center',
+                              position: 'absolute',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              bgcolor: 'rgba(255, 255, 255, 0.95)'
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                              {location.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ display: 'block', color: '#64748b' }}>
+                              {location.availableCars} cars available
+                            </Typography>
+                          </Paper>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+    </Box>
+  );
+};
+
+export default MapPage;
+MapPage.js :
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Container, 
+  Typography, 
+  Paper, 
+  Grid, 
+  Button,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  useTheme,
+  useMediaQuery,
+  Card,
+  CardContent
+} from '@mui/material';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import Navbar from '../components/Navbar';
+import QuickSearch from '../components/QuickSearch';
+import WilayaDropdown from '../components/WilayaDropdown';
+import { useNavigate, useParams } from 'react-router-dom';
+
+// Mapping wilaya names to coordinates and zoom
+const wilayaCoordinates = {
+  "Adrar": { lat: 27.8743, lon: -0.2939, zoom: 12 },
+  "Chlef": { lat: 36.1667, lon: 1.3333, zoom: 12 },
+  "Laghouat": { lat: 33.8, lon: 2.8651, zoom: 12 },
+  "Oum El Bouaghi": { lat: 35.8762, lon: 7.1135, zoom: 12 },
+  "Batna": { lat: 35.5556, lon: 6.1744, zoom: 12 },
+  "Béjaïa": { lat: 36.7519, lon: 5.055, zoom: 12 },
+  "Biskra": { lat: 34.8504, lon: 5.7281, zoom: 12 },
+  "Béchar": { lat: 31.6167, lon: -2.2167, zoom: 12 },
+  "Blida": { lat: 36.4700, lon: 2.8277, zoom: 12 },
+  "Bouira": { lat: 36.3749, lon: 3.9014, zoom: 12 },
+  "Tamanrasset": { lat: 22.785, lon: 5.5228, zoom: 12 },
+  "Tébessa": { lat: 35.4042, lon: 8.1242, zoom: 12 },
+  "Tlemcen": { lat: 34.8828, lon: -1.3160, zoom: 12 },
+  "Tiaret": { lat: 35.3713, lon: 1.3167, zoom: 12 },
+  "Tizi Ouzou": { lat: 36.7167, lon: 4.05, zoom: 12 },
+  "Algiers": { lat: 36.7538, lon: 3.0588, zoom: 12 },
+  "Djelfa": { lat: 34.6666, lon: 3.25, zoom: 12 },
+  "Jijel": { lat: 36.821, lon: 5.7667, zoom: 12 },
+  "Sétif": { lat: 36.1911, lon: 5.4137, zoom: 12 },
+  "Saïda": { lat: 34.8303, lon: 0.1517, zoom: 12 },
+  "Skikda": { lat: 36.8663, lon: 6.9063, zoom: 12 },
+  "Sidi Bel Abbès": { lat: 35.1899, lon: -0.6307, zoom: 12 },
+  "Annaba": { lat: 36.904, lon: 7.7566, zoom: 12 },
+  "Guelma": { lat: 36.4622, lon: 7.4261, zoom: 12 },
+  "Constantine": { lat: 36.365, lon: 6.6147, zoom: 12 },
+  "Médéa": { lat: 36.2645, lon: 2.7539, zoom: 12 },
+  "Mostaganem": { lat: 35.9333, lon: 0.0833, zoom: 12 },
+  "M'Sila": { lat: 35.7058, lon: 4.545, zoom: 12 },
+  "Mascara": { lat: 35.3967, lon: 0.1403, zoom: 12 },
+  "Ouargla": { lat: 31.95, lon: 5.3333, zoom: 12 },
+  "Oran": { lat: 35.6971, lon: -0.6308, zoom: 12 },
+  "El Bayadh": { lat: 33.6839, lon: 1.0191, zoom: 12 },
+  "Illizi": { lat: 26.4833, lon: 8.4667, zoom: 12 },
+  "Bordj Bou Arréridj": { lat: 36.0733, lon: 4.7617, zoom: 12 },
+  "Boumerdès": { lat: 36.7664, lon: 3.4776, zoom: 12 },
+  "El Tarf": { lat: 36.7675, lon: 8.3132, zoom: 12 },
+  "Tindouf": { lat: 27.6742, lon: -8.1477, zoom: 12 },
+  "Tissemsilt": { lat: 35.6072, lon: 1.8103, zoom: 12 },
+  "El Oued": { lat: 33.3561, lon: 6.8632, zoom: 12 },
+  "Khenchela": { lat: 35.4358, lon: 7.1433, zoom: 12 },
+  "Souk Ahras": { lat: 36.2864, lon: 7.9511, zoom: 12 },
+  "Tipaza": { lat: 36.6178, lon: 2.3912, zoom: 12 },
+  "Mila": { lat: 36.4503, lon: 6.2644, zoom: 12 },
+  "Aïn Defla": { lat: 36.2649, lon: 1.9679, zoom: 12 },
+  "Naâma": { lat: 33.2667, lon: -0.3167, zoom: 12 },
+  "Aïn Témouchent": { lat: 35.2975, lon: -1.1404, zoom: 12 },
+  "Ghardaïa": { lat: 32.4894, lon: 3.6731, zoom: 12 },
+  "Relizane": { lat: 35.7372, lon: 0.5559, zoom: 12 },
+  "Timimoun": { lat: 29.2639, lon: 0.2306, zoom: 12 },
+  "Bordj Badji Mokhtar": { lat: 21.3275, lon: -0.9264, zoom: 12 },
+  "Ouled Djellal": { lat: 34.4167, lon: 4.9667, zoom: 12 },
+  "Béni Abbès": { lat: 30.1336, lon: -2.1667, zoom: 12 },
+  "In Salah": { lat: 27.2167, lon: 2.4667, zoom: 12 },
+  "In Guezzam": { lat: 19.5667, lon: 5.7667, zoom: 12 },
+  "Touggourt": { lat: 33.1044, lon: 6.0606, zoom: 12 },
+  "Djanet": { lat: 24.5546, lon: 9.4846, zoom: 12 },
+  "El M'Ghair": { lat: 33.9500, lon: 5.9200, zoom: 12 },
+  "El Menia": { lat: 30.5833, lon: 2.8833, zoom: 12 },
+};
+
+const MapPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate();
+  // const { wilaya } = useParams();
+  const [wilaya, setWilaya] = useState('Algiers');
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
+  // When wilaya changes, reset selected location
+  const handleWilayaChange = (newWilaya) => {
+    setWilaya(newWilaya);
+    setSelectedLocation(null);
+  };
+
+  // Determine city coordinates and zoom
+  const cityCoords = wilayaCoordinates[wilaya] || { lat: 28.0339, lon: 1.6596, zoom: 7 }; // fallback: Algeria center
+  // Calculate bbox for zoom (smaller bbox = more zoom)
+  const delta = cityCoords.zoom >= 12 ? 0.08 : 1.5; // zoom in for city, out for fallback
+  const bbox = [
+    cityCoords.lon - delta,
+    cityCoords.lat - delta,
+    cityCoords.lon + delta,
+    cityCoords.lat + delta
+  ].join(",");
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${cityCoords.lat},${cityCoords.lon}`;
+  
+  // Sample locations for the selected wilaya
+  const locations = [
+    { 
+      id: 1, 
+      name: 'Downtown', 
+      address: `Central ${wilaya}, Main Street`, 
+      availableCars: 8,
+      openHours: '24/7',
+      hasParking: true
+    },
+    { 
+      id: 2, 
+      name: 'Airport', 
+      address: `${wilaya} International Airport, Terminal 1`, 
+      availableCars: 12,
+      openHours: '24/7',
+      hasParking: true
+    },
+    { 
+      id: 3, 
+      name: 'Shopping Mall', 
+      address: `${wilaya} Mall, Commercial District`, 
+      availableCars: 5,
+      openHours: '9:00 AM - 10:00 PM',
+      hasParking: true
+    },
+    { 
+      id: 4, 
+      name: 'Train Station', 
+      address: `${wilaya} Central Station, Railway Avenue`, 
+      availableCars: 7,
+      openHours: '6:00 AM - 11:00 PM',
+      hasParking: true
+    }
+  ];
+
+  const handleGoBack = () => {
+    navigate('/');
+  };
+
+  const handleLocationSelect = (location) => {
+    setSelectedLocation(location);
+  };
+
+  return (
+    <Box sx={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+      <QuickSearch noBackground={true} sx={{ mt: 0, mb: 0, pt: 0, pb: 0 }} />
+      <Box sx={{ mt: 2, mb: 2, maxWidth: 350 }}>
+        <WilayaDropdown value={wilaya} onChange={handleWilayaChange} />
+      </Box>
+      <Box sx={{ 
+        flexGrow: 1,
+        position: 'relative',
+        mt: 6 // 48px margin top to pull the map a little bit lower
+      }}>
+        <Container maxWidth="xl" sx={{ pt: 0, mt: 0 }}>
+          <Box sx={{ mb: 1, mt: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button 
+              variant="outlined" 
+              startIcon={<ArrowBackIcon />}
+              onClick={handleGoBack}
+              sx={{
+                borderColor: '#475569',
+                color: '#475569',
+                '&:hover': {
+                  borderColor: '#334155',
+                  bgcolor: 'rgba(71, 85, 105, 0.04)'
+                }
+              }}
+            >
+              Back to City Selection
+            </Button>
+            <Typography variant="h5" component="h1" sx={{ fontWeight: 600, color: '#1e293b' }}>
+              {wilaya} Rental Locations
+            </Typography>
+          </Box>
+          
+          <Grid container spacing={4} direction={{ xs: 'column-reverse', md: 'row' }} alignItems="stretch">
+            {/* Pick up locations list */}
+            <Grid item xs={12} md={4}>
+              <Paper 
+                elevation={2} 
+                sx={{ 
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  height: '100%',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <Box sx={{ 
+                  background: 'linear-gradient(90deg, #475569 0%, #334155 100%)', 
+                  color: 'white',
+                  p: 2
+                }}>
+                  <Typography variant="h6">
+                    Available Pickup Locations
+                  </Typography>
+                </Box>
+                
+                <List sx={{ p: 0 }}>
+                  {locations.map((location, index) => (
+                    <React.Fragment key={location.id}>
+                      {index > 0 && <Divider />}
+                      <ListItem 
+                        button
+                        selected={selectedLocation?.id === location.id}
+                        onClick={() => handleLocationSelect(location)}
+                        sx={{
+                          p: 2,
+                          transition: 'all 0.2s ease',
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(71, 85, 105, 0.1)',
+                            '&:hover': {
+                              bgcolor: 'rgba(71, 85, 105, 0.15)',
+                            }
+                          },
+                          '&:hover': {
+                            bgcolor: 'rgba(71, 85, 105, 0.05)',
+                          }
+                        }}
+                      >
+                        <ListItemIcon>
+                          <LocationOnIcon sx={{ 
+                            color: selectedLocation?.id === location.id ? '#e11d48' : '#475569',
+                            fontSize: 28
+                          }} />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={
+                            <Typography variant="subtitle1" sx={{ 
+                              fontWeight: selectedLocation?.id === location.id ? 700 : 600,
+                              color: '#1e293b'
+                            }}>
+                              {location.name}
+                            </Typography>
+                          }
+                          secondary={
+                            <Box sx={{ mt: 0.5 }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                {location.address}
+                              </Typography>
+                              <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <DirectionsCarIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {location.availableCars} cars
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <AccessTimeIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {location.openHours}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    </React.Fragment>
+                  ))}
+                </List>
+                
+                {selectedLocation && (
+                  <Box sx={{ p: 3, bgcolor: 'rgba(71, 85, 105, 0.05)' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
+                      Selected Location Details
+                    </Typography>
+                    
+                    <Card elevation={0} sx={{ mb: 2, bgcolor: 'white', borderRadius: 2 }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 600, mb: 1 }}>
+                          {selectedLocation.name}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
+                          {selectedLocation.address}
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <DirectionsCarIcon sx={{ color: '#475569' }} />
+                              <Box>
+                                <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                                  Available Cars
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  {selectedLocation.availableCars}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <AccessTimeIcon sx={{ color: '#475569' }} />
+                              <Box>
+                                <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
+                                  Open Hours
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  {selectedLocation.openHours}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
+                    
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{
+                        bgcolor: '#475569',
+                        color: 'white',
+                        py: 1.2,
+                        borderRadius: 2,
+                        boxShadow: '0 4px 14px rgba(71, 85, 105, 0.4)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          bgcolor: '#334155',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 6px 20px rgba(71, 85, 105, 0.5)'
+                        }
+                      }}
+                    >
+                      Select This Location
+                    </Button>
+                  </Box>
+                )}
+              </Paper>
+            </Grid>
+            {/* Divider between locations and map */}
+            <Grid item xs={12} md={0.1} sx={{ display: { xs: 'none', md: 'flex' }, justifyContent: 'center', alignItems: 'stretch', px: 0 }}>
+              <Divider orientation="vertical" flexItem sx={{ height: '100%' }} />
+            </Grid>
+            <Grid item xs={12} md={7.9} sx={{ display: { md: 'flex' }, justifyContent: { md: 'flex-end' } }}>
+              <Paper 
+                elevation={2} 
+                sx={{ 
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  height: '100%',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <Box sx={{ 
+                  position: 'relative',
+                  height: '100%',
+                  minHeight: '80vh', // Even larger min height for box
+                  width: '100%'
+                }}>
+                  {/* Map header */}
+                  <Box sx={{ 
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 10,
+                    background: 'linear-gradient(90deg, #475569 0%, #334155 100%)', 
+                    color: 'white',
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <LocationOnIcon /> 
+                    <Typography variant="h6">
+                      {wilaya}, Algeria
+                    </Typography>
+                  </Box>
+                  {/* Map - Using OpenStreetMap which doesn't require API key */}
+                  <Box sx={{ 
+                    height: '100%',
+                    background: '#fff',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    width: '100%'
+                  }}>
+                    <iframe 
+                      src={mapUrl}
+                      frameBorder="0"
+                      style={{ 
+                        border: 'none', 
+                        width: '100%', 
+                        height: '90vh', // Even larger height for the map
+                        width: '100%'
+                      }}
+                      title={`Map of ${wilaya}`}
+                      allowFullScreen
+                    />
+                    {/* Map markers */}
+                    {locations.map((location, index) => (
+                      <Box 
+                        key={location.id}
+                        sx={{ 
+                          position: 'absolute',
+                          top: `${20 + (index * 15)}%`,
+                          left: `${20 + (index * 15)}%`,
+                          transform: 'translate(-50%, -100%)',
+                          color: selectedLocation?.id === location.id ? '#e11d48' : '#475569',
+                          animation: selectedLocation?.id === location.id ? 'pulse 1.5s infinite' : 'none',
+                          cursor: 'pointer',
+                          zIndex: selectedLocation?.id === location.id ? 2 : 1,
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translate(-50%, -110%)',
+                            color: '#e11d48'
+                          }
+                        }}
+                        onClick={() => handleLocationSelect(location)}
+                      >
+                        <LocationOnIcon sx={{ 
+                          fontSize: selectedLocation?.id === location.id ? 48 : 36,
+                          filter: selectedLocation?.id === location.id ? 'drop-shadow(0 0 8px rgba(225, 29, 72, 0.5))' : 'none'
+                        }} />
+                        {selectedLocation?.id === location.id && (
+                          <Paper 
+                            elevation={3} 
+                            sx={{ 
+                              p: 1.5, 
+                              borderRadius: 2, 
+                              mt: -0.5,
+                              minWidth: 150,
+                              textAlign: 'center',
+                              position: 'absolute',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              bgcolor: 'rgba(255, 255, 255, 0.95)'
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                              {location.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ display: 'block', color: '#64748b' }}>
+                              {location.availableCars} cars available
+                            </Typography>
+                          </Paper>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+    </Box>
+  );
+};
+
+export default MapPage;
+OfferDetailsPage.js :
+import React from 'react';
+import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableRow, Paper, Avatar } from '@mui/material';
+
+import { useNavigate, useParams } from 'react-router-dom';
+
+// Dummy data for demonstration. Replace with real data fetching logic.
+const offers = [
+  {
+    id: 1,
+    title: 'Toyota Yaris 2020',
+    images: [
+      'https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg',
+      'https://images.pexels.com/photos/170782/pexels-photo-170782.jpeg',
+    ],
+    brand: 'Toyota',
+    price: 40,
+    location: 'Algiers',
+    seats: 5,
+    doors: 4,
+    energy: 'Essence',
+    transmission: 'Automatic',
+    poster: {
+      name: 'Ali Benali',
+      location: 'Algiers',
+      phone: '+213 555 123 456',
+      avatar: '',
+    },
+  },
+  // ... more offers
+];
+
+export default function OfferDetailsPage() {
+  const { offerId } = useParams();
+  const navigate = useNavigate();
+  const offer = offers.find((o) => String(o.id) === String(offerId));
+
+  if (!offer) return <Box sx={{ p: 4 }}>Offer not found.</Box>;
+
+  const details = [
+    ['Brand', offer.brand],
+    ['Price (€)', offer.price],
+    ['Location', offer.location],
+    ['Seats', offer.seats],
+    ['Doors', offer.doors],
+    ['Energy', offer.energy],
+    ['Transmission', offer.transmission],
+  ];
+
+  const posterDetails = [
+    ['Name', offer.poster.name],
+    ['Location', offer.poster.location],
+    ['Phone', offer.poster.phone],
+  ];
+
+  const handleBookNow = () => {
+    // Navigate to chat and send message automatically
+    navigate(`/chat/${offer.poster.name}`, { state: { autoMessage: 'I want to book this car', offerId: offer.id } });
+  };
+
+  return (
+    <Box sx={{ maxWidth: 600, mx: 'auto', my: 4, p: 2 }}>
+      <Typography variant="h4" sx={{ fontWeight: 900, mb: 2, color: '#607d8b' }}>{offer.title}</Typography>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle1" sx={{ color: '#607d8b', fontWeight: 700, mb: 1 }}>Images</Typography>
+        <Box sx={{ display: 'flex', overflowX: 'auto', gap: 2, pb: 1 }}>
+          {offer.images.map((img, idx) => (
+            <Box key={idx} sx={{ minWidth: 260, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#eceff1', borderRadius: 2, boxShadow: 1 }}>
+              <img src={img} alt={offer.title} style={{ maxHeight: 160, maxWidth: 240, borderRadius: 12 }} />
+            </Box>
+          ))}
+        </Box>
+      </Box>
+      <TableContainer component={Paper} sx={{ mb: 3 }}>
+        <Table>
+          <TableBody>
+            {details.map(([label, value]) => (
+              <TableRow key={label}>
+                <TableCell sx={{ fontWeight: 700, color: '#607d8b', width: 120 }}>{label}</TableCell>
+                <TableCell>{value}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: '#607d8b', mb: 1 }}>Poster Info</Typography>
+      <TableContainer component={Paper} sx={{ mb: 3 }}>
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell rowSpan={3} sx={{ width: 80 }}>
+                <Avatar src={offer.poster.avatar} sx={{ width: 56, height: 56, bgcolor: '#607d8b' }}>{offer.poster.name[0]}</Avatar>
+              </TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
+              <TableCell>{offer.poster.name}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 700 }}>Location</TableCell>
+              <TableCell>{offer.poster.location}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 700 }}>Phone</TableCell>
+              <TableCell>{offer.poster.phone}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Button variant="contained" color="primary" fullWidth sx={{ fontWeight: 800, fontSize: 18, borderRadius: 99, py: 1.5, bgcolor: '#1976d2', mb: 2 }} onClick={handleBookNow}>
+        Book Now
+      </Button>
+    </Box>
+  );
+}
+SidebarFilters.js :
+
+
+import React, { useState } from 'react';
+import { Box, Typography, TextField, MenuItem, Slider, Button, ToggleButton, ToggleButtonGroup, Autocomplete, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+
+const brands = [
+  'Toyota', 'Renault', 'Peugeot', 'Hyundai', 'Volkswagen', 'Kia', 'Dacia', 'Citroën', 'Fiat', 'Seat',
+  'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Nissan', 'Honda', 'Mazda', 'Jeep', 'Land Rover',
+  'Opel', 'Skoda', 'Suzuki', 'Mitsubishi', 'Subaru', 'Porsche', 'Lexus', 'Jaguar', 'Mini', 'Volvo',
+  'Tesla', 'Alfa Romeo', 'Infiniti', 'Acura', 'Chery', 'Geely', 'BYD', 'Great Wall', 'Dongfeng',
+  'Changan', 'SsangYong', 'Isuzu', 'Daewoo', 'Other'
+];
+const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
+const transmissions = ['Manual', 'Automatic'];
+const wilayas = [
+  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
+];
+
+export default function SidebarFilters({ filters, onFilterChange, stylish }) {
+  const [pendingFilters, setPendingFilters] = useState(filters);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setPendingFilters({ ...pendingFilters, [name]: value });
+  };
+
+  const handleSliderChange = (_, newValue) => {
+    setPendingFilters({ ...pendingFilters, priceRange: newValue });
+  };
+
+  const handleDateChange = (e) => {
+    const { name, value } = e.target;
+    setPendingFilters({ ...pendingFilters, [name]: value });
+  };
+
+  const handleApply = () => {
+    onFilterChange({ ...pendingFilters });
+  };
+
+  const handleReset = () => {
+    setPendingFilters({});
+    onFilterChange({});
+  };
+
+  // Minimal, blue-grey palette, no background/gradient
+  const fieldSx = stylish ? {
+    mb: 2.3,
+    borderRadius: 2.5,
+    background: 'none',
+    boxShadow: 'none',
+    '& label': { fontWeight: 700, color: '#607d8b', fontFamily: 'Inter, Segoe UI, Arial, sans-serif', letterSpacing: 0.2 },
+    '& .MuiInputBase-root': {
+      fontWeight: 700,
+      borderRadius: 2.5,
+      fontFamily: 'Inter, Segoe UI, Arial, sans-serif',
+      background: 'none',
+      transition: 'box-shadow .22s, border-color .22s',
+      boxShadow: 'none',
+      '&:hover': { boxShadow: '0 2px 10px #b0bec522', borderColor: '#607d8b' },
+      '&.Mui-focused': { boxShadow: '0 4px 16px #607d8b44', borderColor: '#607d8b' },
+    },
+    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#b0bec5' },
+    '& .Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#607d8b' },
+    '& .MuiSelect-select': { fontWeight: 700, color: '#263238' },
+  } : { mb: 2 };
+
+  const groupSx = stylish ? {
+    p: 2.2, mb: 2.5, borderRadius: 3,
+    background: 'none',
+    boxShadow: 'none',
+    border: '1.5px solid #b0bec5',
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
+  } : {};
+
+  const dividerSx = stylish ? { my: 2.5, bgcolor: '#b0bec5', height: 2, borderRadius: 2 } : { my: 2 };
+  const priceLabelSx = stylish ? { mt: 2, mb: 1, fontWeight: 800, color: '#607d8b', letterSpacing: 0.3, fontSize: 16, fontFamily: 'Inter, Segoe UI, Arial, sans-serif' } : { mt: 2, mb: 1, fontWeight: 500, color: '#334155' };
+  const resetBtnSx = stylish ? {
+    mt: 2.5, fontWeight: 900, borderRadius: 99,
+    background: '#607d8b', color: '#fff',
+    boxShadow: '0 2px 10px #b0bec522', letterSpacing: 0.7, fontSize: 16,
+    fontFamily: 'Inter, Segoe UI, Arial, sans-serif',
+    py: 1.2,
+    '&:hover': { background: '#455a64', color: '#fff', boxShadow: '0 6px 18px #b0bec544' },
+    transition: 'box-shadow 0.18s, background 0.18s',
+  } : { mt: 2 };
+
+  const filterBtnSx = {
+    mt: 2.5, fontWeight: 900, borderRadius: 99,
+    background: '#607d8b', color: '#fff',
+    boxShadow: '0 2px 10px #b0bec522', letterSpacing: 0.7, fontSize: 16,
+    fontFamily: 'Inter, Segoe UI, Arial, sans-serif',
+    py: 1.2,
+    '&:hover': { background: '#455a64', color: '#fff', boxShadow: '0 6px 18px #b0bec544' },
+    transition: 'box-shadow 0.18s, background 0.18s',
+  };
+
+  return (
+    <Box sx={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 500, letterSpacing: 0.1 }}>
+      <Typography sx={{ fontWeight: 900, fontSize: 21, color: '#607d8b', letterSpacing: 0.5, mb: 2, fontFamily: 'Inter, Segoe UI, Arial, sans-serif' }}>
+        Customize your search
+      </Typography>
+      <Box sx={groupSx}>
+        <ToggleButtonGroup
+          color="primary"
+          value={filters.brand || ''}
+          exclusive
+          onChange={(e, value) => handleChange({ target: { name: 'brand', value } })}
+          sx={{ mb: 2, flexWrap: 'wrap', borderRadius: 2, background: '#eceff1', p: 0.5 }}
+        >
+          <ToggleButton value="">Any</ToggleButton>
+          {brands.slice(0, 5).map(b => (
+            <ToggleButton key={b} value={b}>{b}</ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+        <ToggleButtonGroup
+          color="primary"
+          value={filters.energy || ''}
+          exclusive
+          onChange={(e, value) => handleChange({ target: { name: 'energy', value } })}
+          sx={{ mb: 2, flexWrap: 'wrap', borderRadius: 2, background: '#eceff1', p: 0.5 }}
+        >
+          <ToggleButton value="">Any</ToggleButton>
+          {energies.map(e => (
+            <ToggleButton key={e} value={e} sx={{ display: 'flex', alignItems: 'center' }}>
+              {e === 'Electric' ? <span style={{ color: '#00bcd4', marginRight: 4 }}>⚡</span> : null}
+              {e}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+        <ToggleButtonGroup
+          color="primary"
+          value={filters.transmission || ''}
+          exclusive
+          onChange={(e, value) => handleChange({ target: { name: 'transmission', value } })}
+          sx={{ mb: 2, flexWrap: 'wrap', borderRadius: 2, background: '#eceff1', p: 0.5 }}
+        >
+          <ToggleButton value="">Any</ToggleButton>
+          {transmissions.map(t => (
+            <ToggleButton key={t} value={t} sx={{ display: 'flex', alignItems: 'center' }}>
+              {t === 'Automatic' ? <span style={{ color: '#607d8b', marginRight: 4 }}>⚙️</span> : null}
+              {t}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+        <Autocomplete
+          options={wilayas}
+          value={filters.wilaya || null}
+          onChange={(e, value) => handleChange({ target: { name: 'wilaya', value } })}
+          renderInput={(params) => <TextField {...params} label="Wilaya" sx={fieldSx} />}
+          sx={{ mb: 2 }}
+        />
+      </Box>
+      <Box sx={dividerSx} />
+      <Box sx={groupSx}>
+        <FormControl component="fieldset" sx={{ mb: 2 }}>
+          <FormLabel component="legend" sx={{ color: '#607d8b', fontWeight: 700 }}>Seats</FormLabel>
+          <RadioGroup
+            row
+            name="seats"
+            value={filters.seats || ''}
+            onChange={handleChange}
+          >
+            {[2, 4, 5, 7, 9].map((val) => (
+              <FormControlLabel key={val} value={val.toString()} control={<Radio sx={{ color: '#607d8b' }} />} label={val} />
+            ))}
+          </RadioGroup>
+        </FormControl>
+        <FormControl component="fieldset" sx={{ mb: 2 }}>
+          <FormLabel component="legend" sx={{ color: '#607d8b', fontWeight: 700 }}>Doors</FormLabel>
+          <RadioGroup
+            row
+            name="doors"
+            value={filters.doors || ''}
+            onChange={handleChange}
+          >
+            {[2, 3, 4, 5, 6].map((val) => (
+              <FormControlLabel key={val} value={val.toString()} control={<Radio sx={{ color: '#607d8b' }} />} label={val} />
+            ))}
+          </RadioGroup>
+        </FormControl>
+      </Box>
+      <Box sx={dividerSx} />
+      <Box sx={groupSx}>
+        <Typography sx={priceLabelSx}>Price Range (€)</Typography>
+        <Slider
+          value={pendingFilters.priceRange || [0, 100]}
+          onChange={handleSliderChange}
+          valueLabelDisplay="auto"
+          min={0}
+          max={200}
+          sx={{ mb: 2, color: '#1976d2', '& .MuiSlider-thumb': { bgcolor: '#607d8b' }, '& .MuiSlider-track': { bgcolor: '#1976d2' } }}
+        />
+      </Box>
+      <Box sx={dividerSx} />
+      <Box sx={groupSx}>
+        <TextField
+          fullWidth
+          label="Available From"
+          name="availableFrom"
+          type="date"
+          value={pendingFilters.availableFrom || ''}
+          onChange={handleDateChange}
+          sx={fieldSx}
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          fullWidth
+          label="Available To"
+          name="availableTo"
+          type="date"
+          value={pendingFilters.availableTo || ''}
+          onChange={handleDateChange}
+          sx={fieldSx}
+          InputLabelProps={{ shrink: true }}
+        />
+      </Box>
+      <Button variant={stylish ? 'contained' : 'outlined'} color="primary" fullWidth sx={filterBtnSx} onClick={handleApply}>
+        Filter
+      </Button>
+      <Button variant={stylish ? 'contained' : 'outlined'} color="primary" fullWidth sx={resetBtnSx} onClick={handleReset}>
+        Reset
+      </Button>
+    </Box>
+  );
+}
+App.js :
+import './App.css';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import QuickSearch from './components/QuickSearch';
+import CarTypesCarousel from './components/CarTypesCarousel';
+import MapSection from './components/MapSection';
+import MapPage from './pages/MapPage';
+import AllOffersPage from './pages/AllOffersPage';
+import OfferDetailsPage from './pages/OfferDetailsPage';
+import ChatPage from './pages/ChatPage';
+
+function App() {
+  return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <BrowserRouter>
+        <div className="App">
+          <Routes>
+            <Route path="/" element={
+              <>
+                <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+                <QuickSearch />
+                <CarTypesCarousel />
+                <MapSection />
+              </>
+            } />
+            <Route path="/map/:wilaya" element={<MapPage />} />
+            <Route path="/offers" element={<AllOffersPage />} />
+<Route path="/offer/:offerId" element={<OfferDetailsPage />} />
+<Route path="/chat/:posterName" element={<ChatPage />} />
+          </Routes>
+        </div>
+      </BrowserRouter>
+    </LocalizationProvider>
+  );
+}
+
+export default App;
+===========================================================
+===========================================================
+
+inside components file 
+CarTypesCarousel.css :
+.car-card-image-container {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  border-radius: 8px 8px 0 0;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+}
+
+.car-card-image-container svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.car-card-image-container:hover svg {
+  transform: scale(1.05) translateY(-2px);
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,0.15));
+}
+
+.car-type-card {
+  padding: 2rem;
+  text-align: center;
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 16px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.car-advantage {
+  color: #6c757d;
+  margin-bottom: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.car-type-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.car-type-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #3f51b5, #2196f3);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.car-type-card:hover::before {
+  opacity: 1;
+}
+
+/* Custom scrollbar for the carousel */
+.slick-slide > div {
+  margin: 1rem;
+  height: 100%;
+}
+
+.slick-track {
+  display: flex !important;
+  align-items: stretch;
+}
+
+.slick-slide {
+  height: auto;
+  padding: 0.5rem 0;
+}
+
+.slick-dots {
+  bottom: -40px;
+}
+
+.slick-dots li button:before {
+  font-size: 10px;
+  color: #3f51b5;
+  opacity: 0.3;
+}
+
+.slick-dots li.slick-active button:before {
+  opacity: 1;
+  color: #3f51b5;
+}
+
+.car-type {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1rem 0;
+  color: #2c3e50;
+  letter-spacing: -0.5px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Carousel arrows */
+.slick-prev:before,
+.slick-next:before {
+  color: #2c3e50;
+}
+CarTypesCarousel.js ;
+==================================
+
+PostCarDialog.js :
+import React, { useState } from 'react';
+import {
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Typography, InputAdornment, MenuItem, IconButton
+} from '@mui/material';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import CloseIcon from '@mui/icons-material/Close';
+import WilayaDropdown from './WilayaDropdown';
+
+const brands = [
+  'Toyota', 'Renault', 'Peugeot', 'Hyundai', 'Volkswagen', 'Kia', 'Dacia', 'Citroën', 'Fiat', 'Seat',
+  'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Nissan', 'Honda', 'Mazda', 'Jeep', 'Land Rover',
+  'Opel', 'Skoda', 'Suzuki', 'Mitsubishi', 'Subaru', 'Porsche', 'Lexus', 'Jaguar', 'Mini', 'Volvo',
+  'Tesla', 'Alfa Romeo', 'Infiniti', 'Acura', 'Chery', 'Geely', 'BYD', 'Great Wall', 'Dongfeng',
+  'Changan', 'SsangYong', 'Isuzu', 'Daewoo', 'Other'
+];
+const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
+const transmissions = ['Manual', 'Automatic'];
+
+export default function PostCarDialog({ open, onClose }) {
+  const [formData, setFormData] = useState({
+    images: [],
+    carName: '',
+    brand: '',
+    description: '',
+    energy: '',
+    seats: '',
+    doors: '',
+    transmission: '',
+    mileage: '',
+    engine: '',
+    wilaya: '',
+    availabilityStart: '',
+    availabilityEnd: '',
+    price: '',
+  });
+  const [imagePreviews, setImagePreviews] = useState([]);
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (files) {
+      const images = Array.from(files);
+      setFormData(prev => ({ ...prev, images }));
+      setImagePreviews(images.map(file => URL.createObjectURL(file)));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleWilayaChange = (wilaya) => {
+    setFormData(prev => ({ ...prev, wilaya }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Submit logic here (API call etc.)
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{
+      sx: {
+        borderRadius: 4,
+        boxShadow: '0 12px 50px -12px rgba(30,41,59,0.25)',
+        bgcolor: '#f8fafc',
+      }
+    }}>
+      <Box sx={{ position: 'relative', background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)', p: 4, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, color: 'white', letterSpacing: 0.5 }}>
+          Post Your Car for Rent
+        </Typography>
+        <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.85)', mb: 0 }}>
+          Share your car and earn income easily
+        </Typography>
+        <IconButton
+          onClick={onClose}
+          sx={{ position: 'absolute', right: 16, top: 16, color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ p: 4, maxHeight: '70vh', overflowY: 'auto', bgcolor: '#f8fafc' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Image Upload */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, color: '#334155', fontWeight: 600 }}>
+                Car Images
+              </Typography>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<AddPhotoAlternateIcon />}
+                fullWidth
+                sx={{ mb: 1.5, textTransform: 'none', justifyContent: 'flex-start', borderRadius: 2, borderColor: '#475569', color: '#475569', bgcolor: '#f1f5f9', '&:hover': { borderColor: '#334155', bgcolor: '#e2e8f0' } }}
+              >
+                Upload Images (max 5)
+                <input
+                  type="file"
+                  accept="image/*"
+                  name="images"
+                  multiple
+                  hidden
+                  onChange={handleChange}
+                  max={5}
+                />
+              </Button>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 1 }}>
+                {imagePreviews.map((src, idx) => (
+                  <Box key={idx} sx={{ width: 72, height: 72, borderRadius: 3, overflow: 'hidden', border: '2px solid #cbd5e1', bgcolor: '#fff', boxShadow: '0 2px 8px rgba(30,41,59,0.07)' }}>
+                    <img src={src} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} />
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+            {/* Description */}
+            <TextField
+              required
+              fullWidth
+              label="Description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              multiline
+              minRows={2}
+              maxRows={4}
+              InputProps={{
+                sx: {
+                  borderRadius: 2.5,
+                  bgcolor: '#f1f5f9',
+                  boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                  '&:hover': { bgcolor: '#e2e8f0' },
+                  '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                }
+              }}
+              InputLabelProps={{
+                sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 }
+              }}
+            />
+            {/* Car Name, Brand, Wilaya */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                required
+                fullWidth
+                label="Car Name"
+                name="carName"
+                value={formData.carName}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><path d="M6 15v-2a2 2 0 012-2h4a2 2 0 012 2v2" stroke="#64748b" strokeWidth="1.6" strokeLinecap="round"/><rect x="4.5" y="10" width="11" height="2.5" rx="1.25" fill="#e2e8f0" stroke="#64748b" strokeWidth="1.2"/></svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              />
+              <TextField
+                required
+                select
+                fullWidth
+                label="Brand"
+                name="brand"
+                value={formData.brand}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}>
+  <rect width="20" height="20" rx="10" fill="#e2e8f0"/>
+  <circle cx="10" cy="10" r="6" stroke="#64748b" strokeWidth="1.5" fill="#fff"/>
+  <path d="M10 4v12M4 10h12" stroke="#64748b" strokeWidth="1.2"/>
+  <path d="M10 10l4.2-4.2" stroke="#64748b" strokeWidth="1.1"/>
+  <circle cx="10" cy="10" r="2.2" fill="#e2e8f0" stroke="#64748b" strokeWidth="1.1"/>
+</svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              >
+                {brands.map(b => <MenuItem key={b} value={b}>{b}</MenuItem>)}
+              </TextField>
+              <WilayaDropdown
+                value={formData.wilaya}
+                onChange={handleWilayaChange}
+                sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: '#f1f5f9', boxShadow: '0 1px 4px rgba(30,41,59,0.03)', '&:hover': { bgcolor: '#e2e8f0' }, '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' } }, '& .MuiInputLabel-root': { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              />
+            </Box>
+            {/* Energy, Engine, Transmission */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                required
+                select
+                fullWidth
+                label="Energy"
+                name="energy"
+                value={formData.energy}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><rect x="7" y="7" width="6" height="8" rx="1.2" stroke="#64748b" strokeWidth="1.5"/><rect x="10" y="6" width="2" height="2" rx="0.5" stroke="#64748b" strokeWidth="1.2"/><path d="M8.5 8.5l5 5" stroke="#64748b" strokeWidth="1.1" strokeLinecap="round"/><rect x="9" y="11" width="2" height="2.5" rx="0.7" stroke="#64748b" strokeWidth="1.1"/></svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              >
+                {energies.map(e => <MenuItem key={e} value={e}>{e}</MenuItem>)}
+              </TextField>
+              <TextField
+                required
+                fullWidth
+                label="Engine (e.g. 1.6L, 90ch)"
+                name="engine"
+                value={formData.engine}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><path d="M7 13l6-6M7 7h6v6" stroke="#64748b" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              />
+              <TextField
+                required
+                select
+                fullWidth
+                label="Transmission"
+                name="transmission"
+                value={formData.transmission}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><path d="M7 13V7M13 13V7M7 10h6M10 7v6" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round"/><circle cx="7" cy="7" r="1" fill="#64748b"/><circle cx="13" cy="7" r="1" fill="#64748b"/><circle cx="7" cy="13" r="1" fill="#64748b"/><circle cx="13" cy="13" r="1" fill="#64748b"/><circle cx="10" cy="10" r="1" fill="#64748b"/></svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              >
+                {transmissions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+              </TextField>
+            </Box>
+            {/* Seats, Doors, Mileage */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                required
+                fullWidth
+                label="Seats"
+                name="seats"
+                type="number"
+                value={formData.seats}
+                onChange={handleChange}
+                inputProps={{ min: 1, max: 9 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}>
+  <rect width="20" height="20" rx="10" fill="#e2e8f0"/>
+  <path d="M7.5 5c0-1 .8-1.5 1.7-1.2l.3.1c.4.2.7.6.7 1.1v3.5" stroke="#64748b" strokeWidth="1.4" strokeLinecap="round"/>
+  <path d="M9.5 8.5c-.7 1.1-1.3 2.2-1.3 3.7V15c0 .6.4 1 1 1h5.2c.6 0 1-.4 1-1v-1.2c0-.6-.4-1.3-1-1.5l-2.2-.7c-.5-.1-.8-.6-.8-1.1V8.5" stroke="#64748b" strokeWidth="1.4" strokeLinejoin="round" fill="#fff"/>
+  <circle cx="8.5" cy="12.2" r="0.7" fill="#e2e8f0" stroke="#64748b" strokeWidth="1.1"/>
+  <path d="M10.5 15h3" stroke="#64748b" strokeWidth="1.2" strokeLinecap="round"/>
+</svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              />
+              <TextField
+                required
+                fullWidth
+                label="Doors"
+                name="doors"
+                type="number"
+                value={formData.doors}
+                onChange={handleChange}
+                inputProps={{ min: 2, max: 6 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}>
+  <rect width="20" height="20" rx="10" fill="#e2e8f0"/>
+  <path d="M6.5 15V7.5c0-.5.3-.9.7-1.1l5.1-1.7c.6-.2 1.2.2 1.2.8V15" stroke="#64748b" strokeWidth="1.4" fill="#fff"/>
+  <path d="M7 8.2h7.2" stroke="#64748b" strokeWidth="1.1"/>
+  <rect x="8.8" y="9.3" width="2.4" height="1.1" rx="0.5" fill="#e2e8f0" stroke="#64748b" strokeWidth="1"/>
+  <rect x="8.2" y="11.8" width="4.2" height="0.5" rx="0.2" fill="#64748b"/>
+  <ellipse cx="8.7" cy="10.6" rx="0.7" ry="0.3" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.9"/>
+</svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              />
+              <TextField
+                required
+                fullWidth
+                label="Mileage (km)"
+                name="mileage"
+                type="number"
+                value={formData.mileage}
+                onChange={handleChange}
+                inputProps={{ min: 0 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><circle cx="10" cy="10" r="5" stroke="#64748b" strokeWidth="1.6"/><path d="M10 10V7" stroke="#64748b" strokeWidth="1.6" strokeLinecap="round"/><circle cx="10" cy="10" r="1.2" fill="#64748b"/></svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              />
+            </Box>
+            {/* Availability Dates */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                required
+                fullWidth
+                label="Available From"
+                name="availabilityStart"
+                type="date"
+                value={formData.availabilityStart}
+                onChange={handleChange}
+                InputLabelProps={{ shrink: true, sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><rect x="6" y="8" width="8" height="6" rx="1.2" stroke="#64748b" strokeWidth="1.6"/><rect x="8" y="6" width="1.5" height="2" rx="0.5" fill="#64748b"/><rect x="10.5" y="6" width="1.5" height="2" rx="0.5" fill="#64748b"/></svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+              />
+              <TextField
+                required
+                fullWidth
+                label="Available Until"
+                name="availabilityEnd"
+                type="date"
+                value={formData.availabilityEnd}
+                onChange={handleChange}
+                InputLabelProps={{ shrink: true, sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><rect x="6" y="8" width="8" height="6" rx="1.2" stroke="#64748b" strokeWidth="1.6"/><rect x="8" y="6" width="1.5" height="2" rx="0.5" fill="#64748b"/><rect x="10.5" y="6" width="1.5" height="2" rx="0.5" fill="#64748b"/></svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+              />
+              {/* Price Field */}
+              <TextField
+                required
+                fullWidth
+                label="Price Per Day (€)"
+                name="price"
+                type="number"
+                inputProps={{ min: 0 }}
+                value={formData.price}
+                onChange={handleChange}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><text x="6" y="15" fontSize="11" fill="#64748b">€</text></svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+              />
+            </Box>
+          </Box>
+          <DialogActions sx={{ p: 0, pt: 4 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              startIcon={<svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="12" fill="#334155"/><path d="M7 17v-2.5a2 2 0 012-2h6a2 2 0 012 2V17" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/><rect x="5.5" y="12" width="13" height="3" rx="1.5" fill="#64748b"/><circle cx="8.5" cy="17.5" r="1.5" fill="#fff"/><circle cx="15.5" cy="17.5" r="1.5" fill="#fff"/></svg>}
+              sx={{
+                background: 'linear-gradient(90deg, #334155 0%, #475569 100%)',
+                color: 'white',
+                py: 1.5,
+                fontSize: '1.13rem',
+                fontWeight: 700,
+                borderRadius: 3,
+                boxShadow: '0 2px 12px 0 rgba(71,85,105,0.13)',
+                textTransform: 'none',
+                letterSpacing: 0.7,
+                transition: 'all 0.22s cubic-bezier(.4,2,.6,1)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #475569 0%, #334155 100%)',
+                  color: '#f1f5f9',
+                  boxShadow: '0 6px 24px 0 rgba(30,41,59,0.18), 0 0 0 4px #cbd5e15a',
+                  transform: 'scale(1.035) translateY(-2px)'
+                }
+              }}
+            >
+              Post Car
+            </Button>
+          </DialogActions>
+        </DialogContent>
+      </form>
+    </Dialog>
+  );
+}
+
+=============================
+QuickSearch.js :
+
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Paper, 
+  TextField, 
+  Button, 
+  InputAdornment, 
+  Typography, 
+  Fade,
+  Autocomplete
+} from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import dayjs from 'dayjs';
+
+// List of all Algerian wilayas (from MapPage.js)
+const wilayas = [
+  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
+];
+
+const QuickSearch = ({ noBackground = false }) => {
+  const [startDate, setStartDate] = useState(dayjs());
+  const [endDate, setEndDate] = useState(dayjs().add(3, 'day'));
+  const [location, setLocation] = useState(null);
+  return (
+    <Box
+      sx={{
+        ...(noBackground
+          ? {
+              background: '#fff',
+              padding: 0,
+              minHeight: 0,
+              justifyContent: 'flex-start',
+              marginTop: 0,
+            }
+          : {
+              background: 'linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 100%), url("https://images.unsplash.com/photo-1485291571150-772bcfc10da5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80")',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              padding: '2rem',
+              minHeight: '600px',
+              justifyContent: 'center',
+            }
+        ),
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      <Fade in timeout={1000}>
+        <Box sx={{ textAlign: 'center', mb: 0, mt: 0, color: 'white' }}>
+          <Typography variant="h2" sx={{ fontWeight: 'bold', mb: noBackground ? 0 : 2 }}>
+            Find Your Perfect Ride
+          </Typography>
+          <Typography variant="h5" sx={{ mb: noBackground ? 0 : 4 }}>
+            Rent a car anywhere, anytime
+          </Typography>
+        </Box>
+      </Fade>
+
+      <Fade in timeout={1500}>
+        <Paper
+          elevation={6}
+          sx={{
+            p: noBackground ? 0 : 4,
+            borderRadius: noBackground ? 0 : 3,
+            width: '100%',
+            maxWidth: 1000,
+            borderRadius: 3,
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: 3,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            position: 'relative',
+            zIndex: 2
+          }}
+        >
+          <Box sx={{ flex: 2 }}>
+            <Autocomplete
+              fullWidth
+              options={wilayas}
+              value={location}
+              onChange={(event, newValue) => setLocation(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Select Wilaya"
+                  variant="outlined"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationOnIcon sx={{ color: '#475569' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+              sx={{ 
+                '& .MuiOutlinedInput-root': { 
+                  borderRadius: 2,
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#475569',
+                  },
+                },
+                '& .MuiAutocomplete-popupIndicator': {
+                  color: '#475569',
+                },
+              }}
+            />
+          </Box>
+
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box sx={{ flex: 1.5 }}>
+              <DateTimePicker
+                label="Start Date & Time"
+                value={startDate}
+                onChange={(newValue) => setStartDate(newValue)}
+                minDate={dayjs()}
+                sx={{ width: '100%' }}
+              />
+            </Box>
+
+            <Box sx={{ flex: 1.5 }}>
+              <DateTimePicker
+                label="End Date & Time"
+                value={endDate}
+                onChange={(newValue) => setEndDate(newValue)}
+                minDate={startDate}
+                sx={{ width: '100%' }}
+              />
+            </Box>
+          </LocalizationProvider>
+
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<DirectionsCarIcon />}
+            sx={{
+              flex: 1,
+              height: '56px',
+              backgroundColor: '#475569',
+              borderRadius: 2,
+              fontSize: '1.1rem',
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: '#334155',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 20px rgba(71,85,105,0.4)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+            onClick={() => {
+              if (!location || !startDate || !endDate) return;
+              const start = startDate.format('YYYY-MM-DD');
+              const end = endDate.format('YYYY-MM-DD');
+              window.location.href = `/offers?wilaya=${encodeURIComponent(location)}&startDate=${start}&endDate=${end}`;
+            }}
+          >
+            Find Cars
+          </Button>
+        </Paper>
+      </Fade>
+
+      {/* Decorative elements */}
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: -100,
+          left: -100,
+          width: 300,
+          height: 300,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0,166,153,0.2) 0%, rgba(0,166,153,0) 70%)',
+          zIndex: 1
+        }}
+      />
+      <Box
+        sx={{
+          position: 'absolute',
+          top: -50,
+          right: -50,
+          width: 200,
+          height: 200,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+          zIndex: 1
+        }}
+      />
+    </Box>
+  );
+};
+
+export default QuickSearch;
+
+SignIn.js :
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  IconButton,
+  InputAdornment,
+  useTheme,
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
+
+const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
+  const theme = useTheme();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Add authentication logic here
+    console.log('Sign in data:', formData);
+  };
+
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: '0 12px 50px -12px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+        }
+      }}
+    >
+      <Box sx={{
+        position: 'relative',
+        background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+        p: 3,
+        color: 'white',
+      }}>
+        <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+          Welcome Back
+        </Typography>
+        <Typography variant="body2" sx={{ opacity: 0.8 }}>
+          Sign in to continue your journey
+        </Typography>
+        <IconButton
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'white',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              required
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              variant="outlined"
+              onFocus={() => setFocused('email')}
+              onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon 
+                      sx={{ 
+                        color: focused === 'email' ? '#475569' : '#94a3b8',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#3498db',
+                  },
+                },
+              }}
+            />
+            <TextField
+              required
+              fullWidth
+              label="Password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={handleChange}
+              variant="outlined"
+              onFocus={() => setFocused('password')}
+              onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon 
+                      sx={{ 
+                        color: focused === 'password' ? '#475569' : '#94a3b8',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      sx={{ color: showPassword ? '#475569' : '#94a3b8' }}
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#3498db',
+                  },
+                },
+              }}
+            />
+            <Button
+              variant="text"
+              sx={{
+                alignSelf: 'flex-end',
+                color: '#64748b',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  color: '#475569',
+                }
+              }}
+            >
+              Forgot Password?
+            </Button>
+          </Box>
+        </DialogContent>
+
+        <DialogActions 
+          sx={{ 
+            p: 4, 
+            pt: 0,
+            flexDirection: 'column',
+            gap: 2
+          }}
+        >
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{
+              bgcolor: '#475569',
+              color: 'white',
+              py: 1.5,
+              fontSize: '1rem',
+              textTransform: 'none',
+              '&:hover': {
+                bgcolor: '#334155',
+              },
+            }}
+          >
+            Sign In
+          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" sx={{ color: '#64748b' }}>
+              Don't have an account?
+            </Typography>
+            <Button
+              onClick={() => onSwitchToSignUp()}
+              sx={{
+                color: '#3498db',
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  color: '#334155',
+                }
+              }}
+            >
+              Sign Up
+            </Button>
+          </Box>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+};
+
+export default SignIn;
+SignUp.js :
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  IconButton,
+  InputAdornment,
+  useTheme,
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
+import PersonIcon from '@mui/icons-material/Person';
+import WilayaDropdown from './WilayaDropdown';
+
+const SignUp = ({ open, onClose, onSwitchToSignIn }) => {
+  const theme = useTheme();
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    birthDate: '',
+    phone: '',
+    residence: '',
+    licenceFront: null,
+    licenceBack: null,
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (files) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords don't match");
+      return;
+    }
+    // Add registration logic here
+    console.log('Sign up data:', formData);
+  };
+
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: '0 12px 50px -12px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+        }
+      }}
+    >
+      <Box sx={{
+        position: 'relative',
+        background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+        p: 3,
+        color: 'white',
+      }}>
+        <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+          Create Account
+        </Typography>
+        <Typography variant="body2" sx={{ opacity: 0.8 }}>
+          Join us and start your journey
+        </Typography>
+        <IconButton
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'white',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ p: 4, maxHeight: '70vh', overflowY: 'auto' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                required
+                fullWidth
+                label="First Name"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                variant="outlined"
+                onFocus={() => setFocused('firstName')}
+                onBlur={() => setFocused('')}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonIcon 
+                        sx={{ 
+                          color: focused === 'firstName' ? '#475569' : '#94a3b8',
+                          transition: 'color 0.3s ease'
+                        }} 
+                      />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': {
+                      borderColor: '#94a3b8',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#475569',
+                    },
+                  },
+                }}
+              />
+              <TextField
+                required
+                fullWidth
+                label="Last Name"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                variant="outlined"
+                onFocus={() => setFocused('lastName')}
+                onBlur={() => setFocused('')}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonIcon 
+                        sx={{ 
+                          color: focused === 'lastName' ? '#475569' : '#94a3b8',
+                          transition: 'color 0.3s ease'
+                        }} 
+                      />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': {
+                      borderColor: '#94a3b8',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#475569',
+                    },
+                  },
+                }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                required
+                fullWidth
+                label="Birth Date"
+                name="birthDate"
+                type="date"
+                value={formData.birthDate}
+                onChange={handleChange}
+                InputLabelProps={{ shrink: true }}
+                variant="outlined"
+              />
+              <TextField
+                required
+                fullWidth
+                label="Phone Number"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                variant="outlined"
+              />
+            </Box>
+            <WilayaDropdown
+              value={formData.residence}
+              onChange={value => setFormData(prev => ({ ...prev, residence: value }))}
+              sx={{ mb: 0 }}
+            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Driving Licence (Front)
+                </Typography>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                  sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                >
+                  {formData.licenceFront ? formData.licenceFront.name : 'Upload Front Image'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    name="licenceFront"
+                    hidden
+                    onChange={handleChange}
+                  />
+                </Button>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Driving Licence (Back)
+                </Typography>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                  sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                >
+                  {formData.licenceBack ? formData.licenceBack.name : 'Upload Back Image'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    name="licenceBack"
+                    hidden
+                    onChange={handleChange}
+                  />
+                </Button>
+              </Box>
+            </Box>
+            <TextField
+              required
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              variant="outlined"
+              onFocus={() => setFocused('email')}
+              onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon 
+                      sx={{ 
+                        color: focused === 'email' ? '#475569' : '#94a3b8',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#475569',
+                  },
+                },
+              }}
+            />
+            <TextField
+              required
+              fullWidth
+              label="Password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={handleChange}
+              variant="outlined"
+              onFocus={() => setFocused('password')}
+              onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon 
+                      sx={{ 
+                        color: focused === 'password' ? '#475569' : '#94a3b8',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      sx={{ color: showPassword ? '#475569' : '#94a3b8' }}
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#475569',
+                  },
+                },
+              }}
+            />
+            <TextField
+              required
+              fullWidth
+              label="Confirm Password"
+              name="confirmPassword"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              variant="outlined"
+              onFocus={() => setFocused('confirmPassword')}
+              onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon 
+                      sx={{ 
+                        color: focused === 'confirmPassword' ? '#475569' : '#94a3b8',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#475569',
+                  },
+                },
+              }}
+            />
+          </Box>
+          {/* DialogActions moved inside DialogContent so button scrolls */}
+          <DialogActions 
+            sx={{ 
+              p: 0, 
+              pt: 2,
+              flexDirection: 'column',
+              gap: 2
+            }}
+          >
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={{
+                bgcolor: '#475569',
+                color: 'white',
+                py: 1.5,
+                fontSize: '1rem',
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: '#334155',
+                },
+              }}
+            >
+              Create Account
+            </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: '#64748b' }}>
+                Already have an account?
+              </Typography>
+              <Button
+                onClick={() => onSwitchToSignIn()}
+                sx={{
+                  color: '#475569',
+                  textTransform: 'none',
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    color: '#334155',
+                  }
+                }}
+              >
+                Sign In
+              </Button>
+            </Box>
+          </DialogActions>
+        </DialogContent>
+      </form>
+    </Dialog>
+  );
+};
+
+export default SignUp;
+============================
+WilayaDropdown.js
+import React from 'react';
+import { Autocomplete, TextField, InputAdornment } from '@mui/material';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+
+// List of all Algerian wilayas
+const wilayas = [
+  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
+];
+
+export default function WilayaDropdown({ value, onChange, sx }) {
+  return (
+    <Autocomplete
+      fullWidth
+      options={wilayas}
+      value={value}
+      onChange={(event, newValue) => onChange(newValue || 'Algiers')}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          placeholder="Select Wilaya"
+          variant="outlined"
+          InputProps={{
+            ...params.InputProps,
+            startAdornment: (
+              <InputAdornment position="start">
+                <LocationOnIcon sx={{ color: '#475569' }} />
+              </InputAdornment>
+            ),
+          }}
+        />
+      )}
+      sx={sx}
+    />
+  );
+}
 

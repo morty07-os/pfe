@@ -25,8 +25,8 @@ export const createRating = async (req, res) => {
 // Function to fetch all ratings
 export const getRatings = async (req, res) => {
     try {
-        // Retrieve all ratings and populate user and car details
-        const ratings = await Rating.find().populate('userId', 'username').populate('carId', 'make model');
+        // Retrieve all ratings and populate car details
+        const ratings = await Rating.find().populate('carId', 'make model');
         res.status(200).json(ratings);
     } catch (error) {
         console.error("Error fetching ratings:", error.message);

@@ -1,152 +1,176 @@
 import User from '../models/user.models.js';
 import bcrypt from 'bcryptjs';
-import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; // Updated path
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 
 // Handles user signup
 export const signup = async (req, res) => {
     try {
-        // Extract user details from the request body
-        const { fullName, username, email, password } = req.body;
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        console.log("Signup request body:", req.body); // Log the request body
+
+        const { firstName, lastName, birthDate, phone, residence, email, password, licenceFront, licenceBack } = req.body;
+
+        // Validate required fields
+        if (!email) {
+            return res.status(400).json({ error: "Email is required" });
+        }
 
         // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.toLowerCase())) {
-            return res.status(400).json({ error: "invalid email format" });
+            console.log("Invalid email format"); // Log invalid email
+            return res.status(400).json({ error: "Invalid email format" });
         }
 
-        // Check if username or email already exists
-        const exisitngUser = await User.findOne({ username });
-        if (exisitngUser) {
-            return res.status(400).json({ error: "username already taken" });
-        }
-
-        const exisitngEmail = await User.findOne({ email: email.toLowerCase() });
-        if (exisitngEmail) {
-            return res.status(400).json({ error: "email already taken" });
+        // Check if email or phone already exists
+        const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { phone }] });
+        if (existingUser) {
+            console.log("Email or phone already in use"); // Log duplicate email/phone
+            return res.status(400).json({ error: "Email or phone number already in use" });
         }
 
         // Validate password length
         if (password.length < 6) {
-            return res.status(400).json({ error: "password must be at least 6 characters long" });
+            console.log("Password too short"); // Log invalid password length
+            return res.status(400).json({ error: "Password must be at least 6 characters long" });
         }
 
         // Hash the password
         const salt = await bcrypt.genSalt(10);
-        const hashpassword = await bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Ensure JWT_SECRET is defined
-        if (!process.env.JWT_SECRET) {
-            console.error("JWT_SECRET is not defined in environment variables");
-            return res.status(500).json({ error: "Server configuration error" });
-        }
+        console.log("Password hashed successfully"); // Log successful password hashing
 
         // Create a new user
         const newUser = new User({
-            fullName,
-            username,
+            firstName,
+            lastName,
+            birthDate,
+            phone,
+            residence,
             email: email.toLowerCase(),
-            password: hashpassword
+            password: hashedPassword,
+            licenceFront,
+            licenceBack,
         });
 
-        // Save the user and generate a token
-        if (newUser) {
-            generateTokenAndSetCookie(newUser._id, res);
-            await newUser.save();
-            res.status(201).json({
+        await newUser.save();
+        console.log("User saved successfully:", newUser); // Log successful user creation
+
+        // Generate token and set it in the cookie
+        generateTokenAndSetCookie(newUser._id, res);
+
+        res.status(201).json({
+            message: "User registered successfully",
+            user: {
                 _id: newUser._id,
-                fullName: newUser.fullName,
-                username: newUser.username,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
                 email: newUser.email,
-                token: newUser.token,
-            });
-        } else {
-            res.status(400).json({ error: "invalid user data" });
-        }
+                phone: newUser.phone,
+                residence: newUser.residence,
+            },
+        });
     } catch (error) {
-        console.log("error in signup controller", error.message);
-        res.status(500).json({ error: "server error" });
+        console.error("Error in signup controller:", error.message); // Log the error message
+        res.status(500).json({ error: "Server error" });
     }
 };
 
 // Handles user login
 export const login = async (req, res) => {
     try {
-        // Extract username and password from the request body
-        const { username, password } = req.body;
+        const { email, password } = req.body;
 
-        // Find the user by username
-        const user = await User.findOne({ username });
+        console.log("Login attempt with email:", email); // Log email
 
-        // Validate user existence and password correctness
-        const isPasswordCorrect = await bcrypt.compare(password, user?.password || "");
-        if (!user || !isPasswordCorrect) {
-            return res.status(400).json({ error: "invalid username or password" });
+        // Find the user by email
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            console.log("User not found"); // Log if user is not found
+            return res.status(400).json({ error: "Invalid email or password" });
+        }
+
+        // Validate password
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) {
+            console.log("Incorrect password"); // Log if password is incorrect
+            return res.status(400).json({ error: "Invalid email or password" });
         }
 
         // Generate token and set it in the cookie
         generateTokenAndSetCookie(user._id, res);
 
-        // Respond with user details
         res.status(200).json({
-            _id: user._id,
-            fullName: user.fullName,
-            username: user.username,
-            email: user.email,
-            token: user.token,
+            message: "Login successful",
+            user: {
+                _id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                phone: user.phone,
+                residence: user.residence,
+            },
         });
     } catch (error) {
-        console.log("error in login controller", error.message);
-        res.status(500).json({ error: "server error" });
+        console.error("Error in login controller:", error.message);
+        res.status(500).json({ error: "Server error" });
     }
 };
 
 // Handles user logout
-export const logout = async (req, res) => {
+export const logout = (req, res) => {
     try {
-        // Clear the JWT cookie
         res.cookie("jwt", "", { maxAge: 0 });
-        res.status(200).json({ message: "user logged out successfully" });
+        res.status(200).json({ message: "User logged out successfully" });
     } catch (error) {
-        console.log("error in logout controller", error.message);
-        res.status(500).json({ error: "server error" });
+        console.error("Error in logout controller:", error.message);
+        res.status(500).json({ error: "Server error" });
     }
 };
 
 // Fetches details of the logged-in user
 export const getMe = async (req, res) => {
     try {
-        // Find the user by ID and exclude the password field
         const user = await User.findById(req.user._id).select("-password");
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
         res.status(200).json(user);
     } catch (error) {
-        console.log("error in getMe controller", error.message);
-        res.status(500).json({ error: "server error" });
+        console.error("Error in getMe controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Deletes a user account
+export const deleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findByIdAndDelete(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        console.error("Error in deleteUser controller:", error.message);
+        res.status(500).json({ error: "Server error" });
     }
 };
 
 // Refreshes the JWT token
 export const refreshToken = async (req, res) => {
     try {
-        // Retrieve the refresh token from cookies
         const refreshToken = req.cookies.refreshToken;
         if (!refreshToken) {
             return res.status(401).json({ error: "No refresh token provided" });
         }
 
-        // Ensure JWT_SECRET is defined
-        if (!process.env.JWT_SECRET) {
-            console.error("JWT_SECRET is not defined in environment variables");
-            return res.status(500).json({ error: "Server configuration error" });
-        }
-
-        // Verify the refresh token and generate a new access token
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, {
-            expiresIn: '15m',
-        });
+        const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
 
-        // Set the new token in the cookie
         res.cookie("jwt", newToken, {
             maxAge: 15 * 60 * 1000,
             httpOnly: true,

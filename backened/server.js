@@ -8,6 +8,8 @@ import { ProtectedRoute } from "./midleware/ProtectedRoute.js";
 import { errorHandler } from './midleware/errorHandler.js';
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import cors from "cors"; // Import CORS
+import User from './models/user.models.js'; // Import the User model
 
 // Load environment variables
 dotenv.config();
@@ -17,6 +19,12 @@ const PORT = process.env.PORT || 5001;
 
 // Apply security headers using Helmet
 app.use(helmet());
+
+// Enable CORS for the frontend
+app.use(cors({
+    origin: "http://localhost:3000", // Replace with the frontend's URL
+    credentials: true, // Allow cookies to be sent
+}));
 
 // Rate limiting middleware to prevent abuse
 const limiter = rateLimit({
@@ -32,6 +40,20 @@ app.use(express.urlencoded({ extended: true }));
 // Middleware for parsing cookies
 app.use(cookieParser());
 
+// Function to remove the username index if it exists
+const removeUsernameIndex = async () => {
+    try {
+        const indexes = await User.collection.indexes();
+        const usernameIndex = indexes.find(index => index.name === "username_1");
+        if (usernameIndex) {
+            await User.collection.dropIndex("username_1");
+            console.log("Dropped username index successfully.");
+        }
+    } catch (error) {
+        console.error("Error dropping username index:", error.message);
+    }
+};
+
 // Mount authentication routes
 app.use("/api/auth", authRoutes);
 
@@ -39,7 +61,8 @@ app.use("/api/auth", authRoutes);
 app.use(errorHandler);
 
 // Start the server and connect to MongoDB
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`server is running on port: ${PORT}`);
-    connectMongoDB();
+    await connectMongoDB();
+    await removeUsernameIndex(); // Ensure the username index is removed
 });
