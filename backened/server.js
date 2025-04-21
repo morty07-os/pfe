@@ -22,7 +22,7 @@ app.use(helmet());
 
 // Enable CORS for the frontend
 app.use(cors({
-    origin: "http://localhost:3000", // Replace with the frontend's URL
+    origin: "http://localhost:3000", // Ensure this matches the frontend's URL
     credentials: true, // Allow cookies to be sent
 }));
 

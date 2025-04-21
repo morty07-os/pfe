@@ -26,6 +26,7 @@ const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [focused, setFocused] = useState('');
+  const [message, setMessage] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,10 +36,32 @@ const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add authentication logic here
-    console.log('Sign in data:', formData);
+    console.log("Sign-in form data:", formData); // Log form data
+
+    try {
+      const response = await fetch('http://localhost:5001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+      console.log("Backend response:", result); // Log backend response
+
+      if (response.ok) {
+        setMessage('Sign in successful');
+        console.log("Sign in successful:", result); // Log success
+        // Optionally, redirect the user or store the token
+      } else {
+        setMessage(result.error || 'Sign in failed');
+        console.error("Sign in failed:", result); // Log error
+      }
+    } catch (error) {
+      setMessage('Sign in failed');
+      console.error("Error during sign in:", error.message); // Log exception
+    }
   };
 
   return (
@@ -177,6 +200,14 @@ const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
               Forgot Password?
             </Button>
           </Box>
+          {message && (
+            <Typography 
+              variant="body2" 
+              sx={{ color: message === 'Sign in successful' ? 'green' : 'red', mt: 2 }}
+            >
+              {message}
+            </Typography>
+          )}
         </DialogContent>
 
         <DialogActions 

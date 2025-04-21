@@ -87,16 +87,18 @@ export const login = async (req, res) => {
         // Find the user by email
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
-            console.log("User not found"); // Log if user is not found
+            console.log("User not found for email:", email); // Log if user is not found
             return res.status(400).json({ error: "Invalid email or password" });
         }
 
         // Validate password
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
         if (!isPasswordCorrect) {
-            console.log("Incorrect password"); // Log if password is incorrect
+            console.log("Incorrect password for email:", email); // Log if password is incorrect
             return res.status(400).json({ error: "Invalid email or password" });
         }
+
+        console.log("Login successful for email:", email); // Log successful login
 
         // Generate token and set it in the cookie
         generateTokenAndSetCookie(user._id, res);
