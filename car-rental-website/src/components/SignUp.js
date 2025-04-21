@@ -81,8 +81,10 @@ const SignUp = ({ open, onClose, onSwitchToSignIn }) => {
       if (response.ok) {
         alert(result.message); // Show success message
         onClose(); // Close the dialog
+        console.log("Signup successful"); // Log success message
       } else {
         alert(result.error || 'Registration failed'); // Show error message
+        console.log("Signup not successful"); // Log failure message
       }
     } catch (error) {
       console.error("Error during registration:", error.message); // Log error
