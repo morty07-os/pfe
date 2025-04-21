@@ -24,9 +24,11 @@ const userSchema = new mongoose.Schema({
     },
     licenceFront: {
         type: String, // Store file path
+        required: true, // Ensure it's required
     },
     licenceBack: {
         type: String, // Store file path
+        required: true, // Ensure it's required
     },
     password: {
         type: String,

@@ -71,7 +71,7 @@ const SignUp = ({ open, onClose, onSwitchToSignIn }) => {
 
     try {
       // Send POST request to the backend
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch('http://localhost:5001/api/auth/signup', { // Updated endpoint
         method: 'POST',
         body: formDataToSend,
       });
@@ -82,10 +82,10 @@ const SignUp = ({ open, onClose, onSwitchToSignIn }) => {
         alert(result.message); // Show success message
         onClose(); // Close the dialog
       } else {
-        alert(result.message); // Show error message
+        alert(result.error || 'Registration failed'); // Show error message
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error during registration:", error.message); // Log error
       alert('An error occurred during registration');
     }
   };

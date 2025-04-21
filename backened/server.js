@@ -10,6 +10,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cors from "cors"; // Import CORS
 import User from './models/user.models.js'; // Import the User model
+import path from "path"; // Import path
 
 // Load environment variables
 dotenv.config();
@@ -39,6 +40,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware for parsing cookies
 app.use(cookieParser());
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Function to remove the username index if it exists
 const removeUsernameIndex = async () => {

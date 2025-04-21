@@ -8,12 +8,20 @@ export const signup = async (req, res) => {
     try {
         console.log("Signup request body:", req.body); // Log the request body
 
-        const { firstName, lastName, birthDate, phone, residence, email, password, licenceFront, licenceBack } = req.body;
+        const { firstName, lastName, birthDate, phone, residence, email, password } = req.body;
 
         // Validate required fields
         if (!email) {
             return res.status(400).json({ error: "Email is required" });
         }
+
+        // Validate required fields
+        if (!req.files || !req.files.licenceFront || !req.files.licenceBack) {
+            return res.status(400).json({ error: "Driving licence images are required" });
+        }
+
+        const licenceFront = req.files.licenceFront[0].path; // Get file path
+        const licenceBack = req.files.licenceBack[0].path; // Get file path
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
