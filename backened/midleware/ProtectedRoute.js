@@ -2,34 +2,26 @@ import User from "../models/user.models.js";
 import jwt from "jsonwebtoken";
 
 // Middleware to protect routes and restrict access based on roles
-export const ProtectedRoute = (roles = []) => async (req, res, next) => {
+export const ProtectedRoute = () => (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        console.log("No Authorization header provided"); // Debugging log
+        return res.status(401).json({ error: "Not authorized: no token provided" });
+    }
+
+    const token = authHeader.split(" ")[1]; // Extract token from "Bearer <token>"
+    if (!token) {
+        console.log("No token found in Authorization header"); // Debugging log
+        return res.status(401).json({ error: "Not authorized: no token provided" });
+    }
+
     try {
-        // Retrieve JWT token from cookies
-        const token = req.cookies.jwt;
-        if (!token) {
-            return res.status(401).json({ error: "Not authorized: no token provided" });
-        }
-
-        // Verify the token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (!decoded) {
-            return res.status(401).json({ error: "Not authorized: invalid token" });
-        }
-
-        // Fetch the user from the database
-        const user = await User.findById(decoded.userId).select("-password");
-        if (!user || (roles.length && !roles.includes(user.role))) {
-            return res.status(403).json({ error: "Access denied" });
-        }
-
-        // Attach the user to the request object
-        req.user = user;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify token
+        console.log("Token verified successfully:", decoded); // Debugging log
+        req.user = decoded; // Attach user info to the request
         next();
-    } catch (err) {
-        if (err.name === "TokenExpiredError") {
-            return res.status(401).json({ error: "Token expired, please log in again" });
-        }
-        console.error("Error in ProtectedRoute middleware:", err.message);
-        res.status(500).json({ error: "Server error" });
+    } catch (error) {
+        console.error("Token verification failed:", error.message); // Debugging log
+        res.status(401).json({ error: "Not authorized: invalid token" });
     }
 };

@@ -11,6 +11,7 @@ import rateLimit from "express-rate-limit";
 import cors from "cors"; // Import CORS
 import User from './models/user.models.js'; // Import the User model
 import path from "path"; // Import path
+import carRoutes from "./routes/car.routes.js"; // Import car routes
 
 // Load environment variables
 dotenv.config();
@@ -24,6 +25,7 @@ app.use(helmet());
 // Enable CORS for the frontend
 app.use(cors({
     origin: "http://localhost:3000", // Ensure this matches the frontend's URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific HTTP methods
     credentials: true, // Allow cookies to be sent
 }));
 
@@ -60,6 +62,9 @@ const removeUsernameIndex = async () => {
 
 // Mount authentication routes
 app.use("/api/auth", authRoutes);
+
+// Mount car routes
+app.use("/api/cars", carRoutes);
 
 // Centralized error handling middleware
 app.use(errorHandler);

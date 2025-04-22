@@ -27,7 +27,7 @@ router.post("/logout", logout); // Log out a user
 router.post("/refresh-token", refreshToken); // Refresh JWT token
 
 // Car routes
-router.post("/addcars", ProtectedRoute, createCar); // Add a new car
+router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload
 router.get("/listcars", ProtectedRoute, getCars); // Get a list of cars
 router.put("/updatecars/:id", ProtectedRoute, updateCar); // Update car details
 router.delete("/deletecars/:id", ProtectedRoute, deleteCar); // Delete a car

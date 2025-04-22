@@ -4,40 +4,27 @@ import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 // Function to create a new car
 export const createCar = async (req, res) => {
     try {
-        // Extract car details from the request body
-        const { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity } = req.body;
+        console.log("Request body:", req.body); // Log request body
+        console.log("Uploaded files:", req.files); // Log uploaded files
 
-        // Validate required fields
-        if (!make || !model || !year || !pricePerDay || !location || !color || !fuelType || !seatingCapacity) {
-            return res.status(400).send("Missing required fields: make, model, year, pricePerDay, location, color, fuelType, seatingCapacity");
+        const { body, files } = req;
+        if (!files || files.length === 0) {
+            return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        // Create and save the new car
-        const newCar = new Car({ 
-            make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity, isDeleted: false 
+        const images = files.map((file) => `uploads/${file.filename}`);
+
+        const newCar = new Car({
+            ...body,
+            images,
         });
+
         await newCar.save();
-
-        // Generate token and set it in the cookie
-        generateTokenAndSetCookie(newCar._id, res);
-
-        // Respond with car details
-        res.status(201).json({
-            _id: newCar._id,
-            make: newCar.make,
-            model: newCar.model,
-            year: newCar.year,
-            pricePerDay: newCar.pricePerDay,
-            location: newCar.location,
-            description: newCar.description,
-            color: newCar.color,
-            fuelType: newCar.fuelType,
-            seatingCapacity: newCar.seatingCapacity,
-            token: newCar.token,
-        });
+        console.log("Car created successfully:", newCar); // Log success
+        res.status(201).json({ message: 'Car created successfully', car: newCar });
     } catch (error) {
-        console.error("Error creating car:", error.message);
-        res.status(500).json({ error: error.message || "Server error" });
+        console.error("Error creating car:", error.message); // Log error
+        res.status(500).json({ error: 'Failed to create car', details: error.message });
     }
 };
 
@@ -71,12 +58,12 @@ export const updateCar = async (req, res) => {
     try {
         // Extract car ID from request parameters
         const { id } = req.params;
-        const { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity } = req.body;
+        const { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity, images, doors, transmission, mileage, engine, availabilityStart, availabilityEnd } = req.body;
 
         // Update the car with the provided data
         const updatedCar = await Car.findByIdAndUpdate(
             id,
-            { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity },
+            { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity, images, doors, transmission, mileage, engine, availabilityStart, availabilityEnd },
             { new: true } // Return the updated document
         );
 

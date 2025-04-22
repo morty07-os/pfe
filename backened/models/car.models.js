@@ -2,52 +2,73 @@ import mongoose from "mongoose";
 
 const carSchema = new mongoose.Schema(
     {
-        make: {
+        carName: {
             type: String,
             required: true,
         },
-        model: {
+        brand: {
             type: String,
             required: true,
         },
-        year: {
-            type: Number,
-            required: true,
-        },
-        pricePerDay: {
-            type: Number,
-            required: true,
-        },
-        location: {
-            type: String,
-            required: true,
-        },
-        availability: {
-            type: Boolean,
-            default: true,
-        },
-        bookedDates: [
-            {
-                startDate: { type: Date, required: true },
-                endDate: { type: Date, required: true },
-            },
-        ],
         description: {
             type: String,
             default: "",
         },
-        color: {
+        energy: {
             type: String,
+            enum: ["Essence", "Diesel", "Hybrid", "Electric"],
             required: true,
         },
-        fuelType: {
-            type: String,
-            enum: ["Petrol", "Diesel", "Electric", "Hybrid"],
-            required: true,
-        },
-        seatingCapacity: {
+        seats: {
             type: Number,
             required: true,
+        },
+        doors: {
+            type: Number,
+            required: true,
+        },
+        transmission: {
+            type: String,
+            enum: ["Manual", "Automatic"],
+            required: true,
+        },
+        mileage: {
+            type: Number,
+            required: true,
+        },
+        engine: {
+            type: String,
+            required: true,
+        },
+        wilaya: {
+            type: String,
+            required: true,
+        },
+        availabilityStart: {
+            type: Date,
+            required: true,
+        },
+        availabilityEnd: {
+            type: Date,
+            required: true,
+        },
+        price: {
+            type: Number,
+            required: true,
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
+        images: {
+            type: [String], // Array of image paths
+            required: true,
+            validate: {
+                validator: function (images) {
+                    return images.every((img) => img.startsWith('uploads/'));
+                },
+                message: 'All image paths must start with "uploads/".',
+            },
         },
     },
     { timestamps: true }
