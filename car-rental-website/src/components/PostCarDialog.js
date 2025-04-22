@@ -39,9 +39,9 @@ export default function PostCarDialog({ open, onClose }) {
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
-      const images = Array.from(files);
-      setFormData(prev => ({ ...prev, images }));
-      setImagePreviews(images.map(file => URL.createObjectURL(file)));
+      const newImages = Array.from(files);
+      setFormData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
+      setImagePreviews(prev => [...prev, ...newImages.map(file => URL.createObjectURL(file))]);
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -134,10 +134,37 @@ export default function PostCarDialog({ open, onClose }) {
                     max={5}
                   />
                 </Button>
-                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1.5,
+                    overflowX: 'auto',
+                    mt: 1,
+                    p: 1,
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 2,
+                    bgcolor: '#f8fafc',
+                  }}
+                >
                   {imagePreviews.map((src, idx) => (
-                    <Box key={idx} sx={{ width: 72, height: 72, borderRadius: 3, overflow: 'hidden', border: '2px solid #cbd5e1', bgcolor: '#fff', boxShadow: '0 2px 8px rgba(30,41,59,0.07)' }}>
-                      <img src={src} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} />
+                    <Box
+                      key={idx}
+                      sx={{
+                        width: 72,
+                        height: 72,
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                        border: '2px solid #cbd5e1',
+                        bgcolor: '#fff',
+                        boxShadow: '0 2px 8px rgba(30,41,59,0.07)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={src}
+                        alt="preview"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }}
+                      />
                     </Box>
                   ))}
                 </Box>

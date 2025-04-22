@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const carSchema = new mongoose.Schema(
     {
+        id: {
+            type: String,
+            unique: true,
+            default: () => new mongoose.Types.ObjectId().toString(),
+        },
         carName: {
             type: String,
             required: true,
@@ -65,9 +70,9 @@ const carSchema = new mongoose.Schema(
             required: true,
             validate: {
                 validator: function (images) {
-                    return images.every((img) => img.startsWith('uploads/'));
+                    return images.length >= 1 && images.length <= 5 && images.every((img) => img.startsWith('uploads/'));
                 },
-                message: 'All image paths must start with "uploads/".',
+                message: 'You must upload between 1 and 5 images, and all image paths must start with "uploads/".',
             },
         },
     },
