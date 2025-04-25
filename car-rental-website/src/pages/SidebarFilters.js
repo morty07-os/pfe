@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { Box, Typography, TextField, MenuItem, Slider, Button, ToggleButton, ToggleButtonGroup, Autocomplete, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 
@@ -21,6 +19,10 @@ export default function SidebarFilters({ filters, onFilterChange, stylish }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setPendingFilters({ ...pendingFilters, [name]: value });
+  };
+
+  const handleToggleChange = (name, value) => {
     setPendingFilters({ ...pendingFilters, [name]: value });
   };
 
@@ -103,9 +105,9 @@ export default function SidebarFilters({ filters, onFilterChange, stylish }) {
       <Box sx={groupSx}>
         <ToggleButtonGroup
           color="primary"
-          value={filters.brand || ''}
+          value={pendingFilters.brand || ''}
           exclusive
-          onChange={(e, value) => handleChange({ target: { name: 'brand', value } })}
+          onChange={(e, value) => handleToggleChange('brand', value)}
           sx={{ mb: 2, flexWrap: 'wrap', borderRadius: 2, background: '#eceff1', p: 0.5 }}
         >
           <ToggleButton value="">Any</ToggleButton>
@@ -115,9 +117,9 @@ export default function SidebarFilters({ filters, onFilterChange, stylish }) {
         </ToggleButtonGroup>
         <ToggleButtonGroup
           color="primary"
-          value={filters.energy || ''}
+          value={pendingFilters.energy || ''}
           exclusive
-          onChange={(e, value) => handleChange({ target: { name: 'energy', value } })}
+          onChange={(e, value) => handleToggleChange('energy', value)}
           sx={{ mb: 2, flexWrap: 'wrap', borderRadius: 2, background: '#eceff1', p: 0.5 }}
         >
           <ToggleButton value="">Any</ToggleButton>
@@ -130,9 +132,9 @@ export default function SidebarFilters({ filters, onFilterChange, stylish }) {
         </ToggleButtonGroup>
         <ToggleButtonGroup
           color="primary"
-          value={filters.transmission || ''}
+          value={pendingFilters.transmission || ''}
           exclusive
-          onChange={(e, value) => handleChange({ target: { name: 'transmission', value } })}
+          onChange={(e, value) => handleToggleChange('transmission', value)}
           sx={{ mb: 2, flexWrap: 'wrap', borderRadius: 2, background: '#eceff1', p: 0.5 }}
         >
           <ToggleButton value="">Any</ToggleButton>
@@ -153,32 +155,39 @@ export default function SidebarFilters({ filters, onFilterChange, stylish }) {
       </Box>
       <Box sx={dividerSx} />
       <Box sx={groupSx}>
-        <FormControl component="fieldset" sx={{ mb: 2 }}>
-          <FormLabel component="legend" sx={{ color: '#607d8b', fontWeight: 700 }}>Seats</FormLabel>
-          <RadioGroup
-            row
-            name="seats"
-            value={filters.seats || ''}
-            onChange={handleChange}
-          >
-            {[2, 4, 5, 7, 9].map((val) => (
-              <FormControlLabel key={val} value={val.toString()} control={<Radio sx={{ color: '#607d8b' }} />} label={val} />
-            ))}
-          </RadioGroup>
-        </FormControl>
-        <FormControl component="fieldset" sx={{ mb: 2 }}>
-          <FormLabel component="legend" sx={{ color: '#607d8b', fontWeight: 700 }}>Doors</FormLabel>
-          <RadioGroup
-            row
-            name="doors"
-            value={filters.doors || ''}
-            onChange={handleChange}
-          >
-            {[2, 3, 4, 5, 6].map((val) => (
-              <FormControlLabel key={val} value={val.toString()} control={<Radio sx={{ color: '#607d8b' }} />} label={val} />
-            ))}
-          </RadioGroup>
-        </FormControl>
+        <Typography sx={{ fontWeight: 700, mb: 1, color: '#607d8b', fontSize: 16 }}>
+          Seats
+        </Typography>
+        <ToggleButtonGroup
+          value={pendingFilters.seats || ''}
+          exclusive
+          onChange={(e, value) => handleToggleChange('seats', value)}
+          sx={{ mb: 2, flexWrap: 'wrap', borderRadius: 2, background: '#eceff1', p: 0.5 }}
+        >
+          <ToggleButton value="">Any</ToggleButton>
+          {[2, 4, 5, 7, 9].map((seat) => (
+            <ToggleButton key={seat} value={seat.toString()}>
+              {seat}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+
+        <Typography sx={{ fontWeight: 700, mb: 1, color: '#607d8b', fontSize: 16 }}>
+          Doors
+        </Typography>
+        <ToggleButtonGroup
+          value={pendingFilters.doors || ''}
+          exclusive
+          onChange={(e, value) => handleToggleChange('doors', value)}
+          sx={{ mb: 2, flexWrap: 'wrap', borderRadius: 2, background: '#eceff1', p: 0.5 }}
+        >
+          <ToggleButton value="">Any</ToggleButton>
+          {[2, 3, 4, 5, 6].map((door) => (
+            <ToggleButton key={door} value={door.toString()}>
+              {door}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
       </Box>
       <Box sx={dividerSx} />
       <Box sx={groupSx}>
