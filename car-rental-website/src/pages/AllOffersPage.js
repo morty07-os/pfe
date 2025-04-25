@@ -36,22 +36,34 @@ export default function AllOffersPage() {
   }, [locationObj.search]);
 
   useEffect(() => {
-    // Fetch offers from the backend
     const fetchOffers = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/cars/getcars'); // Ensure this matches the backend route
+        const queryParams = new URLSearchParams({
+          brand: sidebarFilters.brand || '',
+          energy: sidebarFilters.energy || '',
+          transmission: sidebarFilters.transmission || '',
+          wilaya: sidebarFilters.wilaya || '',
+          seats: sidebarFilters.seats || '',
+          doors: sidebarFilters.doors || '',
+          priceMin: sidebarFilters.priceRange ? sidebarFilters.priceRange[0] : '',
+          priceMax: sidebarFilters.priceRange ? sidebarFilters.priceRange[1] : '',
+          availableFrom: sidebarFilters.availableFrom || '',
+          availableTo: sidebarFilters.availableTo || '',
+        }).toString();
+
+        const response = await fetch(`http://localhost:5001/api/cars/getcars?${queryParams}`);
         if (!response.ok) {
           throw new Error('Failed to fetch offers');
         }
         const data = await response.json();
-        setOffers(data); // Update state with fetched offers
+        setOffers(data);
       } catch (error) {
         console.error('Error fetching offers:', error.message);
       }
     };
 
     fetchOffers();
-  }, []);
+  }, [sidebarFilters]); // Refetch offers whenever sidebar filters change
 
   // Helper to check if two date ranges overlap
   function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
@@ -63,22 +75,7 @@ export default function AllOffersPage() {
     return offerEnd.isAfter(selStart) && offerStart.isBefore(selEnd);
   }
 
-  // Sidebar filter logic
-  function matchesSidebarFilters(offer) {
-    const f = sidebarFilters;
-    if (f.brand && offer.brand !== f.brand) return false;
-    if (f.energy && offer.energy !== f.energy) return false;
-    if (f.transmission && offer.transmission !== f.transmission) return false;
-    if (f.wilaya && offer.location !== f.wilaya) return false;
-    if (f.seats && Number(offer.seats) !== Number(f.seats)) return false;
-    if (f.doors && Number(offer.doors) !== Number(f.doors)) return false;
-    if (f.priceRange && (offer.price < f.priceRange[0] || offer.price > f.priceRange[1])) return false;
-    if (f.availableFrom && dayjs(offer.availableFrom || '2025-05-01').isBefore(dayjs(f.availableFrom))) return false;
-    if (f.availableTo && dayjs(offer.availableTo || '2025-05-10').isAfter(dayjs(f.availableTo))) return false;
-    return true;
-  }
-
-  // Filter offers by search query, query params, and sidebar filters
+  // Filter offers by search query and query params
   const filteredOffers = offers.filter(offer => {
     // Text search
     const matchesSearch =
@@ -96,9 +93,7 @@ export default function AllOffersPage() {
         query.startDate,
         query.endDate
       );
-    // Sidebar filters
-    const matchesSidebar = matchesSidebarFilters(offer);
-    return matchesSearch && matchesWilaya && matchesDate && matchesSidebar;
+    return matchesSearch && matchesWilaya && matchesDate;
   });
 
   return (

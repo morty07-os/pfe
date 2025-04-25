@@ -52,10 +52,46 @@ router.post('/addcars', upload.array('images', 5), async (req, res) => {
 // Route to fetch all cars posted by users
 router.get('/getcars', async (req, res) => {
     try {
-        const cars = await Car.find({ isDeleted: false }).select('-__v'); // Fetch all cars that are not soft-deleted
+        const {
+            brand,
+            energy,
+            transmission,
+            wilaya,
+            seats,
+            doors,
+            priceMin,
+            priceMax,
+            availableFrom,
+            availableTo
+        } = req.query;
+
+        const query = { isDeleted: false };
+
+        if (brand) query.brand = brand;
+        if (energy) query.energy = energy;
+        if (transmission) query.transmission = transmission;
+        if (wilaya) query.wilaya = wilaya;
+        if (seats) query.seats = parseInt(seats);
+        if (doors) query.doors = parseInt(doors);
+        if (priceMin || priceMax) {
+            query.price = {};
+            if (priceMin) query.price.$gte = parseFloat(priceMin);
+            if (priceMax) query.price.$lte = parseFloat(priceMax);
+        }
+        if (availableFrom || availableTo) {
+            query.$and = [];
+            if (availableFrom) {
+                query.$and.push({ availabilityEnd: { $gte: new Date(availableFrom) } });
+            }
+            if (availableTo) {
+                query.$and.push({ availabilityStart: { $lte: new Date(availableTo) } });
+            }
+        }
+
+        const cars = await Car.find(query).select('-__v');
         res.status(200).json(cars);
     } catch (error) {
-        console.error("Error fetching cars:", error.message); // Log error
+        console.error("Error fetching cars:", error.message);
         res.status(500).json({ error: 'Failed to fetch cars.', details: error.message });
     }
 });
