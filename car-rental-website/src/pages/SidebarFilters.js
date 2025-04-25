@@ -22,6 +22,10 @@ export default function SidebarFilters({ filters, onFilterChange, stylish }) {
     setPendingFilters({ ...pendingFilters, [name]: value });
   };
 
+  const handleWilayaChange = (value) => {
+    setPendingFilters({ ...pendingFilters, wilaya: value });
+  };
+
   const handleToggleChange = (name, value) => {
     setPendingFilters({ ...pendingFilters, [name]: value });
   };
@@ -147,8 +151,8 @@ export default function SidebarFilters({ filters, onFilterChange, stylish }) {
         </ToggleButtonGroup>
         <Autocomplete
           options={wilayas}
-          value={filters.wilaya || null}
-          onChange={(e, value) => handleChange({ target: { name: 'wilaya', value } })}
+          value={pendingFilters.wilaya || null}
+          onChange={(e, value) => handleWilayaChange(value)}
           renderInput={(params) => <TextField {...params} label="Wilaya" sx={fieldSx} />}
           sx={{ mb: 2 }}
         />
