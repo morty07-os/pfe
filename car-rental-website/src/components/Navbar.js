@@ -111,6 +111,20 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
                 <PersonAddIcon fontSize="small" sx={{ color: iconColor }} />
                 Sign Up
               </MenuItem>
+              <MenuItem 
+                onClick={() => {
+                  handleClose();
+                  navigate('/profile');
+                }}
+                sx={{ 
+                  color: '#333',
+                  minWidth: '150px',
+                  gap: 1.5
+                }}
+              >
+                <AccountCircleIcon fontSize="small" sx={{ color: iconColor }} />
+                Profile
+              </MenuItem>
             </Menu>
           </Box>
         </Toolbar>

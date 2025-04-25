@@ -17,9 +17,11 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
+import { useNavigate } from 'react-router-dom';
 
 const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -52,8 +54,12 @@ const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
 
       if (response.ok) {
         setMessage('Sign in successful');
-        console.log("Sign in successful:", result); // Log success
-        // Optionally, redirect the user or store the token
+        console.log("Sign in successful:", result);
+
+        // Store the token in localStorage
+        localStorage.setItem('token', result.token);
+
+        navigate('/profile'); // Redirect to profile page
       } else {
         setMessage(result.error || 'Sign in failed');
         console.error("Sign in failed:", result); // Log error

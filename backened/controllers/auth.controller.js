@@ -94,25 +94,19 @@ export const login = async (req, res) => {
 
         // Find the user by email
         const user = await User.findOne({ email: email.toLowerCase() });
-        if (!user) {
-            console.log("User not found for email:", email); // Log if user is not found
-            return res.status(400).json({ error: "Invalid email or password" });
-        }
-
-        // Validate password
-        const isPasswordCorrect = await bcrypt.compare(password, user.password);
-        if (!isPasswordCorrect) {
-            console.log("Incorrect password for email:", email); // Log if password is incorrect
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            console.log("Invalid email or password for email:", email); // Log if user is not found or password is incorrect
             return res.status(400).json({ error: "Invalid email or password" });
         }
 
         console.log("Login successful for email:", email); // Log successful login
 
         // Generate token and set it in the cookie
-        generateTokenAndSetCookie(user._id, res);
+        const token = generateTokenAndSetCookie(user._id, res);
 
         res.status(200).json({
             message: "Login successful",
+            token, // Return token for frontend storage
             user: {
                 _id: user._id,
                 firstName: user.firstName,
@@ -142,11 +136,17 @@ export const logout = (req, res) => {
 // Fetches details of the logged-in user
 export const getMe = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select("-password");
+        const user = await User.findById(req.user.userId).select("-password");
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
-        res.status(200).json(user);
+        res.status(200).json({
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            residence: user.residence,
+        });
     } catch (error) {
         console.error("Error in getMe controller:", error.message);
         res.status(500).json({ error: "Server error" });

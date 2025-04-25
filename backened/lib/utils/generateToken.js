@@ -7,11 +7,6 @@ export const generateTokenAndSetCookie = (userId, res) => {
         expiresIn: '15m', // Token expires in 15 minutes
     });
 
-    // Generate long-lived refresh token
-    const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
-        expiresIn: '7d', // Token expires in 7 days
-    });
-
     // Set access token as an HTTP-only cookie
     res.cookie("jwt", token, {
         maxAge: 15 * 60 * 1000, // 15 minutes
@@ -20,11 +15,6 @@ export const generateTokenAndSetCookie = (userId, res) => {
         secure: process.env.NODE_ENV !== "development", // Secure in production
     });
 
-    // Set refresh token as an HTTP-only cookie
-    res.cookie("refreshToken", refreshToken, {
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV !== "development", // Secure in production
-    });
+    // Return token for frontend storage
+    return token;
 };

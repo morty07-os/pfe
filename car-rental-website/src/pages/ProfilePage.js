@@ -1,94 +1,80 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Avatar, Grid, Paper, CircularProgress } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Box, Typography, Paper, Avatar, CircularProgress } from '@mui/material';
 
-export default function ProfilePage() {
-  const [user, setUser] = useState(null);
+const ProfilePage = () => {
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/auth/me', {
-          method: 'GET',
-          credentials: 'include',
-        });
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error("No token found. Please log in.");
+        }
 
+        const response = await fetch('http://localhost:5001/api/auth/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
         if (response.ok) {
-          const data = await response.json();
-          setUser(data);
+          setProfile(data);
         } else {
-          navigate('/signin'); // Redirect to sign-in page if not authenticated
+          console.error(data.error || 'Failed to fetch profile');
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
-        navigate('/signin'); // Redirect to sign-in page on error
+        console.error('Error fetching profile:', error.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, [navigate]);
+  }, []);
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <CircularProgress />
       </Box>
     );
   }
 
+  if (!profile) {
+    return (
+      <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <Typography variant="h6" color="error">
+          Failed to load profile information.
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', my: 4, p: 2 }}>
-      <Typography variant="h4" sx={{ fontWeight: 900, mb: 2, color: '#607d8b' }}>
-        Profile
-      </Typography>
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <Avatar src={user.profileImg} sx={{ width: 80, height: 80, mr: 3 }}>
-            {user.firstName[0]}
+    <Box sx={{ maxWidth: 400, mx: 'auto', my: 4, p: 2 }}>
+      <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+          <Avatar sx={{ width: 64, height: 64, bgcolor: '#607d8b' }}>
+            {profile.firstName[0]}
           </Avatar>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: '#455a64' }}>
-            {user.firstName} {user.lastName}
+          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b' }}>
+            {profile.firstName} {profile.lastName}
           </Typography>
         </Box>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <Typography variant="body1" sx={{ fontWeight: 700, color: '#607d8b' }}>
-              Email:
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#455a64' }}>
-              {user.email}
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="body1" sx={{ fontWeight: 700, color: '#607d8b' }}>
-              Phone:
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#455a64' }}>
-              {user.phone}
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="body1" sx={{ fontWeight: 700, color: '#607d8b' }}>
-              Residence:
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#455a64' }}>
-              {user.residence}
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="body1" sx={{ fontWeight: 700, color: '#607d8b' }}>
-              Birth Date:
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#455a64' }}>
-              {new Date(user.birthDate).toLocaleDateString()}
-            </Typography>
-          </Grid>
-        </Grid>
+        <Typography variant="body1" sx={{ mb: 1 }}>
+          <strong>Email:</strong> {profile.email}
+        </Typography>
+        <Typography variant="body1" sx={{ mb: 1 }}>
+          <strong>Phone:</strong> {profile.phone}
+        </Typography>
+        <Typography variant="body1" sx={{ mb: 1 }}>
+          <strong>Residence:</strong> {profile.residence}
+        </Typography>
       </Paper>
     </Box>
   );
-}
+};
+
+export default ProfilePage;

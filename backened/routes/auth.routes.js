@@ -20,7 +20,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // User routes
-router.get("/me", ProtectedRoute, getMe); // Get details of the logged-in user
+router.get("/me", ProtectedRoute(), getMe); // Get details of the logged-in user
+router.get("/profile", ProtectedRoute, getMe); // Fetch profile information
 router.post("/signup", upload.fields([{ name: "licenceFront", maxCount: 1 }, { name: "licenceBack", maxCount: 1 }]), signup); // Register a new user with file upload
 router.post("/login", login); // Log in a user
 router.post("/logout", logout); // Log out a user

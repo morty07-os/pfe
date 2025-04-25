@@ -10,6 +10,7 @@ import MapPage from './pages/MapPage';
 import AllOffersPage from './pages/AllOffersPage';
 import OfferDetailsPage from './pages/OfferDetailsPage';
 import ChatPage from './pages/ChatPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
@@ -27,8 +28,9 @@ function App() {
             } />
             <Route path="/map/:wilaya" element={<MapPage />} />
             <Route path="/offers" element={<AllOffersPage />} />
-<Route path="/offer/:offerId" element={<OfferDetailsPage />} />
-<Route path="/chat/:posterName" element={<ChatPage />} />
+            <Route path="/offer/:offerId" element={<OfferDetailsPage />} />
+            <Route path="/chat/:posterName" element={<ChatPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </div>
       </BrowserRouter>
