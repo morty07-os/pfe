@@ -49,4 +49,15 @@ router.post('/addcars', upload.array('images', 5), async (req, res) => {
     }
 });
 
+// Route to fetch all cars posted by users
+router.get('/getcars', async (req, res) => {
+    try {
+        const cars = await Car.find({ isDeleted: false }).select('-__v'); // Fetch all cars that are not soft-deleted
+        res.status(200).json(cars);
+    } catch (error) {
+        console.error("Error fetching cars:", error.message); // Log error
+        res.status(500).json({ error: 'Failed to fetch cars.', details: error.message });
+    }
+});
+
 export default router;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
 import QuickSearch from '../components/QuickSearch';
@@ -21,50 +21,10 @@ function formatDateDMY(dateStr) {
   return `${day}-${month}-${year}`;
 }
 
-// Sample data for demonstration
-const offers = [
-  {
-    id: 1,
-    title: 'Toyota Yaris 2020',
-    brand: 'Toyota',
-    price: 40,
-    location: 'Algiers',
-    image: 'https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg',
-    seats: 5,
-    doors: 4,
-    energy: 'Essence',
-    transmission: 'Automatic',
-  },
-  {
-    id: 2,
-    title: 'Renault Clio 2019',
-    brand: 'Renault',
-    price: 35,
-    location: 'Oran',
-    image: 'https://images.pexels.com/photos/170782/pexels-photo-170782.jpeg',
-    seats: 5,
-    doors: 4,
-    energy: 'Diesel',
-    transmission: 'Manual',
-  },
-  {
-    id: 3,
-    title: 'Hyundai Tucson 2021',
-    brand: 'Hyundai',
-    price: 60,
-    location: 'Constantine',
-    image: 'https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg',
-    seats: 5,
-    doors: 5,
-    energy: 'Essence',
-    transmission: 'Automatic',
-  },
-];
-
-
 export default function AllOffersPage() {
   const [search, setSearch] = React.useState('');
   const [sidebarFilters, setSidebarFilters] = React.useState({});
+  const [offers, setOffers] = useState([]); // State to store fetched offers
   const locationObj = useLocation();
   const query = React.useMemo(() => {
     const params = new URLSearchParams(locationObj.search);
@@ -74,6 +34,24 @@ export default function AllOffersPage() {
       endDate: params.get('endDate')
     };
   }, [locationObj.search]);
+
+  useEffect(() => {
+    // Fetch offers from the backend
+    const fetchOffers = async () => {
+      try {
+        const response = await fetch('http://localhost:5001/api/cars/getcars'); // Ensure this matches the backend route
+        if (!response.ok) {
+          throw new Error('Failed to fetch offers');
+        }
+        const data = await response.json();
+        setOffers(data); // Update state with fetched offers
+      } catch (error) {
+        console.error('Error fetching offers:', error.message);
+      }
+    };
+
+    fetchOffers();
+  }, []);
 
   // Helper to check if two date ranges overlap
   function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
@@ -104,17 +82,17 @@ export default function AllOffersPage() {
   const filteredOffers = offers.filter(offer => {
     // Text search
     const matchesSearch =
-      offer.title.toLowerCase().includes(search.toLowerCase()) ||
+      offer.carName.toLowerCase().includes(search.toLowerCase()) ||
       offer.brand.toLowerCase().includes(search.toLowerCase()) ||
-      offer.location.toLowerCase().includes(search.toLowerCase());
+      offer.wilaya.toLowerCase().includes(search.toLowerCase());
     // Wilaya/location filter
-    const matchesWilaya = !query.wilaya || offer.location === query.wilaya;
+    const matchesWilaya = !query.wilaya || offer.wilaya === query.wilaya;
     // Date filter
     const matchesDate =
       !query.startDate || !query.endDate ||
       isDateRangeOverlap(
-        offer.availableFrom || '2025-05-01',
-        offer.availableTo || '2025-05-10',
+        offer.availabilityStart,
+        offer.availabilityEnd,
         query.startDate,
         query.endDate
       );
