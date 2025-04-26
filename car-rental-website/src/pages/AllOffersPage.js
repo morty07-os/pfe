@@ -182,7 +182,7 @@ export default function AllOffersPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', pl: 2, pr: 0, py: 2 }}>
                       <CardMedia
                         component="img"
-                        image={offer.images?.[0] ? `http://localhost:5001/uploads/${offer.images[0]}` : '/placeholder.jpg'} // Use placeholder if no image exists
+                        image={offer.images?.[0] ? `http://localhost:5001/${offer.images[0]}` : '/placeholder.jpg'} // Updated path
                         alt={offer.title || 'Car image'}
                         sx={{ objectFit: 'cover', borderRadius: 3, width: 100, height: 100, boxShadow: '0 3px 18px #607d8b22', border: '1px solid #e3e8ee', minWidth: 100 }}
                       />

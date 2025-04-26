@@ -44,7 +44,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Serve static files from the uploads directory
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), { setHeaders: (res) => res.set('Cross-Origin-Resource-Policy', 'cross-origin') }));
 
 // Function to remove the username index if it exists
 const removeUsernameIndex = async () => {
@@ -74,4 +74,4 @@ app.listen(PORT, async () => {
     console.log(`server is running on port: ${PORT}`);
     await connectMongoDB();
     await removeUsernameIndex(); // Ensure the username index is removed
-}); 
+});
