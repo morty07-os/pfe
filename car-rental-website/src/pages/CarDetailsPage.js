@@ -15,11 +15,9 @@ export default function CarDetailsPage() {
   useEffect(() => {
     const fetchCarDetails = async () => {
       try {
-        console.log('Fetching car details for ID:', carId); // Debug log
-        const response = await fetch(`http://localhost:5001/api/cars/details/${carId}`);
+        const response = await fetch(`http://localhost:5001/api/cars/details/${carId}`); // Ensure the correct endpoint is used
         if (!response.ok) throw new Error('Failed to fetch car details');
         const data = await response.json();
-        console.log('Fetched car details:', data); // Debug log
         setCar(data);
       } catch (error) {
         console.error('Error fetching car details:', error.message);
@@ -41,10 +39,21 @@ export default function CarDetailsPage() {
         <Grid item xs={12} md={6}>
           <CardMedia
             component="img"
-            image={car.images?.[0] || 'https://via.placeholder.com/400'}
-            alt={car.carName}
+            image={car.images?.[0] ? `http://localhost:5001/uploads/${car.images[0]}` : '/placeholder.jpg'} // Use placeholder if no image exists
+            alt={car.carName || 'Car image'}
             sx={{ borderRadius: 2, boxShadow: 2 }}
           />
+          <Box sx={{ display: 'flex', gap: 2, mt: 2, overflowX: 'auto' }}>
+            {car.images?.map((img, index) => (
+              <CardMedia
+                key={index}
+                component="img"
+                image={`http://localhost:5001/uploads/${img}`} // Ensure the correct path
+                alt={`Car image ${index + 1}`}
+                sx={{ width: 80, height: 80, borderRadius: 2, boxShadow: 1 }}
+              />
+            ))}
+          </Box>
         </Grid>
         <Grid item xs={12} md={6}>
           <CardContent>
@@ -69,10 +78,12 @@ export default function CarDetailsPage() {
               <LocationOnIcon sx={{ color: '#607d8b' }} />
               <Typography>{car.location}</Typography>
             </Box>
-            <Typography variant="body1" sx={{ mt: 2 }}>{car.description}</Typography>
           </CardContent>
         </Grid>
       </Grid>
+      <Typography variant="body1" sx={{ mt: 2, mb: 3 }}>
+        {car.description || 'No description available.'} // Display the car description
+      </Typography>
       <Typography variant="h6" sx={{ mt: 4 }}>Price: €{car.price}/day</Typography>
       <Button variant="contained" color="primary" sx={{ mt: 3 }}>Book Now</Button>
     </Box>

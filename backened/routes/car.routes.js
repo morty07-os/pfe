@@ -88,7 +88,7 @@ router.get('/getcars', async (req, res) => {
             }
         }
 
-        const cars = await Car.find(query).select('-__v');
+        const cars = await Car.find(query).select('-__v'); // Include description in the response
         res.status(200).json(cars);
     } catch (error) {
         console.error("Error fetching cars:", error.message);
@@ -100,7 +100,7 @@ router.get('/getcars', async (req, res) => {
 router.get('/details/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const car = await Car.findById(id).select('-__v');
+        const car = await Car.findById(id).select('-__v'); // Ensure description and images are included
         if (!car) {
             return res.status(404).json({ error: 'Car not found' });
         }

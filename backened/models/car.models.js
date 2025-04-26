@@ -17,7 +17,8 @@ const carSchema = new mongoose.Schema(
         },
         description: {
             type: String,
-            default: "",
+            required: true, // Ensure description is required
+            maxlength: 500, // Limit the description length
         },
         energy: {
             type: String,

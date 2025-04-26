@@ -74,4 +74,4 @@ app.listen(PORT, async () => {
     console.log(`server is running on port: ${PORT}`);
     await connectMongoDB();
     await removeUsernameIndex(); // Ensure the username index is removed
-});
+}); 

@@ -11,6 +11,7 @@ import AllOffersPage from './pages/AllOffersPage';
 import OfferDetailsPage from './pages/OfferDetailsPage';
 import ChatPage from './pages/ChatPage';
 import ProfilePage from './pages/ProfilePage';
+import CarDetailsPage from './pages/CarDetailsPage'; // Import the CarDetailsPage component
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/offer/:offerId" element={<OfferDetailsPage />} />
             <Route path="/chat/:posterName" element={<ChatPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/car-details/:carId" element={<CarDetailsPage />} /> {/* Add route for CarDetailsPage */}
           </Routes>
         </div>
       </BrowserRouter>

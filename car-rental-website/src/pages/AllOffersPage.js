@@ -182,8 +182,8 @@ export default function AllOffersPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', pl: 2, pr: 0, py: 2 }}>
                       <CardMedia
                         component="img"
-                        image={offer.image}
-                        alt={offer.title}
+                        image={offer.images?.[0] ? `http://localhost:5001/uploads/${offer.images[0]}` : '/placeholder.jpg'} // Use placeholder if no image exists
+                        alt={offer.title || 'Car image'}
                         sx={{ objectFit: 'cover', borderRadius: 3, width: 100, height: 100, boxShadow: '0 3px 18px #607d8b22', border: '1px solid #e3e8ee', minWidth: 100 }}
                       />
                     </Box>
@@ -217,9 +217,12 @@ export default function AllOffersPage() {
                           <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 500, color: '#607d8b' }}>{offer.transmission}</Typography>
                         </Box>
                       </Box>
+                      <Typography variant="body2" sx={{ mt: 1, color: '#607d8b', fontSize: 14 }}>
+                        {offer.description || 'No description available.'} // Display the car description
+                      </Typography>
                       <Button
                         component={Link}
-                        to={`/car-details/${offer.id}`} // Updated to navigate to CarDetailsPage with car ID
+                        to={`/car-details/${offer._id}`} // Ensure the correct property (_id) is used for the car ID
                         variant="contained"
                         sx={{
                           borderRadius: 99,
