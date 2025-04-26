@@ -190,12 +190,12 @@ export default function AllOffersPage() {
                     {/* Content */}
                     <CardContent sx={{ flex: 1, p: 2.1, pt: 1.2, pb: '16px !important', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       <Typography variant="h6" fontWeight={900} sx={{ color: '#263238', mb: 0.6, fontSize: 20, letterSpacing: 0.18, lineHeight: 1.18, fontFamily: 'Segoe UI, Arial, sans-serif' }}>
-                        {offer.title}
+                        {offer.title || offer.carName || 'Car Listing'}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <LocationOnIcon sx={{ fontSize: 18, color: '#607d8b', mr: 0.5 }} />
                         <Typography variant="body2" color="#607d8b" sx={{ fontWeight: 700, fontSize: 15, letterSpacing: 0.1, fontFamily: 'Segoe UI, Arial, sans-serif' }}>
-                          {offer.location}
+                          {offer.wilaya || 'Unknown Wilaya'}
                         </Typography>
                       </Box>
                       <Box sx={{ width: '100%', height: 1, bgcolor: '#e3e8ee', my: 1, borderRadius: 2 }} />

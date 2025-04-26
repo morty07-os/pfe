@@ -39,8 +39,8 @@ export default function CarDetailsPage() {
         <Grid item xs={12} md={6}>
           <CardMedia
             component="img"
-            image={car.images?.[0] ? `http://localhost:5001/uploads/${car.images[0]}` : '/placeholder.jpg'} // Use placeholder if no image exists
-            alt={car.carName || 'Car image'}
+            image={`http://localhost:5001/${car.images?.[0]}`} // Ensure the correct path
+            alt={car.carName}
             sx={{ borderRadius: 2, boxShadow: 2 }}
           />
           <Box sx={{ display: 'flex', gap: 2, mt: 2, overflowX: 'auto' }}>
@@ -48,7 +48,7 @@ export default function CarDetailsPage() {
               <CardMedia
                 key={index}
                 component="img"
-                image={`http://localhost:5001/uploads/${img}`} // Ensure the correct path
+                image={`http://localhost:5001/${img}`} // Ensure the correct path
                 alt={`Car image ${index + 1}`}
                 sx={{ width: 80, height: 80, borderRadius: 2, boxShadow: 1 }}
               />
