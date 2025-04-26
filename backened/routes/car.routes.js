@@ -96,4 +96,19 @@ router.get('/getcars', async (req, res) => {
     }
 });
 
+// Route to fetch car details by ID
+router.get('/details/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const car = await Car.findById(id).select('-__v');
+        if (!car) {
+            return res.status(404).json({ error: 'Car not found' });
+        }
+        res.status(200).json(car);
+    } catch (error) {
+        console.error("Error fetching car details:", error.message);
+        res.status(500).json({ error: 'Failed to fetch car details.', details: error.message });
+    }
+});
+
 export default router;

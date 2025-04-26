@@ -219,7 +219,7 @@ export default function AllOffersPage() {
                       </Box>
                       <Button
                         component={Link}
-                        to={`/offer/${offer.id}`}
+                        to={`/car-details/${offer.id}`} // Updated to navigate to CarDetailsPage with car ID
                         variant="contained"
                         sx={{
                           borderRadius: 99,
