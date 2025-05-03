@@ -47,6 +47,17 @@ export default function PostCarDialog({ open, onClose }) {
     }
   };
 
+  const handleRemoveImage = (index) => {
+    const newImages = [...formData.images];
+    newImages.splice(index, 1);
+    setFormData(prev => ({ ...prev, images: newImages }));
+    
+    const newPreviews = [...imagePreviews];
+    URL.revokeObjectURL(newPreviews[index]); // Clean up memory
+    newPreviews.splice(index, 1);
+    setImagePreviews(newPreviews);
+  };
+
   const handleWilayaChange = (wilaya) => {
     setFormData(prev => ({ ...prev, wilaya }));
   };
@@ -54,30 +65,30 @@ export default function PostCarDialog({ open, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-        const formDataToSend = new FormData();
-        Object.keys(formData).forEach((key) => {
-            if (key === 'images') {
-                formData[key].forEach((image) => formDataToSend.append('images', image));
-            } else {
-                formDataToSend.append(key, formData[key]);
-            }
-        });
-
-        const response = await fetch('http://localhost:5001/api/cars/addcars', { // Ensure this URL matches your backend
-            method: 'POST',
-            body: formDataToSend,
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to post the car');
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach((key) => {
+        if (key === 'images') {
+          formData[key].forEach((image) => formDataToSend.append('images', image));
+        } else {
+          formDataToSend.append(key, formData[key]);
         }
+      });
 
-        setSnackbar({ open: true, message: 'Car posted successfully!', severity: 'success' });
-        onClose();
+      const response = await fetch('http://localhost:5001/api/cars/addcars', {
+        method: 'POST',
+        body: formDataToSend,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to post the car');
+      }
+
+      setSnackbar({ open: true, message: 'Car posted successfully!', severity: 'success' });
+      onClose();
     } catch (error) {
-        console.error("Error posting car:", error.message); // Log error
-        setSnackbar({ open: true, message: error.message || 'Failed to post the car. Please try again.', severity: 'error' });
+      console.error("Error posting car:", error.message);
+      setSnackbar({ open: true, message: error.message || 'Failed to post the car. Please try again.', severity: 'error' });
     }
   };
 
@@ -150,6 +161,7 @@ export default function PostCarDialog({ open, onClose }) {
                     <Box
                       key={idx}
                       sx={{
+                        position: 'relative',
                         width: 72,
                         height: 72,
                         borderRadius: 3,
@@ -165,6 +177,23 @@ export default function PostCarDialog({ open, onClose }) {
                         alt="preview"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }}
                       />
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemoveImage(idx)}
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          color: 'white',
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                          },
+                          p: 0.5,
+                        }}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
                     </Box>
                   ))}
                 </Box>

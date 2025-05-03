@@ -198,6 +198,9 @@ export default function AllOffersPage() {
                           {offer.wilaya || 'Unknown Wilaya'}
                         </Typography>
                       </Box>
+                      <Typography variant="body2" fontWeight={500} sx={{ color: '#90a4ae', mb: 1, fontSize: 14, letterSpacing: 0.1, fontFamily: 'Segoe UI, Arial, sans-serif' }}>
+                        Brand: {offer.brand || 'Unknown Brand'}
+                      </Typography>
                       <Box sx={{ width: '100%', height: 1, bgcolor: '#e3e8ee', my: 1, borderRadius: 2 }} />
                       <Box sx={{ display: 'flex', gap: 2, mb: 1, mt: 0.5, justifyContent: 'flex-start' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -218,7 +221,7 @@ export default function AllOffersPage() {
                         </Box>
                       </Box>
                       <Typography variant="body2" sx={{ mt: 1, color: '#607d8b', fontSize: 14 }}>
-                        {offer.description || 'No description available.'} // Display the car description
+                        {offer.description || 'No description available.'}
                       </Typography>
                       <Button
                         component={Link}
@@ -297,10 +300,10 @@ export default function AllOffersPage() {
                             {offer.year ? `Year: ${offer.year}` : 'Year: 2022'}
                           </Box>
                           <Box sx={{ fontSize: 13, color: '#90a4ae', fontWeight: 500, mb: 0.1 }}>
-                            {offer.availableFrom ? `From: ${formatDateDMY(offer.availableFrom)}` : 'From: 01-05-2025'}
+                            {offer.availabilityStart ? `From: ${formatDateDMY(offer.availabilityStart)}` : 'From: Not Available'}
                           </Box>
                           <Box sx={{ fontSize: 13, color: '#90a4ae', fontWeight: 500 }}>
-                            {offer.availableTo ? `To: ${formatDateDMY(offer.availableTo)}` : 'To: 10-05-2025'}
+                            {offer.availabilityEnd ? `To: ${formatDateDMY(offer.availabilityEnd)}` : 'To: Not Available'}
                           </Box>
                         </Box>
                       </Box>
