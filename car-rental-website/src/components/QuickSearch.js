@@ -12,19 +12,41 @@ import {
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import dayjs from 'dayjs';
 
-// List of all Algerian wilayas (from MapPage.js)
+// List of Algerian wilayas
 const wilayas = [
-  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
+  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", 
+  "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", 
+  "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", 
+  "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", 
+  "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", 
+  "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", 
+  "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
 ];
 
-const QuickSearch = ({ noBackground = false }) => {
+const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
   const [startDate, setStartDate] = useState(dayjs());
   const [endDate, setEndDate] = useState(dayjs().add(3, 'day'));
   const [location, setLocation] = useState(null);
+  const [locationInput, setLocationInput] = useState('');
+  const [carName, setCarName] = useState(''); // New state for car name
+
+  const handleSearch = () => {
+    if (!startDate || !endDate) return;
+    
+    const start = startDate.format('YYYY-MM-DD');
+    const end = endDate.format('YYYY-MM-DD');
+    let url = `/offers?startDate=${start}&endDate=${end}`;
+    
+    if (location) url += `&wilaya=${encodeURIComponent(location)}`;
+    if (carName) url += `&carName=${encodeURIComponent(carName)}`;
+    
+    window.location.href = url;
+  };
+
   return (
     <Box
       sx={{
@@ -62,7 +84,6 @@ const QuickSearch = ({ noBackground = false }) => {
           </Typography>
         </Box>
       </Fade>
-
       <Fade in timeout={1500}>
         <Paper
           elevation={6}
@@ -87,6 +108,8 @@ const QuickSearch = ({ noBackground = false }) => {
               options={wilayas}
               value={location}
               onChange={(event, newValue) => setLocation(newValue)}
+              inputValue={locationInput}
+              onInputChange={(event, newInputValue) => setLocationInput(newInputValue)}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -113,6 +136,38 @@ const QuickSearch = ({ noBackground = false }) => {
                   color: '#475569',
                 },
               }}
+              filterOptions={(options, state) => {
+                if (!state.inputValue) return options;
+                return options.filter(option => 
+                  option.toLowerCase().includes(state.inputValue.toLowerCase())
+                );
+              }}
+            />
+          </Box>
+          
+          {/* Car Name Input */}
+          <Box sx={{ flex: 1.5 }}>
+            <TextField
+              fullWidth
+              placeholder="Car Name (e.g., Toyota Corolla)"
+              variant="outlined"
+              value={carName}
+              onChange={(e) => setCarName(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <DirectionsCarIcon sx={{ color: '#475569' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ 
+                '& .MuiOutlinedInput-root': { 
+                  borderRadius: 2,
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#475569',
+                  },
+                }
+              }}
             />
           </Box>
 
@@ -126,7 +181,6 @@ const QuickSearch = ({ noBackground = false }) => {
                 sx={{ width: '100%' }}
               />
             </Box>
-
             <Box sx={{ flex: 1.5 }}>
               <DateTimePicker
                 label="End Date & Time"
@@ -137,7 +191,7 @@ const QuickSearch = ({ noBackground = false }) => {
               />
             </Box>
           </LocalizationProvider>
-
+          
           <Button
             variant="contained"
             size="large"
@@ -156,12 +210,7 @@ const QuickSearch = ({ noBackground = false }) => {
               },
               transition: 'all 0.3s ease'
             }}
-            onClick={() => {
-              if (!location || !startDate || !endDate) return;
-              const start = startDate.format('YYYY-MM-DD');
-              const end = endDate.format('YYYY-MM-DD');
-              window.location.href = `/offers?wilaya=${encodeURIComponent(location)}&startDate=${start}&endDate=${end}`;
-            }}
+            onClick={handleSearch}
           >
             Find Cars
           </Button>
@@ -169,30 +218,14 @@ const QuickSearch = ({ noBackground = false }) => {
       </Fade>
 
       {/* Decorative elements */}
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: -100,
-          left: -100,
-          width: 300,
-          height: 300,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,166,153,0.2) 0%, rgba(0,166,153,0) 70%)',
-          zIndex: 1
-        }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          top: -50,
-          right: -50,
-          width: 200,
-          height: 200,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
-          zIndex: 1
-        }}
-      />
+      <Box sx={{
+        position: 'absolute', bottom: -100, left: -100, width: 300, height: 300,
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,166,153,0.2) 0%, rgba(0,166,153,0) 70%)', zIndex: 1
+      }} />
+      <Box sx={{
+        position: 'absolute', top: -50, right: -50, width: 200, height: 200,
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)', zIndex: 1
+      }} />
     </Box>
   );
 };
