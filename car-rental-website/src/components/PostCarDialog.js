@@ -4,6 +4,7 @@ import {
 } from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloseIcon from '@mui/icons-material/Close';
+import MapSelector from './MapSelector';
 import WilayaDropdown from './WilayaDropdown';
 
 const brands = [
@@ -16,7 +17,7 @@ const brands = [
 const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
 const transmissions = ['Manual', 'Automatic'];
 
-export default function PostCarDialog({ open, onClose }) {
+export default function PostCarDialog({ open, onClose, isLoggedIn }) {
   const [formData, setFormData] = useState({
     images: [],
     carName: '',
@@ -29,12 +30,17 @@ export default function PostCarDialog({ open, onClose }) {
     mileage: '',
     engine: '',
     wilaya: '',
+    pickupLocation: '',
     availabilityStart: '',
     availabilityEnd: '',
     price: '',
   });
   const [imagePreviews, setImagePreviews] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  if (!isLoggedIn) {
+    return null;
+  }
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -60,6 +66,10 @@ export default function PostCarDialog({ open, onClose }) {
 
   const handleWilayaChange = (wilaya) => {
     setFormData(prev => ({ ...prev, wilaya }));
+  };
+
+  const handlePickupLocationChange = (pickupLocation) => {
+    setFormData(prev => ({ ...prev, pickupLocation }));
   };
 
   const handleSubmit = async (e) => {
@@ -145,55 +155,10 @@ export default function PostCarDialog({ open, onClose }) {
                     max={5}
                   />
                 </Button>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    gap: 1.5,
-                    overflowX: 'auto',
-                    mt: 1,
-                    p: 1,
-                    border: '1px solid #cbd5e1',
-                    borderRadius: 2,
-                    bgcolor: '#f8fafc',
-                  }}
-                >
+                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 1 }}>
                   {imagePreviews.map((src, idx) => (
-                    <Box
-                      key={idx}
-                      sx={{
-                        position: 'relative',
-                        width: 72,
-                        height: 72,
-                        borderRadius: 3,
-                        overflow: 'hidden',
-                        border: '2px solid #cbd5e1',
-                        bgcolor: '#fff',
-                        boxShadow: '0 2px 8px rgba(30,41,59,0.07)',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <img
-                        src={src}
-                        alt="preview"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={() => handleRemoveImage(idx)}
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          right: 0,
-                          color: 'white',
-                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                          '&:hover': {
-                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                          },
-                          p: 0.5,
-                        }}
-                      >
-                        <CloseIcon fontSize="small" />
-                      </IconButton>
+                    <Box key={idx} sx={{ width: 72, height: 72, borderRadius: 3, overflow: 'hidden', border: '2px solid #cbd5e1', bgcolor: '#fff', boxShadow: '0 2px 8px rgba(30,41,59,0.07)' }}>
+                      <img src={src} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} />
                     </Box>
                   ))}
                 </Box>

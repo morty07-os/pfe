@@ -144,6 +144,7 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
       <PostCarDialog
         open={showPostCar}
         onClose={() => setShowPostCar(false)}
+        isLoggedIn={true} // Add this prop to show the dialog for logged-in users
       />
     </>
   );
