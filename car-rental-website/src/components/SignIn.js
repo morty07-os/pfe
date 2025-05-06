@@ -19,7 +19,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import { useNavigate } from 'react-router-dom';
 
-const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
+const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -40,7 +40,7 @@ const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Sign-in form data:", formData); // Log form data
+    console.log("Sign-in form data:", formData);
 
     try {
       const response = await fetch('http://localhost:5001/api/auth/login', {
@@ -50,23 +50,25 @@ const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
       });
 
       const result = await response.json();
-      console.log("Backend response:", result); // Log backend response
+      console.log("Backend response:", result);
 
       if (response.ok) {
         setMessage('Sign in successful');
         console.log("Sign in successful:", result);
-
-        // Store the token in localStorage
         localStorage.setItem('token', result.token);
-
-        navigate('/profile'); // Redirect to profile page
+        
+        if (onSuccess) {
+          onSuccess();
+        }
+        
+        navigate('/profile');
       } else {
         setMessage(result.error || 'Sign in failed');
-        console.error("Sign in failed:", result); // Log error
+        console.error("Sign in failed:", result);
       }
     } catch (error) {
       setMessage('Sign in failed');
-      console.error("Error during sign in:", error.message); // Log exception
+      console.error("Error during sign in:", error.message);
     }
   };
 
@@ -266,3 +268,5 @@ const SignIn = ({ open, onClose, onSwitchToSignUp }) => {
 };
 
 export default SignIn;
+
+

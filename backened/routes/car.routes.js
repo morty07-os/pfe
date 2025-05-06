@@ -57,6 +57,7 @@ router.get('/getcars', async (req, res) => {
             energy,
             transmission,
             wilaya,
+            location,
             seats,
             doors,
             priceMin,
@@ -71,6 +72,7 @@ router.get('/getcars', async (req, res) => {
         if (energy) query.energy = energy;
         if (transmission) query.transmission = transmission;
         if (wilaya) query.wilaya = wilaya;
+        if (location) query.location = location;
         if (seats) query.seats = parseInt(seats);
         if (doors) query.doors = parseInt(doors);
         if (priceMin || priceMax) {

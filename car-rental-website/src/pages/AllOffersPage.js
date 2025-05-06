@@ -112,8 +112,8 @@ export default function AllOffersPage() {
     if (f.energy && offer.energy !== f.energy) return false;
     if (f.transmission && offer.transmission !== f.transmission) return false;
     if (f.wilaya && offer.wilaya !== f.wilaya) return false;
-    if (f.seats && Number(offer.seats) !== Number(f.seats)) return false;
-    if (f.doors && Number(offer.doors) !== Number(f.doors)) return false;
+    if (f.seatsRange && (Number(offer.seats) < f.seatsRange[0] || Number(offer.seats) > f.seatsRange[1])) return false;
+    if (f.doorsRange && (Number(offer.doors) < f.doorsRange[0] || Number(offer.doors) > f.doorsRange[1])) return false;
     if (f.priceRange && (offer.price < f.priceRange[0] || offer.price > f.priceRange[1])) return false;
     if (f.availableFrom && dayjs(offer.availableFrom).isBefore(dayjs(f.availableFrom))) return false;
     if (f.availableTo && dayjs(offer.availableTo).isAfter(dayjs(f.availableTo))) return false;

@@ -4,6 +4,10 @@ import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 // Function to create a new car
 export const createCar = async (req, res) => {
     try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
         console.log("Request body:", req.body); // Log request body
         console.log("Uploaded files:", req.files); // Log uploaded files
 
@@ -14,9 +18,32 @@ export const createCar = async (req, res) => {
 
         const images = files.map((file) => `uploads/${file.filename}`);
 
+        // Parse location if it's a string
+        let locationData = body.location;
+        if (typeof locationData === 'string') {
+            try {
+                locationData = JSON.parse(locationData);
+            } catch (e) {
+                console.error('Error parsing location:', e);
+                return res.status(400).json({ error: 'Invalid location format' });
+            }
+        }
+
+
+        // Create location object for GeoJSON
+        const location = {
+            type: 'Point',
+            coordinates: [
+                parseFloat(locationData.lng || locationData[0]),
+                parseFloat(locationData.lat || locationData[1])
+            ]
+        };
+
         const newCar = new Car({
             ...body,
+            location,
             images,
+            owner: req.user._id
         });
 
         await newCar.save();

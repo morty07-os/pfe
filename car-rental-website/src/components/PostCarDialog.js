@@ -1,11 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Typography, InputAdornment, MenuItem, IconButton, Snackbar, Alert
+  Dialog, DialogContent, DialogActions, Button, TextField, Box, Typography, InputAdornment, MenuItem, IconButton, Snackbar, Alert
 } from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloseIcon from '@mui/icons-material/Close';
-import MapSelector from './MapSelector';
 import WilayaDropdown from './WilayaDropdown';
+
+// Import Leaflet CSS
+import 'leaflet/dist/leaflet.css';
+
+// Import Leaflet and fix icon issue
+import L from 'leaflet';
+import { createRoot } from 'react-dom/client';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+
+// Fix for default marker icons in React-Leaflet
+const DefaultIcon = L.icon({
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+function LocationMarker({ position, setPosition }) {
+  const map = useMapEvents({
+    click(e) {
+      setPosition(e.latlng);
+    },
+  });
+
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, map.getZoom());
+    }
+  }, [position, map]);
+
+  return position === null ? null : (
+    <Marker position={position}>
+      <Popup>Your car will be located here</Popup>
+    </Marker>
+  );
+}
 
 const brands = [
   'Toyota', 'Renault', 'Peugeot', 'Hyundai', 'Volkswagen', 'Kia', 'Dacia', 'Citroën', 'Fiat', 'Seat',
@@ -17,12 +58,16 @@ const brands = [
 const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
 const transmissions = ['Manual', 'Automatic'];
 
-export default function PostCarDialog({ open, onClose, isLoggedIn }) {
+function PostCarDialog({ open, onClose }) {
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+
+  // Move state declarations outside of conditional blocks
   const [formData, setFormData] = useState({
     images: [],
     carName: '',
     brand: '',
-    description: '',
+    description: '', 
     energy: '',
     seats: '',
     doors: '',
@@ -30,16 +75,29 @@ export default function PostCarDialog({ open, onClose, isLoggedIn }) {
     mileage: '',
     engine: '',
     wilaya: '',
-    pickupLocation: '',
     availabilityStart: '',
     availabilityEnd: '',
     price: '',
+    location: null, // For storing map coordinates
   });
   const [imagePreviews, setImagePreviews] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  if (!isLoggedIn) {
-    return null;
+  // Add authentication check when dialog opens
+  useEffect(() => {
+    if (!token && open) {
+      console.log("No token found, redirecting to sign in");
+      onClose(); // Close the dialog
+      navigate('/sign-in'); // Redirect to sign-in page
+    }
+  }, [open, onClose, navigate, token]);
+
+  // Add immediate check on render
+  if (!token && open) {
+    // If component renders with open=true but no token, close immediately
+    setTimeout(() => onClose(), 0);
+    navigate('/SignIn'); // Redirect to sign-in page
+    return null; // Don't render anything
   }
 
   const handleChange = (e) => {
@@ -68,13 +126,27 @@ export default function PostCarDialog({ open, onClose, isLoggedIn }) {
     setFormData(prev => ({ ...prev, wilaya }));
   };
 
-  const handlePickupLocationChange = (pickupLocation) => {
-    setFormData(prev => ({ ...prev, pickupLocation }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Check for token again before submitting
+      if (!token) {
+        console.error("No token found during submission");
+        setSnackbar({ open: true, message: 'You must be logged in to post a car', severity: 'error' });
+        onClose();
+        navigate('/SignIn'); // Redirect to sign-in page
+        return;
+      }
+
+      // Validate token format (basic check for JWT format)
+      if (typeof token !== 'string' || token.split('.').length !== 3) {
+        console.error("Invalid token format");
+        localStorage.removeItem('token'); // Remove invalid token
+        setSnackbar({ open: true, message: 'Your session is invalid. Please sign in again.', severity: 'error' });
+        onClose();
+        return;
+      }
+
       const formDataToSend = new FormData();
       Object.keys(formData).forEach((key) => {
         if (key === 'images') {
@@ -86,6 +158,9 @@ export default function PostCarDialog({ open, onClose, isLoggedIn }) {
 
       const response = await fetch('http://localhost:5001/api/cars/addcars', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formDataToSend,
       });
 
@@ -106,9 +181,11 @@ export default function PostCarDialog({ open, onClose, isLoggedIn }) {
     setSnackbar({ open: false, message: '', severity: 'success' });
   };
 
+
+
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{
         sx: {
           borderRadius: 4,
           boxShadow: '0 12px 50px -12px rgba(30,41,59,0.25)',
@@ -155,10 +232,55 @@ export default function PostCarDialog({ open, onClose, isLoggedIn }) {
                     max={5}
                   />
                 </Button>
-                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1.5,
+                    overflowX: 'auto',
+                    mt: 1,
+                    p: 1,
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 2,
+                    bgcolor: '#f8fafc',
+                  }}
+                >
                   {imagePreviews.map((src, idx) => (
-                    <Box key={idx} sx={{ width: 72, height: 72, borderRadius: 3, overflow: 'hidden', border: '2px solid #cbd5e1', bgcolor: '#fff', boxShadow: '0 2px 8px rgba(30,41,59,0.07)' }}>
-                      <img src={src} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} />
+                    <Box
+                      key={idx}
+                      sx={{
+                        position: 'relative',
+                        width: 72,
+                        height: 72,
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                        border: '2px solid #cbd5e1',
+                        bgcolor: '#fff',
+                        boxShadow: '0 2px 8px rgba(30,41,59,0.07)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={src}
+                        alt="preview"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemoveImage(idx)}
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          color: 'white',
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                          },
+                          p: 0.5,
+                        }}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
                     </Box>
                   ))}
                 </Box>
@@ -250,6 +372,35 @@ export default function PostCarDialog({ open, onClose, isLoggedIn }) {
                   sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: '#f1f5f9', boxShadow: '0 1px 4px rgba(30,41,59,0.03)', '&:hover': { bgcolor: '#e2e8f0' }, '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' } }, '& .MuiInputLabel-root': { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
                 />
               </Box>
+              
+              {/* Map Location Selection */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#334155', letterSpacing: 0.3 }}>
+                  Select Car Location
+                </Typography>
+                <Box sx={{ height: 250, width: '100%', borderRadius: 2.5, overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                  <MapContainer
+                    center={[36.7529, 3.0420]} // Default to Algiers coordinates
+                    zoom={6}
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    <LocationMarker 
+                      position={formData.location} 
+                      setPosition={(pos) => setFormData(prev => ({ ...prev, location: pos }))} 
+                    />
+                  </MapContainer>
+                </Box>
+                {formData.location && (
+                  <Typography variant="caption" sx={{ color: '#64748b', fontStyle: 'italic' }}>
+                    Selected location: {formData.location.lat.toFixed(4)}, {formData.location.lng.toFixed(4)}
+                  </Typography>
+                )}
+              </Box>
+              
               {/* Energy, Engine, Transmission */}
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <TextField
@@ -544,3 +695,6 @@ export default function PostCarDialog({ open, onClose, isLoggedIn }) {
     </>
   );
 }
+
+// Instead of export default PostCarDialog;
+export { PostCarDialog };

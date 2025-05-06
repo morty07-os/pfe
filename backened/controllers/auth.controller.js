@@ -90,35 +90,59 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        console.log("Login attempt with email:", email); // Log email
-
-        // Find the user by email
-        const user = await User.findOne({ email: email.toLowerCase() });
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            console.log("Invalid email or password for email:", email); // Log if user is not found or password is incorrect
-            return res.status(400).json({ error: "Invalid email or password" });
+        if (!email || !password) {
+            console.log('Missing credentials');
+            return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        console.log("Login successful for email:", email); // Log successful login
+        console.log('Login attempt for email:', email);
+
+        // Find the user by email (case insensitive)
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            console.log('User not found for email:', email);
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        // Check if password is correct
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            console.log('Invalid password for email:', email);
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
 
         // Generate token and set it in the cookie
         const token = generateTokenAndSetCookie(user._id, res);
+        
+        if (!token) {
+            console.error('Failed to generate token');
+            return res.status(500).json({ error: 'Failed to generate authentication token' });
+        }
+
+        console.log('Login successful for user:', user._id);
+
+        // Return user data without sensitive information
+        const userResponse = {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            residence: user.residence,
+            createdAt: user.createdAt
+        };
 
         res.status(200).json({
-            message: "Login successful",
-            token, // Return token for frontend storage
-            user: {
-                _id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                phone: user.phone,
-                residence: user.residence,
-            },
+            message: 'Login successful',
+            token,
+            user: userResponse
         });
     } catch (error) {
-        console.error("Error in login controller:", error.message);
-        res.status(500).json({ error: "Server error" });
+        console.error('Error in login controller:', error);
+        res.status(500).json({ 
+            error: 'An error occurred during login',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
