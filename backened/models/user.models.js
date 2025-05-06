@@ -1,84 +1,88 @@
 import mongoose from "mongoose";
 
-const carSchema = new mongoose.Schema(
-    {
-        id: {
-            type: String,
-            unique: true,
-            default: () => new mongoose.Types.ObjectId().toString(),
-        },
-        carName: {
-            type: String,
-            required: true,
-        },
-        brand: {
-            type: String,
-            required: true,
-        },
-        description: {
-            type: String,
-            required: true, // Ensure description is required
-            maxlength: 500, // Limit the description length
-        },
-        energy: {
-            type: String,
-            enum: ["Essence", "Diesel", "Hybrid", "Electric"],
-            required: true,
-        },
-        seats: {
-            type: Number,
-            required: true,
-        },
-        doors: {
-            type: Number,
-            required: true,
-        },
-        transmission: {
-            type: String,
-            enum: ["Manual", "Automatic"],
-            required: true,
-        },
-        mileage: {
-            type: Number,
-            required: true,
-        },
-        engine: {
-            type: String,
-            required: true,
-        },
-        wilaya: {
-            type: String,
-            required: true,
-        },
-        availabilityStart: {
-            type: Date,
-            required: true,
-        },
-        availabilityEnd: {
-            type: Date,
-            required: true,
-        },
-        price: {
-            type: Number,
-            required: true,
-        },
-        isDeleted: {
-            type: Boolean,
-            default: false,
-        },
-        images: {
-            type: [String], // Array of image paths
-            required: true,
-            validate: {
-                validator: function (images) {
-                    return images.length >= 1 && images.length <= 5 && images.every((img) => img.startsWith('uploads/'));
-                },
-                message: 'You must upload between 1 and 5 images, and all image paths must start with "uploads/".',
-            },
-        },
+const userSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        required: [true, 'First name is required'],
+        trim: true
     },
-    { timestamps: true }
-);
+    lastName: {
+        type: String,
+        required: [true, 'Last name is required'],
+        trim: true
+    },
+    email: {
+        type: String,
+        required: [true, 'Email is required'],
+        unique: true,
+        trim: true,
+        lowercase: true,
+        match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, 'Please enter a valid email']
+    },
+    password: {
+        type: String,
+        required: [true, 'Password is required'],
+        minlength: [6, 'Password must be at least 6 characters long']
+    },
+    birthDate: {
+        type: Date,
+        required: [true, 'Birth date is required']
+    },
+    phone: {
+        type: String,
+        required: [true, 'Phone number is required'],
+        trim: true,
+        unique: true
+    },
+    residence: {
+        type: String,
+        required: [true, 'Residence is required'],
+        trim: true
+    },
+    licenceFront: {
+        type: String,
+        required: [true, 'Front of driving licence is required']
+    },
+    licenceBack: {
+        type: String,
+        required: [true, 'Back of driving licence is required']
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    verificationToken: String,
+    verificationTokenExpires: Date,
+    refreshToken: String
+}, {
+    timestamps: true
+});
 
-const Car = mongoose.model("Car", carSchema);
-export default Car;
+// Pre-save hook to hash password before saving
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) return next();
+    
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
+
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+export default User;
