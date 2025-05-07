@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Added useNavigate
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -7,20 +7,27 @@ import {
   CardMedia,
   CardContent,
   Button,
+  Container,
+  Paper,
+  Chip,
 } from '@mui/material';
 import EventSeatIcon from '@mui/icons-material/EventSeat';
 import DoorFrontIcon from '@mui/icons-material/DoorFront';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import dayjs from 'dayjs';
+import Navbar from '../components/Navbar';
 
 export default function CarDetailsPage() {
   const { carId } = useParams();
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCarDetails = async () => {
@@ -39,174 +46,276 @@ export default function CarDetailsPage() {
     fetchCarDetails();
   }, [carId]);
 
-  if (loading) return <Box sx={{ p: 4 }}>Loading car details...</Box>;
-  if (!car) return <Box sx={{ p: 4 }}>No car details found or an error occurred.</Box>;
+  if (loading) {
+    return (
+      <>
+        <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+        <Box sx={{ p: 4, textAlign: 'center', mt: 8 }}>Loading car details...</Box>
+      </>
+    );
+  }
+  
+  if (!car) {
+    return (
+      <>
+        <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+        <Box sx={{ p: 4, textAlign: 'center', mt: 8 }}>No car details found or an error occurred.</Box>
+      </>
+    );
+  }
 
   return (
-    <Box
-      sx={{
-        maxWidth: 900,
-        mx: 'auto',
-        p: 4,
-        bgcolor: '#f8fafc',
-        borderRadius: 3,
-        boxShadow: '0 4px 24px 0 #607d8b22',
-      }}
-    >
-      <Typography
-        variant="h4"
-        sx={{
-          fontWeight: 900,
-          mb: 3,
-          color: '#263238',
-          fontFamily: 'Segoe UI, Arial, sans-serif',
-        }}
-      >
-        {car.carName}
-      </Typography>
-
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={6}>
-          <CardMedia
-            component="img"
-            image={`http://localhost:5001/${car.images?.[0]}`}
-            alt={car.carName}
+    <>
+      <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+      <Box sx={{ 
+        bgcolor: '#f8fafc', 
+        minHeight: '100vh', 
+        pt: 4, 
+        pb: 8 
+      }}>
+        <Container maxWidth="lg">
+          <Paper
+            elevation={2}
             sx={{
               borderRadius: 3,
-              boxShadow: '0 3px 18px #607d8b22',
-              border: '1px solid #e3e8ee',
+              overflow: 'hidden',
+              boxShadow: '0 8px 24px rgba(71, 85, 105, 0.12)',
             }}
-          />
-          <Box sx={{ display: 'flex', gap: 2, mt: 2, overflowX: 'auto' }}>
-            {car.images?.map((img, index) => (
-              <CardMedia
-                key={index}
-                component="img"
-                image={`http://localhost:5001/${img}`}
-                alt={`Car image ${index + 1}`}
+          >
+            <Box sx={{ 
+              background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+              p: 3,
+              color: 'white',
+            }}>
+              <Typography
+                variant="h4"
                 sx={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 2,
-                  boxShadow: '0 2px 8px #607d8b22',
-                  border: '1px solid #e3e8ee',
+                  fontWeight: 800,
+                  color: 'white',
                 }}
+              >
+                {car.carName}
+              </Typography>
+              <Chip 
+                label={car.brand} 
+                size="small" 
+                sx={{ 
+                  mt: 1, 
+                  bgcolor: 'rgba(255,255,255,0.2)', 
+                  color: 'white',
+                  fontWeight: 600,
+                  '& .MuiChip-label': { px: 1 }
+                }} 
               />
-            ))}
-          </Box>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <CardContent sx={{ p: 0 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 2,
-                fontWeight: 700,
-                color: '#3f51b5',
-                fontFamily: 'Segoe UI, Arial, sans-serif',
-              }}
-            >
-              Details
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-              <EventSeatIcon sx={{ color: '#607d8b' }} />
-              <Typography sx={{ fontSize: 15, fontWeight: 500, color: '#607d8b' }}>
-                {car.seats} Seats
-              </Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-              <DoorFrontIcon sx={{ color: '#607d8b' }} />
-              <Typography sx={{ fontSize: 15, fontWeight: 500, color: '#607d8b' }}>
-                {car.doors} Doors
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-              <LocalGasStationIcon sx={{ color: '#607d8b' }} />
-              <Typography sx={{ fontSize: 15, fontWeight: 500, color: '#607d8b' }}>
-                {car.energy}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-              <SettingsIcon sx={{ color: '#607d8b' }} />
-              <Typography sx={{ fontSize: 15, fontWeight: 500, color: '#607d8b' }}>
-                {car.transmission}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-              <LocationOnIcon sx={{ color: '#607d8b' }} />
-              <Typography sx={{ fontSize: 15, fontWeight: 500, color: '#607d8b' }}>
-                {car.wilaya || 'Unknown Wilaya'}
-              </Typography>
-            </Box>
-          </CardContent>
 
-          <Typography
-            variant="body2"
-            sx={{ mt: 2, color: '#607d8b', fontSize: 14 }}
-          >
-            Available From:{' '}
-            {car.availabilityStart ? dayjs(car.availabilityStart).format('DD-MM-YYYY') : 'Not Available'}
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{ color: '#607d8b', fontSize: 14, mb: 2 }}
-          >
-            Available To:{' '}
-            {car.availabilityEnd ? dayjs(car.availabilityEnd).format('DD-MM-YYYY') : 'Not Available'}
-          </Typography>
-        </Grid>
-      </Grid>
+            <Box sx={{ p: 3 }}>
+              <Grid container spacing={4}>
+                <Grid item xs={12} md={6}>
+                  <CardMedia
+                    component="img"
+                    image={`http://localhost:5001/${car.images?.[0]}`}
+                    alt={car.carName}
+                    sx={{
+                      borderRadius: 2,
+                      boxShadow: '0 3px 18px rgba(71, 85, 105, 0.1)',
+                      border: '1px solid #e3e8ee',
+                      height: 300,
+                      objectFit: 'cover',
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', gap: 2, mt: 2, overflowX: 'auto', pb: 1 }}>
+                    {car.images?.map((img, index) => (
+                      <CardMedia
+                        key={index}
+                        component="img"
+                        image={`http://localhost:5001/${img}`}
+                        alt={`Car image ${index + 1}`}
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 2,
+                          boxShadow: '0 2px 8px rgba(71, 85, 105, 0.1)',
+                          border: '1px solid #e3e8ee',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s',
+                          '&:hover': {
+                            transform: 'scale(1.05)',
+                          }
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </Grid>
 
-      <Typography
-        variant="body1"
-        sx={{
-          mt: 3,
-          mb: 3,
-          color: '#455a64',
-          fontSize: 16,
-          lineHeight: 1.6,
-        }}
-      >
-        {car.description || 'No description available.'}
-      </Typography>
+                <Grid item xs={12} md={6}>
+                  <CardContent sx={{ p: 0 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        mb: 2,
+                        fontWeight: 700,
+                        color: '#1e293b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      <DirectionsCarIcon /> Car Details
+                    </Typography>
+                    
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Paper sx={{ p: 2, borderRadius: 2, height: '100%' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                            <EventSeatIcon sx={{ color: '#475569' }} />
+                            <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
+                              {car.seats} Seats
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Grid>
+                      
+                      <Grid item xs={6}>
+                        <Paper sx={{ p: 2, borderRadius: 2, height: '100%' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                            <DoorFrontIcon sx={{ color: '#475569' }} />
+                            <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
+                              {car.doors} Doors
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Grid>
+                      
+                      <Grid item xs={6}>
+                        <Paper sx={{ p: 2, borderRadius: 2, height: '100%' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                            <LocalGasStationIcon sx={{ color: '#475569' }} />
+                            <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
+                              {car.energy}
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Grid>
+                      
+                      <Grid item xs={6}>
+                        <Paper sx={{ p: 2, borderRadius: 2, height: '100%' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                            <SettingsIcon sx={{ color: '#475569' }} />
+                            <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
+                              {car.transmission}
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Grid>
+                    </Grid>
+                    
+                    <Paper sx={{ p: 2, borderRadius: 2, mt: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <LocationOnIcon sx={{ color: '#475569' }} />
+                        <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
+                          Location: {car.wilaya || 'Unknown Wilaya'}
+                        </Typography>
+                      </Box>
+                    </Paper>
 
-      <Typography
-        variant="h6"
-        sx={{
-          mt: 4,
-          color: '#3f51b5',
-          fontWeight: 700,
-        }}
-      >
-        Price: €{car.price}/day
-      </Typography>
+                    <Paper sx={{ p: 2, borderRadius: 2, mt: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <CalendarMonthIcon sx={{ color: '#475569' }} />
+                        <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
+                          Availability
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: '#64748b', fontSize: 14, ml: 4 }}
+                      >
+                        From: {car.availabilityStart ? dayjs(car.availabilityStart).format('DD-MM-YYYY') : 'Not Available'}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: '#64748b', fontSize: 14, ml: 4 }}
+                      >
+                        To: {car.availabilityEnd ? dayjs(car.availabilityEnd).format('DD-MM-YYYY') : 'Not Available'}
+                      </Typography>
+                    </Paper>
+                  </CardContent>
+                </Grid>
+              </Grid>
 
-      {/* Navigate to /book/:carId when clicked */}
-      <Button
-        variant="contained"
-        sx={{
-          mt: 3,
-          borderRadius: 99,
-          background: '#607d8b',
-          color: '#fff',
-          fontWeight: 700,
-          py: 1.15,
-          fontSize: 15,
-          boxShadow: '0 2px 10px #607d8b33',
-          letterSpacing: 0.3,
-          textTransform: 'none',
-          fontFamily: 'Segoe UI, Arial, sans-serif',
-          ':hover': {
-            background: '#455a64',
-            boxShadow: '0 8px 28px #607d8b33',
-            transform: 'scale(1.035)',
-          },
-        }}
-        onClick={() => navigate(`/book/${car._id}`)} // Navigates on click
-      >
-        Book Now
-      </Button>
-    </Box>
+              <Paper sx={{ p: 3, borderRadius: 2, mt: 3 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    mb: 2,
+                    fontWeight: 700,
+                    color: '#1e293b',
+                  }}
+                >
+                  Description
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#475569',
+                    fontSize: 16,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {car.description || 'No description available.'}
+                </Typography>
+              </Paper>
+
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                mt: 3,
+                p: 3,
+                borderRadius: 2,
+                background: 'linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 100%)',
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AttachMoneyIcon sx={{ color: '#1e293b', fontSize: 28 }} />
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 800,
+                      color: '#1e293b',
+                    }}
+                  >
+                    €{car.price}/day
+                  </Typography>
+                </Box>
+
+                <Button
+                  variant="contained"
+                  onClick={() => navigate(`/book/${car._id}`)}
+                  sx={{
+                    borderRadius: 99,
+                    background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    py: 1.15,
+                    px: 3,
+                    fontSize: 15,
+                    boxShadow: '0 4px 14px rgba(71, 85, 105, 0.25)',
+                    textTransform: 'none',
+                    '&:hover': {
+                      background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
+                      boxShadow: '0 6px 20px rgba(71, 85, 105, 0.35)',
+                      transform: 'translateY(-2px)',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  Book Now
+                </Button>
+              </Box>
+            </Box>
+          </Paper>
+        </Container>
+      </Box>
+    </>
   );
 }
