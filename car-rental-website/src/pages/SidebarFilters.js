@@ -158,11 +158,11 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       }
       if (key === 'seatsRange') {
         return pendingFilters[key] && 
-               (pendingFilters[key][0] > 2 || pendingFilters[key][1] < 9);
+               (pendingFilters[key][0] !== 2 || pendingFilters[key][1] !== 9);
       }
       if (key === 'doorsRange') {
         return pendingFilters[key] && 
-               (pendingFilters[key][0] > 2 || pendingFilters[key][1] < 5);
+               (pendingFilters[key][0] !== 2 || pendingFilters[key][1] !== 5);
       }
       return pendingFilters[key] && pendingFilters[key] !== '';
     }).length;

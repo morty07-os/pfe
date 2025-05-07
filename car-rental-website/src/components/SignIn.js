@@ -57,10 +57,18 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
         console.log("Sign in successful:", result);
         localStorage.setItem('token', result.token);
         
+        // Close the dialog
+        onClose();
+        
+        // Call onSuccess callback if provided
         if (onSuccess) {
           onSuccess();
         }
         
+        // Dispatch custom event to notify other components about login state change
+        window.dispatchEvent(new Event('loginStateChanged'));
+        
+        // Navigate to profile page
         navigate('/profile');
       } else {
         setMessage(result.error || 'Sign in failed');

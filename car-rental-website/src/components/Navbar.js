@@ -20,6 +20,7 @@ import SignIn from './SignIn';
 import SignUp from './SignUp';
 import { PostCarDialog } from './PostCarDialog';
 import { useNavigate } from 'react-router-dom';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const Navbar = ({ sx = {}, iconColor = '#333' }) => {
   const navigate = useNavigate();
@@ -123,6 +124,15 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
     setSnackbar({ ...snackbar, open: false });
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    handleClose();
+    window.dispatchEvent(new Event('loginStateChanged'));
+    // Redirect to home page or offers page after logout
+    navigate('/offers');
+  };
+
   return (
     <>
       <AppBar position="static" sx={{ backgroundColor: '#fff', ...sx }}>
@@ -186,75 +196,94 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
                 horizontal: 'right',
               }}
             >
-              <MenuItem 
-                onClick={handleSignInClick}
-                sx={{ 
-                  color: '#333',
-                  minWidth: '150px',
-                  gap: 1.5
-                }}
-              >
-                <LoginIcon fontSize="small" sx={{ color: iconColor }} />
-                Sign In
-              </MenuItem>
-              <MenuItem 
-                onClick={handleSignUpClick}
-                sx={{ 
-                  color: '#333',
-                  minWidth: '150px',
-                  gap: 1.5
-                }}
-              >
-                <PersonAddIcon fontSize="small" sx={{ color: iconColor }} />
-                Sign Up
-              </MenuItem>
-              <MenuItem 
-                onClick={() => {
-                  handleClose();
-                  navigate('/profile');
-                }}
-                sx={{ 
-                  color: '#333',
-                  minWidth: '150px',
-                  gap: 1.5
-                }}
-              >
-                <AccountCircleIcon fontSize="small" sx={{ color: iconColor }} />
-                Profile
-              </MenuItem>
+              {!isLoggedIn ? (
+                <>
+                  <MenuItem 
+                    onClick={handleSignInClick}
+                    sx={{ 
+                      color: '#333',
+                      minWidth: '150px',
+                      gap: 1.5
+                    }}
+                  >
+                    <LoginIcon fontSize="small" sx={{ color: iconColor }} />
+                    Sign In
+                  </MenuItem>
+                  <MenuItem 
+                    onClick={handleSignUpClick}
+                    sx={{ 
+                      color: '#333',
+                      minWidth: '150px',
+                      gap: 1.5
+                    }}
+                  >
+                    <PersonAddIcon fontSize="small" sx={{ color: iconColor }} />
+                    Sign Up
+                  </MenuItem>
+                </>
+              ) : (
+                <>
+                  <MenuItem 
+                    onClick={() => {
+                      handleClose();
+                      navigate('/profile');
+                    }}
+                    sx={{ 
+                      color: '#333',
+                      minWidth: '150px',
+                      gap: 1.5
+                    }}
+                  >
+                    <AccountCircleIcon fontSize="small" sx={{ color: iconColor }} />
+                    Profile
+                  </MenuItem>
+                  <MenuItem 
+                    onClick={handleLogout}
+                    sx={{ 
+                      color: '#e74c3c',
+                      minWidth: '150px',
+                      gap: 1.5
+                    }}
+                  >
+                    <LogoutIcon fontSize="small" sx={{ color: '#e74c3c' }} />
+                    Logout
+                  </MenuItem>
+                </>
+              )}
             </Menu>
           </Box>
         </Toolbar>
       </AppBar>
 
-      <SignIn 
-        open={showSignIn}
-        onClose={() => setShowSignIn(false)}
-        onSwitchToSignUp={handleSwitchToSignUp}
-        onSuccess={handleSignInSuccess}
-      />
+      {/* Only render SignIn and SignUp dialogs if user is not logged in */}
+      {!isLoggedIn && (
+        <>
+          <SignIn
+            open={showSignIn}
+            onClose={() => setShowSignIn(false)}
+            onSwitchToSignUp={handleSwitchToSignUp}
+            onSuccess={handleSignInSuccess}
+          />
+          <SignUp
+            open={showSignUp}
+            onClose={() => setShowSignUp(false)}
+            onSwitchToSignIn={handleSwitchToSignIn}
+          />
+        </>
+      )}
 
-      <SignUp
-        open={showSignUp}
-        onClose={() => setShowSignUp(false)}
-        onSwitchToSignIn={handleSwitchToSignIn}
-      />
+      {/* Post Car Dialog can be shown regardless of login state */}
       <PostCarDialog
         open={showPostCar}
         onClose={() => setShowPostCar(false)}
       />
 
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={4000} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

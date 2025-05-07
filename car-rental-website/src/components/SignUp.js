@@ -79,9 +79,20 @@ const SignUp = ({ open, onClose, onSwitchToSignIn }) => {
       const result = await response.json();
 
       if (response.ok) {
-        alert(result.message); // Show success message
-        onClose(); // Close the dialog
-        console.log("Signup successful"); // Log success message
+        // Store token in localStorage
+        localStorage.setItem('token', result.token);
+        
+        // Close the dialog
+        onClose();
+        
+        // Log success message
+        console.log("Signup successful");
+        
+        // Dispatch custom event to notify other components about login state change
+        window.dispatchEvent(new Event('loginStateChanged'));
+        
+        // Navigate to profile page
+        window.location.href = '/profile';
       } else {
         alert(result.error || 'Registration failed'); // Show error message
         console.log("Signup not successful"); // Log failure message
