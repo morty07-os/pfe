@@ -473,17 +473,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           icon={<LocalGasStationIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
         >
           <Box sx={{ position: 'relative' }}>
-            <ToggleButtonGroup
-              value={pendingFilters.energy || ''}
-              exclusive
-              onChange={(e, value) => handleChange({ target: { name: 'energy', value } })}
-              aria-label="energy type"
-              size="small"
-              fullWidth
-              sx={{ 
-                display: 'flex',
-                '& .MuiToggleButtonGroup-grouped': {
-                  flex: 1,
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: 1 
+            }}>
+              <ToggleButton 
+                value="Gasoline"
+                selected={pendingFilters.energy === 'Gasoline'}
+                onChange={() => handleChange({ target: { name: 'energy', value: 'Gasoline' } })}
+                sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
@@ -501,28 +500,104 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   '&:hover': {
                     bgcolor: 'rgba(203, 213, 225, 0.2)',
                   }
-                }
-              }}
-            >
-              <ToggleButton value="Gasoline">
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <LocalGasStationIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
                   Gasoline
                 </Box>
               </ToggleButton>
-              <ToggleButton value="Diesel">
+              
+              <ToggleButton 
+                value="Diesel"
+                selected={pendingFilters.energy === 'Diesel'}
+                onChange={() => handleChange({ target: { name: 'energy', value: 'Diesel' } })}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  border: '1px solid #e2e8f0',
+                  color: '#64748b',
+                  py: 0.75,
+                  '&.Mui-selected': {
+                    bgcolor: '#455a64',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: '#37474f',
+                    }
+                  },
+                  '&:hover': {
+                    bgcolor: 'rgba(203, 213, 225, 0.2)',
+                  }
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <DirectionsCarIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
                   Diesel
                 </Box>
               </ToggleButton>
-              <ToggleButton value="Electric">
+              
+              <ToggleButton 
+                value="Hybrid"
+                selected={pendingFilters.energy === 'Hybrid'}
+                onChange={() => handleChange({ target: { name: 'energy', value: 'Hybrid' } })}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  border: '1px solid #e2e8f0',
+                  color: '#64748b',
+                  py: 0.75,
+                  '&.Mui-selected': {
+                    bgcolor: '#455a64',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: '#37474f',
+                    }
+                  },
+                  '&:hover': {
+                    bgcolor: 'rgba(203, 213, 225, 0.2)',
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <LocalGasStationIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
+                  Hybrid
+                </Box>
+              </ToggleButton>
+              
+              <ToggleButton 
+                value="Electric"
+                selected={pendingFilters.energy === 'Electric'}
+                onChange={() => handleChange({ target: { name: 'energy', value: 'Electric' } })}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  border: '1px solid #e2e8f0',
+                  color: '#64748b',
+                  py: 0.75,
+                  '&.Mui-selected': {
+                    bgcolor: '#455a64',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: '#37474f',
+                    }
+                  },
+                  '&:hover': {
+                    bgcolor: 'rgba(203, 213, 225, 0.2)',
+                  }
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ElectricCarIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
                   Electric
                 </Box>
               </ToggleButton>
-            </ToggleButtonGroup>
+            </Box>
             
             {pendingFilters.energy && (
               <Fade in={true}>
