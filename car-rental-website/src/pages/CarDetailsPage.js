@@ -10,6 +10,7 @@ import {
   Container,
   Paper,
   Chip,
+  Avatar,
 } from '@mui/material';
 import EventSeatIcon from '@mui/icons-material/EventSeat';
 import DoorFrontIcon from '@mui/icons-material/DoorFront';
@@ -19,6 +20,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import PersonIcon from '@mui/icons-material/Person';
 import dayjs from 'dayjs';
 import Navbar from '../components/Navbar';
 
@@ -238,6 +240,35 @@ export default function CarDetailsPage() {
                       >
                         To: {car.availabilityEnd ? dayjs(car.availabilityEnd).format('DD-MM-YYYY') : 'Not Available'}
                       </Typography>
+                    </Paper>
+                    
+                    <Paper sx={{ p: 2, borderRadius: 2, mt: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <PersonIcon sx={{ color: '#475569' }} />
+                        <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
+                          Car Owner
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', ml: 4, mt: 1 }}>
+                        <Avatar 
+                          sx={{ 
+                            bgcolor: '#e2e8f0', 
+                            color: '#475569',
+                            width: 36,
+                            height: 36,
+                            mr: 1.5
+                          }}
+                        >
+                          {car.ownerName?.firstName?.charAt(0) || car.owner?.firstName?.charAt(0) || 'U'}
+                        </Avatar>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: '#475569', fontSize: 14, fontWeight: 600 }}
+                        >
+                          {car.ownerName?.firstName} {car.ownerName?.lastName || 
+                           car.owner?.firstName} {car.owner?.lastName || 'Unknown Owner'}
+                        </Typography>
+                      </Box>
                     </Paper>
                   </CardContent>
                 </Grid>

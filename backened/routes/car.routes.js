@@ -24,7 +24,7 @@ router.put("/update/:id", ProtectedRoute(), upload.array("images", 5), updateCar
 router.delete("/delete/:id", ProtectedRoute(), deleteCar); // Delete a car
 
 // Route to post a car
-router.post('/addcars', upload.array('images', 5), async (req, res) => {
+router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req, res) => {
     try {
         console.log("Request body:", req.body); // Log request body
         console.log("Uploaded files:", req.files); // Log uploaded files
@@ -36,9 +36,22 @@ router.post('/addcars', upload.array('images', 5), async (req, res) => {
 
         const imagePaths = files.map((file) => `uploads/${file.filename}`);
 
+        // Get user information for owner details
+        const User = (await import('../models/user.models.js')).default;
+        const user = await User.findById(req.user.userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
         const car = new Car({
             ...body,
             images: imagePaths,
+            owner: req.user.userId,
+            ownerName: {
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
         });
 
         await car.save();
@@ -90,7 +103,11 @@ router.get('/getcars', async (req, res) => {
             }
         }
 
-        const cars = await Car.find(query).select('-__v'); // Include description in the response
+        // Fetch cars with owner information
+        const cars = await Car.find(query)
+            .select('-__v')
+            .populate('owner', 'firstName lastName -_id'); // Populate owner information
+            
         res.status(200).json(cars);
     } catch (error) {
         console.error("Error fetching cars:", error.message);
@@ -102,7 +119,10 @@ router.get('/getcars', async (req, res) => {
 router.get('/details/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const car = await Car.findById(id).select('-__v'); // Ensure description and images are included
+        const car = await Car.findById(id)
+            .select('-__v')
+            .populate('owner', 'firstName lastName -_id'); // Populate owner information
+            
         if (!car) {
             return res.status(404).json({ error: 'Car not found' });
         }

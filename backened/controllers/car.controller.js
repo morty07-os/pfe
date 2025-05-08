@@ -1,4 +1,5 @@
 import Car from '../models/car.models.js';
+import User from '../models/user.models.js';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; 
 
 // Function to create a new car
@@ -29,7 +30,6 @@ export const createCar = async (req, res) => {
             }
         }
 
-
         // Create location object for GeoJSON
         const location = {
             type: 'Point',
@@ -39,11 +39,21 @@ export const createCar = async (req, res) => {
             ]
         };
 
+        // Get user information for owner details
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
         const newCar = new Car({
             ...body,
             location,
             images,
-            owner: req.user._id
+            owner: req.user.userId,
+            ownerName: {
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
         });
 
         await newCar.save();

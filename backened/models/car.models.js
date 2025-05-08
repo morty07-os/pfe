@@ -76,6 +76,21 @@ const carSchema = new mongoose.Schema(
                 message: 'You must upload between 1 and 5 images, and all image paths must start with "uploads/".',
             },
         },
+        owner: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        ownerName: {
+            firstName: {
+                type: String,
+                required: true
+            },
+            lastName: {
+                type: String,
+                required: true
+            }
+        }
     },
     { timestamps: true }
 );

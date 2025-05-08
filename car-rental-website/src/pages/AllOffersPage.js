@@ -14,7 +14,8 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Button
+  Button,
+  Avatar
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -29,6 +30,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import AirlineSeatReclineNormalIcon from '@mui/icons-material/AirlineSeatReclineNormal';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
+import PersonIcon from '@mui/icons-material/Person';
 import { useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import SidebarFilters from './SidebarFilters';
@@ -473,6 +475,19 @@ export default function AllOffersPage() {
                             }}>
                               {offer.wilaya || 'Unknown Location'}
                             </Typography>
+                            
+                            {(offer.ownerName || offer.owner) && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                                <PersonIcon sx={{ color: '#64748b', fontSize: 18, mr: 0.5 }} />
+                                <Typography variant="body2" sx={{
+                                  color: '#64748b',
+                                  fontWeight: 600
+                                }}>
+                                  {offer.ownerName?.firstName} {offer.ownerName?.lastName || 
+                                   offer.owner?.firstName} {offer.owner?.lastName}
+                                </Typography>
+                              </Box>
+                            )}
                           </Box>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                             <Chip
@@ -497,6 +512,23 @@ export default function AllOffersPage() {
                                 borderRadius: 1
                               }}
                             />
+                            {(offer.ownerName || offer.owner) && (
+                              <Chip
+                                avatar={
+                                  <Avatar sx={{ bgcolor: '#e2e8f0', color: '#475569', width: 24, height: 24 }}>
+                                    {offer.ownerName?.firstName?.charAt(0) || offer.owner?.firstName?.charAt(0) || 'U'}
+                                  </Avatar>
+                                }
+                                label={`${offer.ownerName?.firstName || offer.owner?.firstName || ''} ${offer.ownerName?.lastName || offer.owner?.lastName || 'Owner'}`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#f1f5f9',
+                                  color: '#475569',
+                                  fontWeight: 500,
+                                  borderRadius: 1
+                                }}
+                              />
+                            )}
                             <Chip
                               icon={<LocalGasStationIcon sx={{ color: '#64748b' }} />}
                               label={offer.energy || 'N/A'}
