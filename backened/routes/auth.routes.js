@@ -3,7 +3,7 @@ import multer from "multer";
 import { login, signup, logout, getMe, refreshToken } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
-import { createBooking, getBookings, updateBooking, deleteBooking } from "../controllers/booking.controller.js";
+
 import { processPayment } from "../controllers/payment.controller.js";
 
 const router = express.Router();
@@ -58,11 +58,7 @@ router.get("/listcars", ProtectedRoute, getCars); // Get a list of cars
 router.put("/updatecars/:id", ProtectedRoute, updateCar); // Update car details
 router.delete("/deletecars/:id", ProtectedRoute, deleteCar); // Delete a car
 
-// Booking routes
-router.post("/bookings", ProtectedRoute, createBooking); // Create a new booking
-router.get("/bookings", ProtectedRoute, getBookings); // Get all bookings
-router.put("/bookings/:id", ProtectedRoute, updateBooking); // Update a booking
-router.delete("/bookings/:id", ProtectedRoute, deleteBooking); // Delete a booking
+
 
 // Payment route
 router.post("/payments", ProtectedRoute, processPayment); // Process a payment
