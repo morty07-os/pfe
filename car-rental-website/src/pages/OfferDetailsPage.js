@@ -104,9 +104,6 @@ export default function OfferDetailsPage() {
           </TableBody>
         </Table>
       </TableContainer>
-      <Button variant="contained" color="primary" fullWidth sx={{ fontWeight: 800, fontSize: 18, borderRadius: 99, py: 1.5, bgcolor: '#1976d2', mb: 2 }} onClick={handleBookNow}>
-        Book Now
-      </Button>
     </Box>
   );
 }

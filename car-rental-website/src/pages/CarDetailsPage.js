@@ -482,29 +482,6 @@ export default function CarDetailsPage() {
                         </Typography>
                       </Box>
 
-                      <Button
-                        variant="contained"
-                        onClick={() => navigate(`/book/${car._id}`)}
-                        sx={{
-                          borderRadius: 99,
-                          background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
-                          color: '#fff',
-                          fontWeight: 700,
-                          py: { xs: 1, sm: 1.15 },
-                          px: { xs: 2, sm: 3 },
-                          fontSize: { xs: 14, sm: 15 },
-                          boxShadow: '0 4px 14px rgba(71, 85, 105, 0.25)',
-                          textTransform: 'none',
-                          '&:hover': {
-                            background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
-                            boxShadow: '0 6px 20px rgba(71, 85, 105, 0.35)',
-                            transform: 'translateY(-2px)',
-                          },
-                          transition: 'all 0.3s ease',
-                        }}
-                      >
-                        Book Now
-                      </Button>
                     </Box>
                   </Grid>
 
