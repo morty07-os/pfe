@@ -481,7 +481,28 @@ export default function CarDetailsPage() {
                           €{car.price}/day
                         </Typography>
                       </Box>
-
+                      <Button
+                        variant="contained"
+                        onClick={() => navigate(`/booking/${carId}`)} // Placeholder navigation
+                        sx={{
+                          borderRadius: 99,
+                          background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                          color: '#fff',
+                          fontWeight: 600,
+                          py: { xs: 0.8, sm: 1 },
+                          px: { xs: 2, sm: 3 },
+                          textTransform: 'none',
+                          fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                          whiteSpace: 'nowrap', // Prevent text wrapping
+                          '&:hover': {
+                            background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                          },
+                          transition: 'all 0.2s ease-in-out',
+                        }}
+                      >
+                        Book Now
+                      </Button>
                     </Box>
                   </Grid>
 
