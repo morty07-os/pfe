@@ -93,7 +93,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
   const [pendingFilters, setPendingFilters] = useState(filters || {});
   const [showApplyEffect, setShowApplyEffect] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = (e) => {  
     const { name, value } = e.target;
     setPendingFilters({ ...pendingFilters, [name]: value });
   };

@@ -15,7 +15,21 @@ import {
     IconButton,
     Chip,
     Divider,
-    Stack
+    Stack,
+    Stepper,
+    Step,
+    StepLabel,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    Radio,
+    RadioGroup,
+    FormControlLabel,
+    FormControl,
+    FormLabel,
+    Tooltip
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -31,6 +45,10 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InfoIcon from '@mui/icons-material/Info';
+import PaymentIcon from '@mui/icons-material/Payment';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import CancelIcon from '@mui/icons-material/Cancel';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import dayjs from 'dayjs';
 
 const BookingPage = () => {
@@ -44,6 +62,21 @@ const BookingPage = () => {
     const [totalCost, setTotalCost] = useState(0);
     const [bookingError, setBookingError] = useState('');
     const [bookingSuccess, setBookingSuccess] = useState('');
+    
+    // Payment and booking status states
+    const [activeStep, setActiveStep] = useState(0);
+    const [bookingId, setBookingId] = useState(null);
+    const [bookingStatus, setBookingStatus] = useState('pending');
+    const [paymentMethod, setPaymentMethod] = useState('credit_card');
+    const [paymentCompleted, setPaymentCompleted] = useState(false);
+    const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+    const [showCancellationDialog, setShowCancellationDialog] = useState(false);
+    const [cancellationReason, setCancellationReason] = useState('');
+    const [processingPayment, setProcessingPayment] = useState(false);
+    const [processingCancellation, setProcessingCancellation] = useState(false);
+    
+    // Booking workflow steps
+    const steps = ['Select Dates', 'Review Details', 'Payment', 'Confirmation'];
 
     useEffect(() => {
         const fetchCarDetails = async () => {
@@ -66,51 +99,137 @@ const BookingPage = () => {
         }
     }, [carId]);
 
-    const handleBookingSubmit = async (e) => {
-        e.preventDefault();
+    // Handle moving to the next step in the booking process
+    const handleNextStep = () => {
+        if (activeStep === 0) {
+            // Validate dates before proceeding
+            if (!startDate || !endDate) {
+                setBookingError('Please select both start and end dates.');
+                return;
+            }
+            
+            const start = dayjs(startDate);
+            const end = dayjs(endDate);
+            
+            if (start.isSame(end) || start.isAfter(end)) {
+                setBookingError('End date must be after start date.');
+                return;
+            }
+            
+            setBookingError('');
+            setActiveStep(1); // Move to review details
+        } else if (activeStep === 1) {
+            // Move to payment step
+            setActiveStep(2);
+        }
+    };
+    
+    // Handle going back to the previous step
+    const handleBackStep = () => {
+        setActiveStep((prevStep) => Math.max(0, prevStep - 1));
+    };
+    
+    // Open payment dialog
+    const handleOpenPaymentDialog = () => {
+        setShowPaymentDialog(true);
+    };
+    
+    // Close payment dialog
+    const handleClosePaymentDialog = () => {
+        setShowPaymentDialog(false);
+    };
+    
+    // Process payment and create booking
+    const handleProcessPayment = async () => {
+        setProcessingPayment(true);
         setBookingError('');
-        setBookingSuccess('');
-
-        if (!startDate || !endDate) {
-            setBookingError('Please select both start and end dates.');
-            return;
-        }
-        // Ensure dayjs objects for comparison
-        const start = dayjs(startDate);
-        const end = dayjs(endDate);
-
-        if (start.isSame(end) || start.isAfter(end)) {
-            setBookingError('End date must be after start date.');
-            return;
-        }
-
+        
         try {
             const token = localStorage.getItem('token');
             if (!token) {
                 setBookingError('You must be logged in to make a booking.');
+                setProcessingPayment(false);
                 return;
             }
-
-            const response = await axios.post('http://localhost:5001/api/bookings', {
+            
+            // First create the booking
+            const bookingResponse = await axios.post('http://localhost:5001/api/bookings', {
                 car: carId,
-                startDate: startDate.toISOString(), // Send ISO string to backend
-                endDate: endDate.toISOString(),   // Send ISO string to backend
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
             }, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
-            if (response.status === 201) {
+            
+            if (bookingResponse.status === 201) {
+                // Mock payment processing (in a real app, this would integrate with Stripe, PayPal, etc.)
+                // Simulate a payment delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Store the booking ID for future reference
+                const newBookingId = bookingResponse.data.booking._id;
+                setBookingId(newBookingId);
+                
+                // Update UI state
+                setPaymentCompleted(true);
+                setBookingStatus('pending');
                 setBookingSuccess('Booking successful! Your booking is pending approval.');
-                // navigate('/my-bookings'); // Optional: redirect
+                setActiveStep(3); // Move to confirmation step
+                setShowPaymentDialog(false);
             } else {
-                setBookingError(response.data.message || 'Failed to create booking. Please try again.');
+                setBookingError(bookingResponse.data.message || 'Failed to create booking. Please try again.');
             }
         } catch (err) {
-            console.error("Error creating booking:", err);
-            setBookingError(err.response?.data?.message || 'An error occurred while creating the booking.');
+            console.error("Error processing payment:", err);
+            setBookingError(err.response?.data?.message || 'An error occurred while processing your payment.');
+        } finally {
+            setProcessingPayment(false);
         }
+    };
+    
+    // Handle booking cancellation
+    const handleCancelBooking = async () => {
+        if (!bookingId) return;
+        
+        setProcessingCancellation(true);
+        
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setBookingError('You must be logged in to cancel a booking.');
+                setProcessingCancellation(false);
+                return;
+            }
+            
+            const response = await axios.patch(`http://localhost:5001/api/bookings/${bookingId}/cancel`, {
+                reason: cancellationReason
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.status === 200) {
+                setBookingStatus('cancelled');
+                setBookingSuccess('Booking cancelled successfully.');
+                setShowCancellationDialog(false);
+            } else {
+                setBookingError(response.data.message || 'Failed to cancel booking. Please try again.');
+            }
+        } catch (err) {
+            console.error("Error cancelling booking:", err);
+            setBookingError(err.response?.data?.message || 'An error occurred while cancelling your booking.');
+        } finally {
+            setProcessingCancellation(false);
+        }
+    };
+    
+    // Legacy booking submit function (now replaced by the multi-step process)
+    const handleBookingSubmit = async (e) => {
+        e.preventDefault();
+        handleNextStep();
     };
     
     // Helper to get the primary image URL
@@ -218,13 +337,30 @@ const BookingPage = () => {
             <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
             <Box sx={{ bgcolor: '#f8fafc', minHeight: 'calc(100vh - 64px)', py: 4 }}>
                 <Container maxWidth="lg">
-                    <Button
-                        startIcon={<ArrowBackIcon />}
-                        onClick={() => navigate(-1)}
-                        sx={{ mb: 3, color: '#475569', '&:hover': { bgcolor: 'rgba(71, 85, 105, 0.08)' } }}
-                    >
-                        Back to Details
-                    </Button>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                        <Button
+                            startIcon={<ArrowBackIcon />}
+                            onClick={() => navigate(-1)}
+                            sx={{ color: '#475569', '&:hover': { bgcolor: 'rgba(71, 85, 105, 0.08)' } }}
+                        >
+                            Back to Details
+                        </Button>
+                        
+                        <Button
+                            variant="outlined"
+                            onClick={() => navigate('/my-bookings')}
+                            sx={{ 
+                                color: '#1e293b', 
+                                borderColor: '#1e293b',
+                                '&:hover': { 
+                                    bgcolor: 'rgba(30, 41, 59, 0.08)',
+                                    borderColor: '#0f172a'
+                                } 
+                            }}
+                        >
+                            View My Bookings
+                        </Button>
+                    </Box>
 
                     <Paper elevation={3} sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 8px 24px rgba(71, 85, 105, 0.12)' }}>
                         <Box sx={{ background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)', p: { xs: 2.5, sm: 3 }, color: 'white' }}>
@@ -283,69 +419,462 @@ const BookingPage = () => {
                                 {!carDetails.isAvailable && (
                                     <Alert severity="warning" sx={{ mb: 2 }}>This car is currently not available for booking.</Alert>
                                 )}
-                                {carDetails.isAvailable && (
+                                {carDetails.isOwner && (
+                                    <Alert 
+                                        severity="info" 
+                                        sx={{ 
+                                            mb: 2, 
+                                            border: '1px solid #ef4444', 
+                                            bgcolor: 'rgba(239, 68, 68, 0.08)',
+                                            '& .MuiAlert-icon': { color: '#ef4444' }
+                                        }}
+                                    >
+                                        This is your car. You cannot book your own vehicle.
+                                    </Alert>
+                                )}
+                                {carDetails.isAvailable && !carDetails.isOwner && (
                                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                                         <Box component="form" onSubmit={handleBookingSubmit}>
-                                            <Stack spacing={2} sx={{mt: 1}}>
-                                                <DatePicker
-                                                    label="Start Date"
-                                                    value={startDate}
-                                                    onChange={(newValue) => {
-                                                        setStartDate(newValue);
-                                                        if (endDate && newValue && dayjs(newValue).isAfter(dayjs(endDate))) {
-                                                            setEndDate(null); // Reset end date if start date is after it
-                                                            setTotalCost(0);
-                                                        }
-                                                    }}
-                                                    shouldDisableDate={shouldDisableDate}
-                                                    minDate={dayjs()}
-                                                    renderInput={(params) => <TextField {...params} fullWidth required margin="normal" />}
-                                                />
-                                                <DatePicker
-                                                    label="End Date"
-                                                    value={endDate}
-                                                    onChange={(newValue) => setEndDate(newValue)}
-                                                    shouldDisableDate={shouldDisableDate}
-                                                    minDate={startDate ? dayjs(startDate).add(1, 'day') : dayjs().add(1, 'day')}
-                                                    disabled={!startDate}
-                                                    renderInput={(params) => <TextField {...params} fullWidth required margin="normal" />}
-                                                />
-                                            </Stack>
-
-                                            {totalCost > 0 && (
-                                                <Box sx={{ my: 2, p: 2, backgroundColor: '#eef2f9', borderRadius: 1 }}>
-                                                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b' }}>
-                                                        Booking Summary
-                                                    </Typography>
-                                                    <Typography variant="body1" sx={{ color: '#334155' }}>
-                                                        Rental Duration: {dayjs(endDate).diff(dayjs(startDate), 'day')} days
-                                                    </Typography>
-                                                    <Typography variant="body1" sx={{ color: '#334155' }}>
-                                                        Price per day: ${carDetails.pricePerDay}
-                                                    </Typography>
-                                                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#10b981', mt: 1 }}>
-                                                        Total Cost: ${totalCost}
-                                                    </Typography>
+                                            {/* Booking Process Stepper */}
+                                            <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+                                                {steps.map((label) => (
+                                                    <Step key={label}>
+                                                        <StepLabel>{label}</StepLabel>
+                                                    </Step>
+                                                ))}
+                                            </Stepper>
+                                            
+                                            {/* Step 1: Date Selection */}
+                                            {activeStep === 0 && (
+                                                <Stack spacing={2} sx={{mt: 1}}>
+                                                    <DatePicker
+                                                        label="Start Date"
+                                                        value={startDate}
+                                                        onChange={(newValue) => {
+                                                            setStartDate(newValue);
+                                                            if (endDate && newValue && dayjs(newValue).isAfter(dayjs(endDate))) {
+                                                                setEndDate(null); // Reset end date if start date is after it
+                                                                setTotalCost(0);
+                                                            }
+                                                        }}
+                                                        shouldDisableDate={shouldDisableDate}
+                                                        minDate={dayjs()}
+                                                    />
+                                                    <DatePicker
+                                                        label="End Date"
+                                                        value={endDate}
+                                                        onChange={(newValue) => setEndDate(newValue)}
+                                                        shouldDisableDate={shouldDisableDate}
+                                                        minDate={startDate ? dayjs(startDate).add(1, 'day') : dayjs().add(1, 'day')}
+                                                        disabled={!startDate}
+                                                    />
+                                                    
+                                                    {/* Cancellation Policy Information */}
+                                                    <Box sx={{ mt: 2, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px dashed #cbd5e1' }}>
+                                                        <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', color: '#475569', fontWeight: 600, mb: 1 }}>
+                                                            <HelpOutlineIcon sx={{ mr: 1, fontSize: 20 }} />
+                                                            Cancellation Policy
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                                                            • Free cancellation up to 48 hours before pickup
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                                                            • 50% refund for cancellations between 24-48 hours before pickup
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                                            • No refund for cancellations less than 24 hours before pickup
+                                                        </Typography>
+                                                    </Box>
+                                                </Stack>
+                                            )}
+                                            
+                                            {/* Step 2: Review Details */}
+                                            {activeStep === 1 && (
+                                                <Box>
+                                                    <Paper elevation={1} sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+                                                        <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2 }}>
+                                                            Booking Summary
+                                                        </Typography>
+                                                        
+                                                        <Grid container spacing={2}>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2" sx={{ color: '#64748b' }}>Start Date:</Typography>
+                                                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+                                                                    {dayjs(startDate).format('MMM D, YYYY')}
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2" sx={{ color: '#64748b' }}>End Date:</Typography>
+                                                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+                                                                    {dayjs(endDate).format('MMM D, YYYY')}
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2" sx={{ color: '#64748b' }}>Duration:</Typography>
+                                                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+                                                                    {dayjs(endDate).diff(dayjs(startDate), 'day')} days
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2" sx={{ color: '#64748b' }}>Price per day:</Typography>
+                                                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+                                                                    ${carDetails.pricePerDay}
+                                                                </Typography>
+                                                            </Grid>
+                                                        </Grid>
+                                                        
+                                                        <Divider sx={{ my: 2 }} />
+                                                        
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                                                                Total Cost:
+                                                            </Typography>
+                                                            <Typography variant="h6" sx={{ fontWeight: 700, color: '#10b981' }}>
+                                                                ${totalCost}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Paper>
+                                                </Box>
+                                            )}
+                                            
+                                            {/* Step 3: Payment */}
+                                            {activeStep === 2 && (
+                                                <Box>
+                                                    <Paper elevation={1} sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+                                                        <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2, display: 'flex', alignItems: 'center' }}>
+                                                            <PaymentIcon sx={{ mr: 1 }} />
+                                                            Payment Method
+                                                        </Typography>
+                                                        
+                                                        <FormControl component="fieldset">
+                                                            <RadioGroup
+                                                                name="payment-method"
+                                                                value={paymentMethod}
+                                                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                                            >
+                                                                <FormControlLabel 
+                                                                    value="credit_card" 
+                                                                    control={<Radio />} 
+                                                                    label={
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                                            <CreditCardIcon sx={{ mr: 1, color: '#475569' }} />
+                                                                            <Typography>Credit/Debit Card</Typography>
+                                                                        </Box>
+                                                                    } 
+                                                                />
+                                                                <FormControlLabel 
+                                                                    value="paypal" 
+                                                                    control={<Radio />} 
+                                                                    label={
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                                            <img 
+                                                                                src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" 
+                                                                                alt="PayPal" 
+                                                                                style={{ width: 40, marginRight: 8 }} 
+                                                                            />
+                                                                            <Typography>PayPal</Typography>
+                                                                        </Box>
+                                                                    } 
+                                                                />
+                                                            </RadioGroup>
+                                                        </FormControl>
+                                                        
+                                                        <Button
+                                                            variant="contained"
+                                                            fullWidth
+                                                            onClick={handleOpenPaymentDialog}
+                                                            sx={{ 
+                                                                mt: 3, py: 1.5, fontWeight: 600,
+                                                                background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                                                                '&:hover': { background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)' }
+                                                            }}
+                                                            startIcon={<PaymentIcon />}
+                                                        >
+                                                            Proceed to Payment
+                                                        </Button>
+                                                    </Paper>
+                                                </Box>
+                                            )}
+                                            
+                                            {/* Step 4: Confirmation */}
+                                            {activeStep === 3 && (
+                                                <Box>
+                                                    <Paper elevation={1} sx={{ p: 3, mb: 2, borderRadius: 2, textAlign: 'center' }}>
+                                                        <CheckCircleIcon sx={{ fontSize: 60, color: '#10b981', mb: 2 }} />
+                                                        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
+                                                            Booking Confirmed!
+                                                        </Typography>
+                                                        <Typography variant="body1" sx={{ color: '#475569', mb: 3 }}>
+                                                            Your booking is now {bookingStatus}. You will receive a confirmation email shortly.
+                                                        </Typography>
+                                                        
+                                                        <Box sx={{ bgcolor: '#f1f5f9', p: 2, borderRadius: 2, mb: 3 }}>
+                                                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>Booking ID:</Typography>
+                                                            <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155', mb: 2 }}>
+                                                                {bookingId || 'BOOKING-12345'}
+                                                            </Typography>
+                                                            
+                                                            <Grid container spacing={2}>
+                                                                <Grid item xs={6}>
+                                                                    <Typography variant="body2" sx={{ color: '#64748b' }}>Start Date:</Typography>
+                                                                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+                                                                        {dayjs(startDate).format('MMM D, YYYY')}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={6}>
+                                                                    <Typography variant="body2" sx={{ color: '#64748b' }}>End Date:</Typography>
+                                                                    <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+                                                                        {dayjs(endDate).format('MMM D, YYYY')}
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item xs={12}>
+                                                                    <Typography variant="body2" sx={{ color: '#64748b' }}>Total Amount Paid:</Typography>
+                                                                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#10b981' }}>
+                                                                        ${totalCost}
+                                                                    </Typography>
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Box>
+                                                        
+                                                        <Button
+                                                            variant="outlined"
+                                                            color="error"
+                                                            onClick={() => setShowCancellationDialog(true)}
+                                                            startIcon={<CancelIcon />}
+                                                            sx={{ mr: 2 }}
+                                                        >
+                                                            Cancel Booking
+                                                        </Button>
+                                                        
+                                                        <Button
+                                                            variant="contained"
+                                                            onClick={() => navigate('/my-bookings')}
+                                                            sx={{ 
+                                                                fontWeight: 600,
+                                                                background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                                                                '&:hover': { background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)' }
+                                                            }}
+                                                        >
+                                                            View All Bookings
+                                                        </Button>
+                                                    </Paper>
                                                 </Box>
                                             )}
 
                                             {bookingError && <Alert severity="error" sx={{ mt: 2 }}>{bookingError}</Alert>}
-                                            {bookingSuccess && <Alert severity="success" sx={{ mt: 2 }}>{bookingSuccess}</Alert>}
-                                            <Button
-                                            type="submit"
-                                            variant="contained"
-                                            fullWidth
-                                            disabled={!!bookingSuccess || !carDetails.isAvailable}
-                                            sx={{ 
-                                                mt: 2, py: 1.5, fontWeight: 600,
-                                                background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
-                                                '&:hover': { background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)' }
-                                            }}
-                                        >
-                                            {bookingSuccess ? 'Booked!' : 'Submit Booking'}
-                                        </Button>
-                                    </Box>
-                                </LocalizationProvider> 
+                                            
+                                            {/* Navigation buttons for multi-step form */}
+                                            {activeStep < 3 && (
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+                                                    <Button
+                                                        disabled={activeStep === 0}
+                                                        onClick={handleBackStep}
+                                                        startIcon={<ArrowBackIcon />}
+                                                    >
+                                                        Back
+                                                    </Button>
+                                                    
+                                                    {activeStep < 2 && (
+                                                        <Button
+                                                            variant="contained"
+                                                            onClick={handleNextStep}
+                                                            disabled={!startDate || !endDate || (activeStep === 0 && totalCost === 0)}
+                                                            sx={{ 
+                                                                fontWeight: 600,
+                                                                background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                                                                '&:hover': { background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)' }
+                                                            }}
+                                                        >
+                                                            {activeStep === 0 ? 'Review Booking' : 'Proceed to Payment'}
+                                                        </Button>
+                                                    )}
+                                                </Box>
+                                            )}
+                                        </Box>
+                                        
+                                        {/* Payment Dialog */}
+                                        <Dialog open={showPaymentDialog} onClose={handleClosePaymentDialog} maxWidth="sm" fullWidth>
+                                            <DialogTitle sx={{ fontWeight: 700, bgcolor: '#f8fafc' }}>
+                                                Complete Your Payment
+                                            </DialogTitle>
+                                            <DialogContent>
+                                                <DialogContentText sx={{ mb: 3 }}>
+                                                    Please enter your payment details to complete the booking.
+                                                </DialogContentText>
+                                                
+                                                {paymentMethod === 'credit_card' && (
+                                                    <Box component="form" sx={{ mt: 1 }}>
+                                                        <TextField
+                                                            margin="normal"
+                                                            required
+                                                            fullWidth
+                                                            label="Card Number"
+                                                            placeholder="1234 5678 9012 3456"
+                                                            InputLabelProps={{ shrink: true }}
+                                                        />
+                                                        <Grid container spacing={2}>
+                                                            <Grid item xs={6}>
+                                                                <TextField
+                                                                    margin="normal"
+                                                                    required
+                                                                    fullWidth
+                                                                    label="Expiry Date"
+                                                                    placeholder="MM/YY"
+                                                                    InputLabelProps={{ shrink: true }}
+                                                                />
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <TextField
+                                                                    margin="normal"
+                                                                    required
+                                                                    fullWidth
+                                                                    label="CVC"
+                                                                    placeholder="123"
+                                                                    InputLabelProps={{ shrink: true }}
+                                                                />
+                                                            </Grid>
+                                                        </Grid>
+                                                        <TextField
+                                                            margin="normal"
+                                                            required
+                                                            fullWidth
+                                                            label="Cardholder Name"
+                                                            placeholder="John Doe"
+                                                            InputLabelProps={{ shrink: true }}
+                                                        />
+                                                    </Box>
+                                                )}
+                                                
+                                                {paymentMethod === 'paypal' && (
+                                                    <Box sx={{ textAlign: 'center', py: 3 }}>
+                                                        <img 
+                                                            src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg" 
+                                                            alt="PayPal" 
+                                                            style={{ width: 150, marginBottom: 16 }} 
+                                                        />
+                                                        <Typography variant="body1" sx={{ mb: 2 }}>
+                                                            You will be redirected to PayPal to complete your payment.
+                                                        </Typography>
+                                                    </Box>
+                                                )}
+                                                
+                                                <Box sx={{ bgcolor: '#f1f5f9', p: 2, borderRadius: 2, mt: 2 }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#475569', mb: 1 }}>
+                                                        Payment Summary
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                                            Rental ({dayjs(endDate).diff(dayjs(startDate), 'day')} days × ${carDetails.pricePerDay})
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                            ${totalCost}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                                            Service Fee
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                            $0.00
+                                                        </Typography>
+                                                    </Box>
+                                                    <Divider sx={{ my: 1 }} />
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                                                            Total
+                                                        </Typography>
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#10b981' }}>
+                                                            ${totalCost}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </DialogContent>
+                                            <DialogActions sx={{ px: 3, pb: 3 }}>
+                                                <Button onClick={handleClosePaymentDialog} disabled={processingPayment}>
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    variant="contained"
+                                                    onClick={handleProcessPayment}
+                                                    disabled={processingPayment}
+                                                    sx={{ 
+                                                        fontWeight: 600,
+                                                        background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                                                        '&:hover': { background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)' }
+                                                    }}
+                                                >
+                                                    {processingPayment ? (
+                                                        <>
+                                                            <CircularProgress size={24} sx={{ mr: 1, color: 'white' }} />
+                                                            Processing...
+                                                        </>
+                                                    ) : (
+                                                        `Pay $${totalCost}`
+                                                    )}
+                                                </Button>
+                                            </DialogActions>
+                                        </Dialog>
+                                        
+                                        {/* Cancellation Dialog */}
+                                        <Dialog open={showCancellationDialog} onClose={() => setShowCancellationDialog(false)} maxWidth="sm" fullWidth>
+                                            <DialogTitle sx={{ fontWeight: 700, bgcolor: '#f8fafc', color: '#ef4444' }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <CancelIcon sx={{ mr: 1 }} />
+                                                    Cancel Booking
+                                                </Box>
+                                            </DialogTitle>
+                                            <DialogContent>
+                                                <DialogContentText sx={{ mb: 3 }}>
+                                                    Are you sure you want to cancel your booking? Please review our cancellation policy:
+                                                </DialogContentText>
+                                                
+                                                <Box sx={{ mb: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px dashed #cbd5e1' }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#475569', mb: 1 }}>
+                                                        Cancellation Policy
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                                                        • Free cancellation up to 48 hours before pickup
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                                                        • 50% refund for cancellations between 24-48 hours before pickup
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                                        • No refund for cancellations less than 24 hours before pickup
+                                                    </Typography>
+                                                </Box>
+                                                
+                                                <TextField
+                                                    label="Reason for Cancellation (Optional)"
+                                                    multiline
+                                                    rows={3}
+                                                    fullWidth
+                                                    value={cancellationReason}
+                                                    onChange={(e) => setCancellationReason(e.target.value)}
+                                                    variant="outlined"
+                                                />
+                                            </DialogContent>
+                                            <DialogActions sx={{ px: 3, pb: 3 }}>
+                                                <Button onClick={() => setShowCancellationDialog(false)} disabled={processingCancellation}>
+                                                    Keep Booking
+                                                </Button>
+                                                <Button
+                                                    variant="contained"
+                                                    color="error"
+                                                    onClick={handleCancelBooking}
+                                                    disabled={processingCancellation}
+                                                >
+                                                    {processingCancellation ? (
+                                                        <>
+                                                            <CircularProgress size={24} sx={{ mr: 1, color: 'white' }} />
+                                                            Processing...
+                                                        </>
+                                                    ) : (
+                                                        'Confirm Cancellation'
+                                                    )}
+                                                </Button>
+                                            </DialogActions>
+                                        </Dialog>
+                                    </LocalizationProvider> 
                                 )}
                                  <Typography variant="body2" sx={{ mt: 2, color: '#64748b' }}>
                                     Owner: {carDetails.ownerName?.firstName || carDetails.owner?.firstName || 'N/A'} {carDetails.ownerName?.lastName || carDetails.owner?.lastName || ''}

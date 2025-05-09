@@ -116,17 +116,34 @@ router.get('/getcars', async (req, res) => {
 });
 
 // Route to fetch car details by ID
-router.get('/details/:id', async (req, res) => {
+router.get('/details/:id', ProtectedRoute({ required: false }), async (req, res) => {
     try {
         const { id } = req.params;
         const car = await Car.findById(id)
             .select('-__v')
-            .populate('owner', 'firstName lastName -_id'); // Populate owner information
+            .populate('owner', 'firstName lastName email'); // Populate owner information with email
             
         if (!car) {
             return res.status(404).json({ error: 'Car not found' });
         }
-        res.status(200).json(car);
+
+        // Check if the car is available based on its availability dates
+        const now = new Date();
+        const isAvailable = !car.isDeleted && 
+                           new Date(car.availabilityStart) <= now && 
+                           new Date(car.availabilityEnd) >= now;
+
+        // Add isAvailable property to the response
+        const carResponse = car.toObject();
+        carResponse.isAvailable = isAvailable;
+
+        // Get user ID from request if authenticated
+        const userId = req.user?.userId || null;
+        
+        // Check if the current user is the owner of the car
+        carResponse.isOwner = userId && car.owner._id.toString() === userId.toString();
+
+        res.status(200).json(carResponse);
     } catch (error) {
         console.error("Error fetching car details:", error.message);
         res.status(500).json({ error: 'Failed to fetch car details.', details: error.message });

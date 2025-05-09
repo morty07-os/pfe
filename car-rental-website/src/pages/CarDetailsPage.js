@@ -766,13 +766,29 @@ export default function CarDetailsPage() {
                                 {car.ownerName?.firstName?.charAt(0) || car.owner?.firstName?.charAt(0) || 'U'}
                               </Avatar>
                               <Box>
-                                <Typography
-                                  variant="body2"
-                                  sx={{ color: '#475569', fontSize: 15, fontWeight: 600 }}
-                                >
-                                  {car.ownerName?.firstName} {car.ownerName?.lastName || 
-                                  car.owner?.firstName} {car.owner?.lastName || 'Unknown Owner'}
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ color: '#475569', fontSize: 15, fontWeight: 600 }}
+                                  >
+                                    {car.ownerName?.firstName} {car.ownerName?.lastName || 
+                                    car.owner?.firstName} {car.owner?.lastName || 'Unknown Owner'}
+                                  </Typography>
+                                  
+                                  {car.isOwner && (
+                                    <Chip 
+                                      label="Your Car" 
+                                      size="small" 
+                                      sx={{ 
+                                        ml: 1, 
+                                        bgcolor: '#fee2e2', 
+                                        color: '#ef4444',
+                                        fontWeight: 600,
+                                        fontSize: '0.7rem'
+                                      }} 
+                                    />
+                                  )}
+                                </Box>
                                 <Typography variant="caption" sx={{ color: '#64748b' }}>
                                   Vehicle owner
                                 </Typography>
