@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
+// Assuming you have an AuthContext or similar to get user info
+// import { AuthContext } from '../context/AuthContext'; // Example
 import QuickSearch from '../components/QuickSearch';
 import {
   Box,
@@ -45,7 +47,24 @@ export default function AllOffersPage() {
   const [sidebarFilters, setSidebarFilters] = React.useState({});
   const [showMobileSidebar, setShowMobileSidebar] = React.useState(false);
   const [offers, setOffers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null); // Added for current user
   const locationObj = useLocation();
+  // const { user } = useContext(AuthContext); // Example: if using AuthContext
+
+  useEffect(() => {
+    // Attempt to get user from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setCurrentUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse user from localStorage", e);
+        setCurrentUser(null);
+      }
+    }
+    // Or if using context:
+    // setCurrentUser(user);
+  }, []);
   const query = React.useMemo(() => {
     const params = new URLSearchParams(locationObj.search);
     return {
@@ -392,12 +411,17 @@ export default function AllOffersPage() {
                   </Typography>
                 </Paper>
               ) : (
-                filteredOffers.map((offer) => (
-                  <Grid item xs={12} key={offer.id} sx={{ width: '100%' }}>
+                filteredOffers.map((offer) => {
+                  // Check if the current offer belongs to the logged-in user
+                  const isOwnOffer = currentUser && offer.owner && (offer.owner === currentUser._id || offer.owner._id === currentUser._id);
+
+                  return (
+                  <Grid item xs={12} key={offer._id || offer.id} sx={{ width: '100%' }}>
                     <Card sx={{
                       borderRadius: 2,
                       boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                      border: '1px solid #e2e8f0',
+                      border: isOwnOffer ? '2px solid red' : '1px solid #e2e8f0', // Highlight if own offer
+                      backgroundColor: isOwnOffer ? '#fff5f5' : 'inherit', // Light red background if own offer
                       transition: 'all 0.2s ease-in-out',
                       '&:hover': {
                         boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
@@ -413,10 +437,17 @@ export default function AllOffersPage() {
                         top: 0,
                         height: '100%',
                         width: 5,
-                        bgcolor: '#64748b',
+                        bgcolor: isOwnOffer ? 'red' : '#64748b', // Red side bar for own offer
                         borderRadius: '4px 0 0 4px',
                       }
                     }}>
+                      {isOwnOffer && (
+                        <Tooltip title="This is your own listing. You cannot book it.">
+                          <Box sx={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'red', color: 'white', padding: '2px 8px', borderRadius: 1, fontSize: '0.75rem', zIndex: 1 }}>
+                            Your Offer
+                          </Box>
+                        </Tooltip>
+                      )}
                       <Box sx={{
                         display: 'flex',
                         flexDirection: { xs: 'column', md: 'row' },
@@ -585,31 +616,34 @@ export default function AllOffersPage() {
                             />
                           </Box>
                           <Button
-                            component={Link}
-                            to={`/car-details/${offer._id}`}
+                            component={isOwnOffer ? undefined : Link} // Disable Link behavior if own offer
+                            to={isOwnOffer ? undefined : `/car-details/${offer._id}`}
                             variant="contained"
+                            disabled={isOwnOffer} // Disable button if own offer
                             sx={{
                               alignSelf: 'flex-start',
-                              bgcolor: '#64748b',
-                              color: 'white',
+                              bgcolor: isOwnOffer ? '#e0e0e0' : '#64748b', // Greyed out if own offer
+                              color: isOwnOffer ? '#a0a0a0' : 'white',
                               borderRadius: 1,
                               px: 3,
                               py: 1,
                               fontWeight: 600,
                               textTransform: 'none',
                               '&:hover': {
-                                bgcolor: '#475569',
-                              }
+                                bgcolor: isOwnOffer ? '#e0e0e0' : '#475569',
+                              },
+                              cursor: isOwnOffer ? 'not-allowed' : 'pointer',
                             }}
                           >
-                            <DirectionsCarIcon sx={{ mr: 1 }} /> View Details
+                            <DirectionsCarIcon sx={{ mr: 1 }} /> 
+                            {isOwnOffer ? "Your Listing" : "View Details"}
                           </Button>
                         </Box>
                       </Box>
                     </Card>
                   </Grid>
-                ))
-              )}
+                );
+              }))}
             </Grid>
           </Box>
         </Box>

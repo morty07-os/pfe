@@ -12,6 +12,7 @@ import cors from "cors"; // Import CORS
 import User from './models/user.models.js'; // Import the User model
 import path from "path"; // Import path
 import carRoutes from "./routes/car.routes.js"; // Import car routes
+import bookingRoutes from "./routes/booking.routes.js"; // Import booking routes
 
 
 // Load environment variables
@@ -66,6 +67,9 @@ app.use("/api/auth", authRoutes);
 
 // Mount car routes
 app.use("/api/cars", carRoutes);
+
+// Mount booking routes
+app.use("/api/bookings", bookingRoutes);
 
 
 // Centralized error handling middleware
