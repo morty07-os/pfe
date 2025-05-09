@@ -78,13 +78,39 @@ const BookingPage = () => {
     // Booking workflow steps
     const steps = ['Select Dates', 'Review Details', 'Payment', 'Confirmation'];
 
+    // State to track if current user is the owner
+    const [isOwner, setIsOwner] = useState(false);
+
     useEffect(() => {
         const fetchCarDetails = async () => {
             try {
                 setLoading(true);
                 const response = await axios.get(`http://localhost:5001/api/cars/details/${carId}`);
                 setCarDetails(response.data);
-                setError('');
+                
+                // Check if the current user is the owner of this car
+                const token = localStorage.getItem('token');
+                if (token) {
+                    try {
+                        // Decode the token to get user ID (assuming JWT)
+                        const tokenParts = token.split('.');
+                        if (tokenParts.length === 3) {
+                            const payload = JSON.parse(atob(tokenParts[1]));
+                            const currentUserId = payload.id;
+                            
+                            // Check if current user is the car owner
+                            if (response.data.owner && response.data.owner._id === currentUserId) {
+                                setIsOwner(true);
+                                setError('You cannot book your own car.');
+                            } else {
+                                setIsOwner(false);
+                                setError('');
+                            }
+                        }
+                    } catch (tokenErr) {
+                        console.error("Error processing token:", tokenErr);
+                    }
+                }
             } catch (err) {
                 console.error("Error fetching car details:", err);
                 setError('Failed to load car details. Please try again later or check if the car ID is correct.');
@@ -148,6 +174,13 @@ const BookingPage = () => {
             const token = localStorage.getItem('token');
             if (!token) {
                 setBookingError('You must be logged in to make a booking.');
+                setProcessingPayment(false);
+                return;
+            }
+            
+            // Check if user is trying to book their own car
+            if (isOwner) {
+                setBookingError('You cannot book your own car.');
                 setProcessingPayment(false);
                 return;
             }
@@ -447,6 +480,11 @@ const BookingPage = () => {
                                             {/* Step 1: Date Selection */}
                                             {activeStep === 0 && (
                                                 <Stack spacing={2} sx={{mt: 1}}>
+                                                    {isOwner && (
+                                                        <Alert severity="error" sx={{ mb: 2 }}>
+                                                            You cannot book your own car. This is your car listing.
+                                                        </Alert>
+                                                    )}
                                                     <DatePicker
                                                         label="Start Date"
                                                         value={startDate}
@@ -459,6 +497,7 @@ const BookingPage = () => {
                                                         }}
                                                         shouldDisableDate={shouldDisableDate}
                                                         minDate={dayjs()}
+                                                        disabled={isOwner}
                                                     />
                                                     <DatePicker
                                                         label="End Date"
@@ -466,7 +505,7 @@ const BookingPage = () => {
                                                         onChange={(newValue) => setEndDate(newValue)}
                                                         shouldDisableDate={shouldDisableDate}
                                                         minDate={startDate ? dayjs(startDate).add(1, 'day') : dayjs().add(1, 'day')}
-                                                        disabled={!startDate}
+                                                        disabled={!startDate || isOwner}
                                                     />
                                                     
                                                     {/* Cancellation Policy Information */}
@@ -685,7 +724,7 @@ const BookingPage = () => {
                                                                 '&:hover': { background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)' }
                                                             }}
                                                         >
-                                                            {activeStep === 0 ? 'Review Booking' : 'Proceed to Payment'}
+                                                            {activeStep === 0 ? 'Continue' : 'Proceed to Payment'}
                                                         </Button>
                                                     )}
                                                 </Box>

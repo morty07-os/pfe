@@ -146,6 +146,21 @@ function PostCarDialog({ open, onClose }) {
         onClose();
         return;
       }
+      
+      // Validate availability dates
+      if (formData.availabilityStart && formData.availabilityEnd) {
+        const startDate = new Date(formData.availabilityStart);
+        const endDate = new Date(formData.availabilityEnd);
+        
+        if (startDate >= endDate) {
+          setSnackbar({ 
+            open: true, 
+            message: 'End date must be after start date.', 
+            severity: 'error' 
+          });
+          return;
+        }
+      }
 
       const formDataToSend = new FormData();
       Object.keys(formData).forEach((key) => {

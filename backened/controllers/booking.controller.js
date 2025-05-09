@@ -39,6 +39,11 @@ export const createBooking = async (req, res) => {
 
     const ownerId = car.owner;
 
+    // Prevent users from booking their own cars
+    if (ownerId.toString() === userId) {
+      return res.status(400).json({ message: 'You cannot book your own car.' });
+    }
+
     // Validate dates
     const sDate = new Date(startDate);
     const eDate = new Date(endDate);
