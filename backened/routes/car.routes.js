@@ -115,6 +115,24 @@ router.get('/getcars', async (req, res) => {
     }
 });
 
+// Route to fetch cars owned by the current user
+router.get('/user-cars', ProtectedRoute(), async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        
+        // Find all cars where the owner is the current user
+        const userCars = await Car.find({ 
+            owner: userId,
+            isDeleted: false 
+        }).sort({ createdAt: -1 }); // Sort by newest first
+        
+        res.status(200).json(userCars);
+    } catch (error) {
+        console.error("Error fetching user's cars:", error.message);
+        res.status(500).json({ error: 'Failed to fetch your cars.', details: error.message });
+    }
+});
+
 // Route to fetch car details by ID
 router.get('/details/:id', ProtectedRoute({ required: false }), async (req, res) => {
     try {

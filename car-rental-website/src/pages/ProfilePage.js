@@ -61,10 +61,25 @@ const ProfilePage = () => {
     }
   };
 
+  const fetchUserCars = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5001/api/cars/user-cars', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok) setUserCars(data);
+      else console.error(data.error || 'Failed to fetch user cars');
+    } catch (error) {
+      console.error('Error fetching user cars:', error.message);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
-    // In a real app, you would also fetch user's cars here
-    // For now, we'll use empty array
+    fetchUserCars();
   }, []);
 
   const handleLogout = async () => {
@@ -291,6 +306,7 @@ const ProfilePage = () => {
                     variant="contained" 
                     size="small"
                     startIcon={<AddCircleIcon />}
+                    onClick={() => navigate('/add-car')}
                     sx={{ 
                       bgcolor: 'rgba(255,255,255,0.15)', 
                       color: 'white',
@@ -316,6 +332,7 @@ const ProfilePage = () => {
                       <Button
                         variant="contained"
                         startIcon={<AddCircleIcon />}
+                        onClick={() => navigate('/add-car')}
                         sx={{
                           bgcolor: '#475569',
                           '&:hover': { bgcolor: '#334155' },
@@ -330,7 +347,110 @@ const ProfilePage = () => {
                       </Button>
                     </Box>
                   ) : (
-                    <Typography>Your vehicles will appear here</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {userCars.map((car) => (
+                        <Paper
+                          key={car._id}
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            border: '1px solid #e2e8f0',
+                            display: 'flex',
+                            gap: 2,
+                            transition: 'all 0.2s ease-in-out',
+                            '&:hover': {
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                              transform: 'translateY(-2px)',
+                            }
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              borderRadius: 1,
+                              overflow: 'hidden',
+                              flexShrink: 0
+                            }}
+                          >
+                            <img
+                              src={car.images?.[0] ? `http://localhost:5001/${car.images[0]}` : '/placeholder.jpg'}
+                              alt={car.carName}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                              {car.carName}
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
+                              <Chip
+                                label={car.brand}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#f1f5f9',
+                                  color: '#475569',
+                                  fontWeight: 500,
+                                  fontSize: '0.7rem'
+                                }}
+                              />
+                              <Chip
+                                label={`€${car.price}/day`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#e6f0fa',
+                                  color: '#64748b',
+                                  fontWeight: 500,
+                                  fontSize: '0.7rem'
+                                }}
+                              />
+                            </Box>
+                          </Box>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => navigate(`/car-details/${car._id}`)}
+                            sx={{
+                              alignSelf: 'center',
+                              borderColor: '#64748b',
+                              color: '#64748b',
+                              borderRadius: 1,
+                              textTransform: 'none',
+                              fontWeight: 600,
+                              '&:hover': {
+                                borderColor: '#475569',
+                                bgcolor: 'rgba(100, 116, 139, 0.04)'
+                              }
+                            }}
+                          >
+                            View
+                          </Button>
+                        </Paper>
+                      ))}
+                      <Button
+                        variant="contained"
+                        startIcon={<AddCircleIcon />}
+                        onClick={() => navigate('/add-car')}
+                        sx={{
+                          alignSelf: 'flex-start',
+                          mt: 2,
+                          bgcolor: '#475569',
+                          '&:hover': { bgcolor: '#334155' },
+                          borderRadius: 2,
+                          px: 2,
+                          py: 0.75,
+                          textTransform: 'none',
+                          fontWeight: 600
+                        }}
+                      >
+                        Add Another Vehicle
+                      </Button>
+                    </Box>
                   )}
                 </CardContent>
               </StyledCard>

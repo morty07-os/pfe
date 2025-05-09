@@ -43,6 +43,8 @@ export default function CarDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isOwnCar, setIsOwnCar] = useState(false);
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -83,6 +85,32 @@ export default function CarDetailsPage() {
     );
   };
 
+  // Fetch current user from localStorage
+  useEffect(() => {
+    const fetchCurrentUser = () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        // Fetch user data from API
+        fetch('http://localhost:5001/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data && data._id) {
+              setCurrentUser(data);
+            }
+          })
+          .catch(err => console.error('Error fetching current user:', err));
+      } catch (error) {
+        console.error('Error getting user from localStorage:', error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
   useEffect(() => {
     const fetchCarDetails = async () => {
       try {
@@ -91,6 +119,17 @@ export default function CarDetailsPage() {
         if (!response.ok) throw new Error('Failed to fetch car details');
         const data = await response.json();
         setCar(data);
+        
+        // Check if the car belongs to the current user
+        if (currentUser && data.owner) {
+          // Compare owner ID with current user ID
+          const isOwner = 
+            (typeof data.owner === 'string' && data.owner === currentUser._id) || 
+            (data.owner._id && data.owner._id === currentUser._id);
+          
+          setIsOwnCar(isOwner);
+        }
+        
         setError(null);
       } catch (error) {
         console.error('Error fetching car details:', error.message);
@@ -101,7 +140,7 @@ export default function CarDetailsPage() {
     };
 
     fetchCarDetails();
-  }, [carId]);
+  }, [carId, currentUser]);
 
   // Go back to previous page
   const handleGoBack = () => {
@@ -280,7 +319,9 @@ export default function CarDetailsPage() {
               }}
             >
               <Box sx={{ 
-                background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+                background: isOwnCar 
+                  ? 'linear-gradient(135deg, #991b1b 0%, #b91c1c 100%)' 
+                  : 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
                 p: { xs: 2.5, sm: 3 },
                 color: 'white',
                 position: 'relative',
@@ -297,6 +338,19 @@ export default function CarDetailsPage() {
                   display: { xs: 'none', md: 'block' }
                 }
               }}>
+                {isOwnCar && (
+                  <Chip
+                    icon={<CheckCircleIcon sx={{ color: 'white !important' }} />}
+                    label="Your Car Listing"
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      fontWeight: 600,
+                      mb: 2,
+                      '& .MuiChip-label': { px: 1 }
+                    }}
+                  />
+                )}
                 <Typography
                   variant="h4"
                   sx={{
@@ -481,28 +535,41 @@ export default function CarDetailsPage() {
                           €{car.price}/day
                         </Typography>
                       </Box>
-                      <Button
-                        variant="contained"
-                        onClick={() => navigate(`/booking/${carId}`)} // Placeholder navigation
-                        sx={{
-                          borderRadius: 99,
-                          background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
-                          color: '#fff',
-                          fontWeight: 600,
-                          py: { xs: 0.8, sm: 1 },
-                          px: { xs: 2, sm: 3 },
-                          textTransform: 'none',
-                          fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                          whiteSpace: 'nowrap', // Prevent text wrapping
-                          '&:hover': {
-                            background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                          },
-                          transition: 'all 0.2s ease-in-out',
-                        }}
+                      <Tooltip 
+                        title={isOwnCar ? "You cannot book your own car" : ""}
+                        placement="top"
                       >
-                        Book Now
-                      </Button>
+                        <span> {/* Wrapper needed for disabled buttons with tooltip */}
+                          <Button
+                            variant="contained"
+                            onClick={() => navigate(`/booking/${carId}`)}
+                            disabled={isOwnCar}
+                            sx={{
+                              borderRadius: 99,
+                              background: isOwnCar 
+                                ? '#e0e0e0' 
+                                : 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                              color: isOwnCar ? '#a0a0a0' : '#fff',
+                              fontWeight: 600,
+                              py: { xs: 0.8, sm: 1 },
+                              px: { xs: 2, sm: 3 },
+                              textTransform: 'none',
+                              fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                              whiteSpace: 'nowrap', // Prevent text wrapping
+                              '&:hover': {
+                                background: isOwnCar 
+                                  ? '#e0e0e0' 
+                                  : 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
+                                boxShadow: isOwnCar ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
+                              },
+                              transition: 'all 0.2s ease-in-out',
+                              cursor: isOwnCar ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            {isOwnCar ? "Your Own Car" : "Book Now"}
+                          </Button>
+                        </span>
+                      </Tooltip>
                     </Box>
                   </Grid>
 
