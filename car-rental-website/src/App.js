@@ -12,9 +12,6 @@ import OfferDetailsPage from './pages/OfferDetailsPage';
 import ChatPage from './pages/ChatPage';
 import ProfilePage from './pages/ProfilePage';
 import CarDetailsPage from './pages/CarDetailsPage'; // Import the CarDetailsPage component
-import BookingPage from './pages/BookingPage'; // Import the BookingPage component
-import MyBookingsPage from './pages/MyBookingsPage'; // Import the MyBookingsPage component
-import OwnerBookingsPage from './pages/OwnerBookingsPage'; // Import the OwnerBookingsPage component
 
 function App() {
   return (
@@ -36,9 +33,6 @@ function App() {
             <Route path="/chat/:posterName" element={<ChatPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/car-details/:carId" element={<CarDetailsPage />} /> {/* Add route for CarDetailsPage */}
-            <Route path="/booking/:carId" element={<BookingPage />} /> {/* Add route for BookingPage */}
-            <Route path="/my-bookings" element={<MyBookingsPage />} /> {/* Add route for MyBookingsPage */}
-            <Route path="/owner-bookings" element={<OwnerBookingsPage />} /> {/* Add route for OwnerBookingsPage */}
           </Routes>
         </div>
       </BrowserRouter>

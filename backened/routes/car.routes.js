@@ -150,4 +150,4 @@ router.get('/details/:id', ProtectedRoute({ required: false }), async (req, res)
     }
 });
 
-export default router;
+export default router; 
