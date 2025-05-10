@@ -22,6 +22,15 @@ import { PostCarDialog } from './PostCarDialog';
 import { useNavigate } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
 
+const buttonStyles = (iconColor) => ({
+  color: iconColor,
+  '&:hover': {
+    color: '#3498db',
+    cursor: 'pointer',
+  },
+  transition: 'color 0.3s ease',
+});
+
 const Navbar = ({ sx = {}, iconColor = '#333' }) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -149,7 +158,11 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
 
           <Box sx={{ display: 'flex', gap: 2 }}>
             {/* Navigate to all offers page */}
-            <IconButton color="inherit" sx={{ color: '#333' }} onClick={() => navigate('/offers')}>
+            <IconButton 
+              color="inherit" 
+              sx={{ color: iconColor }}
+              onClick={() => navigate('/offers')}
+            >
               <KeyIcon sx={{ color: iconColor }} />
             </IconButton>
             <Tooltip 
@@ -159,15 +172,7 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
             >
               <IconButton 
                 color="inherit" 
-                sx={{ 
-                  color: iconColor,
-                  '&:hover': {
-                    color: isLoggedIn ? '#3498db' : '#e74c3c',
-                    cursor: 'pointer',
-                  },
-                  transition: 'color 0.3s ease',
-                  opacity: isLoggedIn ? 1 : 0.5,
-                }} 
+                sx={{ color: iconColor }}
                 onClick={handlePostCarClick}
               >
                 <AddCircleIcon sx={{ 
@@ -178,7 +183,14 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
             </Tooltip>
             <IconButton 
               color="inherit" 
-              sx={{ color: iconColor }}
+              sx={{ 
+                color: iconColor,
+                '&:hover': {
+                  color: '#3498db',
+                  cursor: 'pointer',
+                },
+                transition: 'color 0.3s ease'
+              }}
               onClick={handleAccountClick}
             >
               <AccountCircleIcon sx={{ color: iconColor }} />

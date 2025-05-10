@@ -19,7 +19,7 @@ import bookingRoutes from "./routes/booking.routes.js"; // Import booking routes
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = 5002;
 
 // Apply security headers using Helmet
 app.use(helmet());
