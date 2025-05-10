@@ -50,23 +50,43 @@ export default function AllOffersPage() {
   const [showMobileSidebar, setShowMobileSidebar] = React.useState(false);
   const [offers, setOffers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null); // Added for current user
+  const [userCars, setUserCars] = useState([]); // Added to store user's cars
   const locationObj = useLocation();
-  // const { user } = useContext(AuthContext); // Example: if using AuthContext
 
   useEffect(() => {
     // Attempt to get user from localStorage
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setCurrentUser(JSON.parse(storedUser));
+        const user = JSON.parse(storedUser);
+        // Ensure user ID is stored as a string
+        if (user._id) {
+          user._id = user._id.toString();
+        }
+        setCurrentUser(user);
+        fetchUserCars(); // Fetch user's cars when user is loaded
       } catch (e) {
         console.error("Failed to parse user from localStorage", e);
         setCurrentUser(null);
       }
     }
-    // Or if using context:
-    // setCurrentUser(user);
   }, []);
+
+  const fetchUserCars = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5001/api/cars/user-cars', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok) setUserCars(data);
+      else console.error(data.error || 'Failed to fetch user cars');
+    } catch (error) {
+      console.error('Error fetching user cars:', error.message);
+    }
+  };
   const query = React.useMemo(() => {
     const params = new URLSearchParams(locationObj.search);
     return {
@@ -415,7 +435,16 @@ export default function AllOffersPage() {
               ) : (
                 filteredOffers.map((offer) => {
                   // Check if the current offer belongs to the logged-in user
-                  const isOwnOffer = currentUser && offer.owner && (offer.owner === currentUser._id || offer.owner._id === currentUser._id);
+                  const isOwnOffer = currentUser && offer.owner && (
+                    console.log('Owner ID:', offer.owner),
+                    console.log('Current User ID:', currentUser._id),
+                    offer.owner.toString() === currentUser._id.toString()
+                  );
+
+                  // Add a console log to debug the car data
+                  if (isOwnOffer) {
+                    console.log('Found user car:', offer);
+                  }
 
                   return (
                   <Grid item xs={12} key={offer._id || offer.id} sx={{ width: '100%' }}>
@@ -492,13 +521,28 @@ export default function AllOffersPage() {
                         </Box>
                         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Typography variant="h6" sx={{
-                              fontWeight: 700,
-                              color: '#1e293b',
-                              fontSize: '1.25rem'
-                            }}>
-                              {offer.title || offer.carName || 'Car Listing'}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {isOwnOffer && (
+                                <Chip
+                                  label="Your Car"
+                                  color="error"
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#ef4444',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    '& .MuiChip-label': { px: 1 }
+                                  }}
+                                />
+                              )}
+                              <Typography variant="h6" sx={{
+                                fontWeight: 700,
+                                color: '#1e293b',
+                                fontSize: '1.25rem'
+                              }}>
+                                {offer.title || offer.carName || 'Car Listing'}
+                              </Typography>
+                            </Box>
                             <Box sx={{
                               bgcolor: '#e6f0fa',
                               color: '#64748b',
