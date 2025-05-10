@@ -44,6 +44,7 @@ export default function CarDetailsPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isOwnCar, setIsOwnCar] = useState(false);
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -118,6 +119,17 @@ export default function CarDetailsPage() {
         if (!response.ok) throw new Error('Failed to fetch car details');
         const data = await response.json();
         setCar(data);
+        
+        // Check if the car belongs to the current user
+        if (currentUser && data.owner) {
+          // Compare owner ID with current user ID
+          const isOwner = 
+            (typeof data.owner === 'string' && data.owner === currentUser._id) || 
+            (data.owner._id && data.owner._id === currentUser._id);
+          
+          setIsOwnCar(isOwner);
+        }
+        
         setError(null);
       } catch (error) {
         console.error('Error fetching car details:', error.message);
@@ -128,7 +140,7 @@ export default function CarDetailsPage() {
     };
 
     fetchCarDetails();
-  }, [carId]);
+  }, [carId, currentUser]);
 
   // Go back to previous page
   const handleGoBack = () => {
@@ -168,21 +180,8 @@ export default function CarDetailsPage() {
             >
               <Box sx={{ 
                 background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
-                p: { xs: 2.5, sm: 3 },
+                p: 3,
                 color: 'white',
-                position: 'relative',
-                overflow: 'hidden',
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: '30%',
-                  height: '100%',
-                  background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 100%)',
-                  transform: 'skewX(-15deg)',
-                  display: { xs: 'none', md: 'block' }
-                }
               }}>
                 <Skeleton variant="text" width="60%" height={40} sx={{ bgcolor: 'rgba(255,255,255,0.1)' }} />
                 <Skeleton variant="text" width="20%" height={30} sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.1)' }} />
@@ -320,7 +319,9 @@ export default function CarDetailsPage() {
               }}
             >
               <Box sx={{ 
-                background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+                background: isOwnCar 
+                  ? 'linear-gradient(135deg, #991b1b 0%, #b91c1c 100%)' 
+                  : 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
                 p: { xs: 2.5, sm: 3 },
                 color: 'white',
                 position: 'relative',
@@ -337,6 +338,19 @@ export default function CarDetailsPage() {
                   display: { xs: 'none', md: 'block' }
                 }
               }}>
+                {isOwnCar && (
+                  <Chip
+                    icon={<CheckCircleIcon sx={{ color: 'white !important' }} />}
+                    label="Your Car Listing"
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      fontWeight: 600,
+                      mb: 2,
+                      '& .MuiChip-label': { px: 1 }
+                    }}
+                  />
+                )}
                 <Typography
                   variant="h4"
                   sx={{
@@ -522,32 +536,37 @@ export default function CarDetailsPage() {
                         </Typography>
                       </Box>
                       <Tooltip 
-                        title="You cannot book your own car"
+                        title={isOwnCar ? "You cannot book your own car" : ""}
                         placement="top"
                       >
                         <span> {/* Wrapper needed for disabled buttons with tooltip */}
                           <Button
                             variant="contained"
                             onClick={() => navigate(`/booking/${carId}`)}
-                            disabled
+                            disabled={isOwnCar}
                             sx={{
                               borderRadius: 99,
-                              background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
-                              color: '#fff',
+                              background: isOwnCar 
+                                ? '#e0e0e0' 
+                                : 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                              color: isOwnCar ? '#a0a0a0' : '#fff',
                               fontWeight: 600,
                               py: { xs: 0.8, sm: 1 },
                               px: { xs: 2, sm: 3 },
                               textTransform: 'none',
                               fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                              whiteSpace: 'nowrap',
+                              whiteSpace: 'nowrap', // Prevent text wrapping
                               '&:hover': {
-                                background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                background: isOwnCar 
+                                  ? '#e0e0e0' 
+                                  : 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
+                                boxShadow: isOwnCar ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
                               },
                               transition: 'all 0.2s ease-in-out',
+                              cursor: isOwnCar ? 'not-allowed' : 'pointer',
                             }}
                           >
-                            Book Now
+                            {isOwnCar ? "Your Own Car" : "Book Now"}
                           </Button>
                         </span>
                       </Tooltip>
@@ -822,6 +841,20 @@ export default function CarDetailsPage() {
                                     {car.ownerName?.firstName} {car.ownerName?.lastName || 
                                     car.owner?.firstName} {car.owner?.lastName || 'Unknown Owner'}
                                   </Typography>
+                                  
+                                  {car.isOwner && (
+                                    <Chip 
+                                      label="Your Car" 
+                                      size="small" 
+                                      sx={{ 
+                                        ml: 1, 
+                                        bgcolor: '#fee2e2', 
+                                        color: '#ef4444',
+                                        fontWeight: 600,
+                                        fontSize: '0.7rem'
+                                      }} 
+                                    />
+                                  )}
                                 </Box>
                                 <Typography variant="caption" sx={{ color: '#64748b' }}>
                                   Vehicle owner

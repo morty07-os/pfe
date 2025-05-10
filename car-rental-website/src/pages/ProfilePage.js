@@ -362,17 +362,6 @@ const ProfilePage = () => {
                             '&:hover': {
                               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                               transform: 'translateY(-2px)',
-                            },
-                            position: 'relative',
-                            '&::before': {
-                              content: '""',
-                              position: 'absolute',
-                              left: 0,
-                              top: 0,
-                              height: '100%',
-                              width: 4,
-                              bgcolor: '#ef4444',
-                              borderRadius: '4px 0 0 4px',
                             }
                           }}
                         >
@@ -417,16 +406,6 @@ const ProfilePage = () => {
                                   bgcolor: '#e6f0fa',
                                   color: '#64748b',
                                   fontWeight: 500,
-                                  fontSize: '0.7rem'
-                                }}
-                              />
-                              <Chip
-                                label="Your Car"
-                                size="small"
-                                sx={{
-                                  bgcolor: '#fee2e2',
-                                  color: '#ef4444',
-                                  fontWeight: 600,
                                   fontSize: '0.7rem'
                                 }}
                               />
