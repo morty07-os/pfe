@@ -66,10 +66,18 @@ export const signup = async (req, res) => {
         console.log("User saved successfully:", newUser); // Log successful user creation
 
         // Generate token and set it in the cookie
-        generateTokenAndSetCookie(newUser._id, res);
+        // Generate token and set it in the cookie
+        const token = generateTokenAndSetCookie(newUser._id, res);
+
+        if (!token) {
+            // Handle case where token generation failed, though generateTokenAndSetCookie logs errors
+            console.error('Failed to generate token during signup');
+            return res.status(500).json({ error: 'Failed to generate authentication token during signup' });
+        }
 
         res.status(201).json({
             message: "User registered successfully",
+            token, // Include the token in the response
             user: {
                 _id: newUser._id,
                 firstName: newUser.firstName,
