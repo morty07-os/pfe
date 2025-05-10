@@ -36,6 +36,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import { useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import SidebarFilters from './SidebarFilters';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+
 function formatDateDMY(dateStr) {
   if (!dateStr) return '';
   const [year, month, day] = dateStr.split('-');
@@ -420,8 +422,8 @@ export default function AllOffersPage() {
                     <Card sx={{
                       borderRadius: 2,
                       boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                      border: isOwnOffer ? '2px solid red' : '1px solid #e2e8f0', // Highlight if own offer
-                      backgroundColor: isOwnOffer ? '#fff5f5' : 'inherit', // Light red background if own offer
+                      border: isOwnOffer ? '2px solid #ef4444' : '1px solid #e2e8f0',
+                      backgroundColor: isOwnOffer ? '#fff5f5' : 'inherit',
                       transition: 'all 0.2s ease-in-out',
                       '&:hover': {
                         boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
@@ -437,16 +439,31 @@ export default function AllOffersPage() {
                         top: 0,
                         height: '100%',
                         width: 5,
-                        bgcolor: isOwnOffer ? 'red' : '#64748b', // Red side bar for own offer
+                        bgcolor: isOwnOffer ? '#ef4444' : '#64748b',
                         borderRadius: '4px 0 0 4px',
                       }
                     }}>
                       {isOwnOffer && (
-                        <Tooltip title="This is your own listing. You cannot book it.">
-                          <Box sx={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'red', color: 'white', padding: '2px 8px', borderRadius: 1, fontSize: '0.75rem', zIndex: 1 }}>
-                            Your Offer
+                        <Box sx={{ 
+                          position: 'absolute', 
+                          top: 8, 
+                          right: 8, 
+                          zIndex: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}>
+                          <Chip
+                            icon={<CheckCircleIcon sx={{ color: 'white !important' }} />}
+                            label="Your Car"
+                            sx={{
+                              bgcolor: '#ef4444',
+                              color: 'white',
+                              fontWeight: 600,
+                              '& .MuiChip-label': { px: 1 }
+                            }}
+                          />
                           </Box>
-                        </Tooltip>
                       )}
                       <Box sx={{
                         display: 'flex',
@@ -616,13 +633,13 @@ export default function AllOffersPage() {
                             />
                           </Box>
                           <Button
-                            component={isOwnOffer ? undefined : Link} // Disable Link behavior if own offer
+                            component={isOwnOffer ? undefined : Link}
                             to={isOwnOffer ? undefined : `/car-details/${offer._id}`}
                             variant="contained"
-                            disabled={isOwnOffer} // Disable button if own offer
+                            disabled={isOwnOffer}
                             sx={{
                               alignSelf: 'flex-start',
-                              bgcolor: isOwnOffer ? '#e0e0e0' : '#64748b', // Greyed out if own offer
+                              bgcolor: isOwnOffer ? '#e0e0e0' : '#64748b',
                               color: isOwnOffer ? '#a0a0a0' : 'white',
                               borderRadius: 1,
                               px: 3,
