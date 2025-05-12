@@ -15,6 +15,7 @@ import CarDetailsPage from './pages/CarDetailsPage'; // Import the CarDetailsPag
 import BookingPage from './pages/BookingPage'; // Import the BookingPage component
 import ChatPage from './pages/ChatPage'; // Import the new ChatPage component
 import PaymentPage from './pages/PaymentPage'; // Import the PaymentPage component
+import MapSelectPage from './pages/MapSelectPage'; // Import the MapSelectPage component
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
             <Route path="/car-details/:carId" element={<CarDetailsPage />} /> {/* Add route for CarDetailsPage */}
             <Route path="/booking/:carId" element={<BookingPage />} /> {/* Add route for BookingPage */}
             <Route path="/payment/:carId" element={<PaymentPage />} /> {/* Add route for PaymentPage */}
+            <Route path="/map-select" element={<MapSelectPage />} /> {/* Add route for MapSelectPage */}
           </Routes>
         </div>
       </BrowserRouter>

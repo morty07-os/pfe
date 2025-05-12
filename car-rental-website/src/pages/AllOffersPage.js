@@ -560,7 +560,7 @@ export default function AllOffersPage() {
                             </Box>
                           </Box>
                           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <LocationOnIcon sx={{ color: '#ef4444', mr: 0.5 }} />
+                            <LocationOnIcon sx={{ color: '#64748b', mr: 0.5 }} />
                             <Typography variant="body2" sx={{
                               color: '#64748b',
                               fontWeight: 600

@@ -31,7 +31,7 @@ const buttonStyles = (iconColor) => ({
   transition: 'color 0.3s ease',
 });
 
-const Navbar = ({ sx = {}, iconColor = '#333' }) => {
+const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [showSignIn, setShowSignIn] = useState(false);
@@ -144,26 +144,26 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: '#fff', ...sx }}>
+      <AppBar position="static" sx={{ backgroundColor: '#000', ...sx }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <IconButton
             size="large"
             edge="start"
             color="inherit"
             aria-label="menu"
-            sx={{ color: iconColor }}
+            sx={{ color: '#fff' }}
           >
-            <MenuIcon sx={{ color: iconColor }} />
+            <MenuIcon sx={{ color: '#fff' }} />
           </IconButton>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
             {/* Navigate to all offers page */}
             <IconButton 
               color="inherit" 
-              sx={{ color: iconColor }}
+              sx={{ color: '#fff' }}
               onClick={() => navigate('/offers')}
             >
-              <KeyIcon sx={{ color: iconColor }} />
+              <KeyIcon sx={{ color: '#fff' }} />
             </IconButton>
             <Tooltip 
               title={isLoggedIn ? "Post a car" : "Sign in to post a car"} 
@@ -172,11 +172,11 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
             >
               <IconButton 
                 color="inherit" 
-                sx={{ color: iconColor }}
+                sx={{ color: '#fff' }}
                 onClick={handlePostCarClick}
               >
                 <AddCircleIcon sx={{ 
-                  color: 'inherit',
+                  color: '#fff',
                   fontSize: '1.5rem'
                 }} />
               </IconButton>
@@ -184,7 +184,7 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
             <IconButton 
               color="inherit" 
               sx={{ 
-                color: iconColor,
+                color: '#fff',
                 '&:hover': {
                   color: '#3498db',
                   cursor: 'pointer',
@@ -193,7 +193,7 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
               }}
               onClick={handleAccountClick}
             >
-              <AccountCircleIcon sx={{ color: iconColor }} />
+              <AccountCircleIcon sx={{ color: '#fff' }} />
             </IconButton>
             <Menu
               anchorEl={anchorEl}
@@ -218,7 +218,7 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
                       gap: 1.5
                     }}
                   >
-                    <LoginIcon fontSize="small" sx={{ color: iconColor }} />
+                    <LoginIcon fontSize="small" sx={{ color: '#333' }} />
                     Sign In
                   </MenuItem>
                   <MenuItem 
@@ -229,7 +229,7 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
                       gap: 1.5
                     }}
                   >
-                    <PersonAddIcon fontSize="small" sx={{ color: iconColor }} />
+                    <PersonAddIcon fontSize="small" sx={{ color: '#333' }} />
                     Sign Up
                   </MenuItem>
                 </>
@@ -246,7 +246,7 @@ const Navbar = ({ sx = {}, iconColor = '#333' }) => {
                       gap: 1.5
                     }}
                   >
-                    <AccountCircleIcon fontSize="small" sx={{ color: iconColor }} />
+                    <AccountCircleIcon fontSize="small" sx={{ color: '#333' }} />
                     Profile
                   </MenuItem>
                   <MenuItem 

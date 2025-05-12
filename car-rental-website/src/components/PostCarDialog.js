@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Dialog, DialogContent, DialogActions, Button, TextField, Box, Typography, InputAdornment, MenuItem, IconButton, Snackbar, Alert
+  Dialog, DialogContent, DialogActions, Button, TextField, Box, Typography, InputAdornment, MenuItem, IconButton, Snackbar, Alert,
+  DialogTitle, Paper, CircularProgress
 } from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloseIcon from '@mui/icons-material/Close';
-import WilayaDropdown from './WilayaDropdown';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import SearchIcon from '@mui/icons-material/Search';
 
 // Import Leaflet CSS
 import 'leaflet/dist/leaflet.css';
@@ -13,7 +16,10 @@ import 'leaflet/dist/leaflet.css';
 // Import Leaflet and fix icon issue
 import L from 'leaflet';
 import { createRoot } from 'react-dom/client';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+
+// Import geosearch
+import { OpenStreetMapProvider } from 'leaflet-geosearch';
 
 // Fix for default marker icons in React-Leaflet
 const DefaultIcon = L.icon({
@@ -27,6 +33,251 @@ const DefaultIcon = L.icon({
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
+
+// Create a custom search component that doesn't use useMap
+function SearchControl({ onLocationFound, mapRef }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const provider = useRef(new OpenStreetMapProvider());
+  const searchTimeout = useRef(null);
+  
+  // Function to fetch suggestions as user types, limited to Algeria
+  const fetchSuggestions = async (query) => {
+    if (!query.trim() || query.trim().length < 2) return;
+    
+    setIsSearching(true);
+    try {
+      // Add 'Algeria' to the search query to focus on Algerian locations
+      const searchQuery = `${query}, Algeria`;
+      const results = await provider.current.search({ query: searchQuery });
+      
+      // Filter results to ensure they're in Algeria
+      const algerianResults = results.filter(result => {
+        const label = result.label.toLowerCase();
+        return label.includes('algeria') || label.includes('algérie') || label.includes('الجزائر');
+      });
+      
+      setSearchResults(algerianResults.slice(0, 5)); // Limit to 5 results
+      setShowResults(true);
+    } catch (error) {
+      console.error('Search suggestion error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+  
+  // Handle input change with debounce
+  const handleInputChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Clear previous timeout
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+    
+    // If query is empty, clear results
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+    
+    // Set new timeout for debounce (300ms)
+    searchTimeout.current = setTimeout(() => {
+      fetchSuggestions(query);
+    }, 300);
+  };
+  
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
+  }, []);
+  
+  const handleResultClick = (result) => {
+    const { y: lat, x: lng } = result;
+    const location = { lat, lng };
+    onLocationFound(location);
+    if (mapRef.current) {
+      mapRef.current.flyTo([lat, lng], 15);
+    }
+    setShowResults(false);
+    setSearchQuery(result.label.split(',')[0]); // Set search input to selected location name
+  };
+  
+  return (
+    <Paper sx={{
+      position: 'absolute',
+      top: 16,
+      left: 16,
+      right: 16,
+      zIndex: 1000,
+      borderRadius: 3,
+      boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+      overflow: 'hidden',
+      bgcolor: 'rgba(255,255,255,0.98)',
+      maxWidth: 'calc(100% - 32px)',
+      border: '1px solid rgba(203, 213, 225, 0.8)'
+    }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', p: 1.5 }}>
+        <TextField
+          fullWidth
+          placeholder="Search for a location in Algeria..."
+          value={searchQuery}
+          onChange={handleInputChange}
+          onKeyPress={(e) => e.key === 'Enter' && searchResults.length > 0 && handleResultClick(searchResults[0])}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: '#64748b' }} />
+              </InputAdornment>
+            ),
+            sx: {
+              borderRadius: 2,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#cbd5e1',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#94a3b8',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#475569',
+              },
+            }
+          }}
+          variant="outlined"
+          size="small"
+        />
+        {searchQuery && (
+          <IconButton 
+            onClick={() => {
+              setSearchQuery('');
+              setSearchResults([]);
+              setShowResults(false);
+            }} 
+            sx={{ color: '#94a3b8', ml: 1 }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        )}
+      </Box>
+
+      {/* Search results with suggestions */}
+      {(showResults && searchResults.length > 0) && (
+        <Box sx={{ 
+          maxHeight: 300, 
+          overflowY: 'auto',
+          borderTop: '1px solid #e2e8f0',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#f1f5f9',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: '#cbd5e1',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: '#94a3b8',
+          },
+        }}>
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              display: 'block', 
+              p: 1, 
+              bgcolor: '#f8fafc', 
+              color: '#64748b',
+              fontWeight: 500,
+              borderBottom: '1px solid #f1f5f9',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <Box 
+              component="img" 
+              src="https://flagcdn.com/w20/dz.png" 
+              alt="Algeria flag" 
+              sx={{ width: 16, height: 'auto', mr: 0.8 }} 
+            />
+            Algerian Locations
+          </Typography>
+          {searchResults.map((result, index) => (
+            <Box 
+              key={index}
+              onClick={() => handleResultClick(result)}
+              sx={{ 
+                p: 1.5, 
+                cursor: 'pointer', 
+                '&:hover': { bgcolor: '#f8fafc' },
+                borderBottom: index < searchResults.length - 1 ? '1px solid #f1f5f9' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Box sx={{ 
+                bgcolor: '#f1f5f9', 
+                borderRadius: '50%', 
+                width: 32, 
+                height: 32, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                mr: 1.5
+              }}>
+                <LocationOnIcon sx={{ color: '#475569', fontSize: 18 }} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                  {result.label.split(',')[0]}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.5 }}>
+                  {result.label.split(',').slice(1).join(',').trim()}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      )}
+      
+      {/* No results message */}
+      {showResults && searchResults.length === 0 && !isSearching && searchQuery.trim().length >= 2 && (
+        <Box sx={{ p: 2, borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <SearchIcon fontSize="small" sx={{ color: '#94a3b8', mr: 0.5 }} />
+              <Box 
+                component="img" 
+                src="https://flagcdn.com/w20/dz.png" 
+                alt="Algeria flag" 
+                sx={{ width: 16, height: 'auto', ml: 0.5 }} 
+              />
+            </Box>
+            No locations found in Algeria. Try a different search term or be more specific.
+          </Typography>
+        </Box>
+      )}
+      
+      {/* Loading indicator */}
+      {isSearching && (
+        <Box sx={{ p: 2, borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <CircularProgress size={20} sx={{ color: '#475569', mr: 1.5 }} />
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
+            Searching locations...
+          </Typography>
+        </Box>
+      )}
+    </Paper>
+  );
+}
 
 function LocationMarker({ position, setPosition }) {
   const map = useMapEvents({
@@ -58,37 +309,170 @@ const brands = [
 const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
 const transmissions = ['Manual', 'Automatic'];
 
+const carFeatures = [
+  { 
+    id: 'airConditioning', 
+    label: 'Air Conditioning', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 4V20M4 12H20M7 7L17 17M7 17L17 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  },
+  { 
+    id: 'bluetooth', 
+    label: 'Bluetooth', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 8L18 16L12 22V2L18 8L6 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  },
+  { 
+    id: 'cruiseControl', 
+    label: 'Cruise Control', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 4V8M12 12V16M4 12H8M16 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  },
+  { 
+    id: 'parkingSensors', 
+    label: 'Parking Sensors', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 8V16M8 4H16M20 8V16M8 20H16M9 12H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  },
+  { 
+    id: 'reverseCam', 
+    label: 'Reverse Camera', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="8" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z" stroke="currentColor" strokeWidth="2" />
+      <path d="M7 8L9 4H15L17 8" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  },
+  { 
+    id: 'usb', 
+    label: 'USB Port', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 10V2M12 22V16M8 6H16M8 18H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <rect x="8" y="10" width="8" height="6" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  },
+  { 
+    id: 'auxInput', 
+    label: 'AUX Input', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 12H7M17 12H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" />
+      <path d="M10 16L14 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  },
+  { 
+    id: 'leatherSeats', 
+    label: 'Leather Seats', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 12V19H19V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M5 8V5H19V8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M5 8C5 10.2091 8.13401 12 12 12C15.866 12 19 10.2091 19 8" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  },
+  { 
+    id: 'heatedSeats', 
+    label: 'Heated Seats', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 12V19H19V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12 5V9M9 6L15 8M9 8L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  },
+  { 
+    id: 'sunroof', 
+    label: 'Sunroof', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="8" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M8 8V6C8 4.89543 9.79086 4 12 4C14.2091 4 16 4.89543 16 6V8" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  },
+  { 
+    id: 'navigation', 
+    label: 'Navigation', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 4V12L16 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  },
+  { 
+    id: 'keylessEntry', 
+    label: 'Keyless Entry', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="8" cy="15" r="4" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 15H19V10L16 7H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  },
+  { 
+    id: 'alloyWheels', 
+    label: 'Alloy Wheels', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 4V9M12 15V20M4 12H9M15 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  },
+  { 
+    id: 'childSeat', 
+    label: 'Child Seat', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="7" r="3" stroke="currentColor" strokeWidth="2" />
+      <path d="M8 14H16L17 20H7L8 14Z" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  },
+  { 
+    id: 'airbags', 
+    label: 'Airbags', 
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 8V16M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  }
+];
+
 function PostCarDialog({ open, onClose }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
   // Move state declarations outside of conditional blocks
   const [formData, setFormData] = useState({
-    images: [],
     carName: '',
     brand: '',
-    description: '', 
-    energy: '',
-    seats: '',
-    doors: '',
-    transmission: '',
-    mileage: '',
-    engine: '',
-    wilaya: '',
-    availabilityStart: '',
-    availabilityEnd: '',
+    description: '',
     price: '',
-    location: null, // For storing map coordinates
+    energy: '',
+    transmission: '',
+    images: [],
+    location: null,
+    features: {}
   });
   const [imagePreviews, setImagePreviews] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Add authentication check when dialog opens
+  // Add authentication check when dialog opens and check for selected location
   useEffect(() => {
     if (!token && open) {
       console.log("No token found, redirecting to sign in");
       onClose(); // Close the dialog
       navigate('/sign-in'); // Redirect to sign-in page
+    }
+    
+    // Check for selected location in localStorage when dialog opens
+    if (open) {
+      const savedLocation = localStorage.getItem('selectedLocation');
+      if (savedLocation) {
+        try {
+          const locationData = JSON.parse(savedLocation);
+          setFormData(prev => ({ ...prev, location: locationData }));
+          // Clear the localStorage after retrieving the location
+          localStorage.removeItem('selectedLocation');
+        } catch (error) {
+          console.error('Error parsing saved location:', error);
+        }
+      }
     }
   }, [open, onClose, navigate, token]);
 
@@ -122,13 +506,102 @@ function PostCarDialog({ open, onClose }) {
     setImagePreviews(newPreviews);
   };
 
-  const handleWilayaChange = (wilaya) => {
-    setFormData(prev => ({ ...prev, wilaya }));
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
+  
+  const handleOpenMapDialog = () => {
+    setMapDialogOpen(true);
+    // If we already have a location, center the map on it
+    if (formData.location && mapRef.current) {
+      setTimeout(() => {
+        mapRef.current.setView([formData.location.lat, formData.location.lng], 15);
+      }, 300);
+    }
+  };
+  
+  const handleCloseMapDialog = () => {
+    setMapDialogOpen(false);
+  };
+  
+  const handleUseCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          // Update the map center to show the current location
+          if (mapRef.current) {
+            mapRef.current.setView([latitude, longitude], 15);
+          }
+          
+          // Set the location in form data
+          setFormData(prev => ({
+            ...prev,
+            location: { lat: latitude, lng: longitude }
+          }));
+          
+          setSnackbar({
+            open: true,
+            message: 'Current location detected and shown on map',
+            severity: 'success'
+          });
+          
+          // Don't close the dialog automatically
+          // Let the user confirm the location by clicking the Confirm button
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          setSnackbar({
+            open: true,
+            message: 'Could not get your location. Please try again or select on map.',
+            severity: 'error'
+          });
+        }
+      );
+    } else {
+      setSnackbar({
+        open: true,
+        message: 'Geolocation is not supported by your browser',
+        severity: 'error'
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check if location is set
+    if (!formData.location) {
+      setSnackbar({
+        open: true,
+        message: 'Please set a pickup location before submitting',
+        severity: 'error'
+      });
+      return;
+    }
+    
     try {
+      // Create a FormData object to handle file uploads
+      const data = new FormData();
+      
+      // Append all form fields
+      data.append('carName', formData.carName);
+      data.append('brand', formData.brand);
+      data.append('description', formData.description);
+      data.append('energy', formData.energy);
+      data.append('seats', formData.seats);
+      data.append('doors', formData.doors);
+      data.append('transmission', formData.transmission);
+      data.append('mileage', formData.mileage);
+      data.append('engine', formData.engine);
+      // No longer using wilaya field, using location coordinates instead
+      data.append('availabilityStart', formData.availabilityStart);
+      data.append('availabilityEnd', formData.availabilityEnd);
+      data.append('price', formData.price);
+      
+      // Append location data
+      data.append('location[lat]', formData.location.lat);
+      data.append('location[lng]', formData.location.lng);
+
       // Check for token again before submitting
       if (!token) {
         console.error("No token found during submission");
@@ -162,6 +635,8 @@ function PostCarDialog({ open, onClose }) {
         }
       }
 
+      // Append images
+      formData.images.forEach((image) => data.append('images', image));
       const formDataToSend = new FormData();
       Object.keys(formData).forEach((key) => {
         if (key === 'images') {
@@ -196,7 +671,8 @@ function PostCarDialog({ open, onClose }) {
     setSnackbar({ open: false, message: '', severity: 'success' });
   };
 
-
+  // Map and marker references
+  const mapRef = useRef(null);
 
   return (
     <>
@@ -300,6 +776,7 @@ function PostCarDialog({ open, onClose }) {
                   ))}
                 </Box>
               </Box>
+              {/* First pickup location button removed as requested */}
               {/* Description */}
               <TextField
                 required
@@ -381,39 +858,46 @@ function PostCarDialog({ open, onClose }) {
                 >
                   {brands.map(b => <MenuItem key={b} value={b}>{b}</MenuItem>)}
                 </TextField>
-                <WilayaDropdown
-                  value={formData.wilaya}
-                  onChange={handleWilayaChange}
-                  sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: '#f1f5f9', boxShadow: '0 1px 4px rgba(30,41,59,0.03)', '&:hover': { bgcolor: '#e2e8f0' }, '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' } }, '& .MuiInputLabel-root': { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+                <TextField
+                  fullWidth
+                  onClick={handleOpenMapDialog}
+                  value={formData.location ? 'Location Selected' : 'Click to set pickup location'}
+                  sx={{ 
+                    '& .MuiInputBase-input': { 
+                      color: formData.location ? '#334155' : '#64748b',
+                      fontWeight: formData.location ? 500 : 400
+                    }
+                  }}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationOnIcon sx={{ color: formData.location ? '#475569' : '#64748b' }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: formData.location ? (
+                      <InputAdornment position="end">
+                        <Typography variant="caption" sx={{ color: '#475569', fontWeight: 500, mr: 1 }}>
+                          Click to change
+                        </Typography>
+                      </InputAdornment>
+                    ) : null,
+                    sx: {
+                      borderRadius: 2.5,
+                      bgcolor: formData.location ? '#e2e8f0' : '#f1f5f9',
+                      border: formData.location ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                      boxShadow: formData.location ? '0 2px 6px rgba(30,41,59,0.08)' : '0 1px 4px rgba(30,41,59,0.03)',
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: '#e2e8f0', borderColor: '#cbd5e1' },
+                      '&.Mui-focused': { boxShadow: '0 0 0 2px #475569', borderColor: '#475569' },
+                      height: 56,
+                      pl: 2
+                    }
+                  }}
+                  value={formData.location ? 'Pickup Location Set ✓' : 'Click to set pickup location'}
+                  onClick={handleOpenMapDialog}
+                  sx={{ cursor: 'pointer' }}
                 />
-              </Box>
-              
-              {/* Map Location Selection */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#334155', letterSpacing: 0.3 }}>
-                  Select Car Location
-                </Typography>
-                <Box sx={{ height: 250, width: '100%', borderRadius: 2.5, overflow: 'hidden', border: '1px solid #cbd5e1' }}>
-                  <MapContainer
-                    center={[36.7529, 3.0420]} // Default to Algiers coordinates
-                    zoom={6}
-                    style={{ height: '100%', width: '100%' }}
-                  >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                    <LocationMarker 
-                      position={formData.location} 
-                      setPosition={(pos) => setFormData(prev => ({ ...prev, location: pos }))} 
-                    />
-                  </MapContainer>
-                </Box>
-                {formData.location && (
-                  <Typography variant="caption" sx={{ color: '#64748b', fontStyle: 'italic' }}>
-                    Selected location: {formData.location.lat.toFixed(4)}, {formData.location.lng.toFixed(4)}
-                  </Typography>
-                )}
               </Box>
               
               {/* Energy, Engine, Transmission */}
@@ -429,7 +913,7 @@ function PostCarDialog({ open, onClose }) {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><rect x="7" y="7" width="6" height="8" rx="1.2" stroke="#64748b" strokeWidth="1.5"/><rect x="10" y="6" width="2" height="2" rx="0.5" stroke="#64748b" strokeWidth="1.2"/><path d="M8.5 8.5l5 5" stroke="#64748b" strokeWidth="1.1" strokeLinecap="round"/><rect x="9" y="11" width="2" height="2.5" rx="0.7" stroke="#64748b" strokeWidth="1.1"/></svg>
+                        <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><rect x="7" y="7" width="6" height="8" rx="1.2" stroke="#64748b" strokeWidth="1.5"/><rect x="10" y="6" width="2" height="2" rx="0.5" fill="#64748b"/><path d="M8.5 8.5l5 5" stroke="#64748b" strokeWidth="1.1" strokeLinecap="round"/><rect x="9" y="11" width="2" height="2.5" rx="0.7" stroke="#64748b" strokeWidth="1.1"/></svg>
                       </InputAdornment>
                     ),
                     sx: {
@@ -662,6 +1146,85 @@ function PostCarDialog({ open, onClose }) {
                   }}
                 />
               </Box>
+              
+              {/* Car Features */}
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, color: '#334155', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                  <Box component="span" sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                    <svg width="20" height="20" fill="none">
+                      <rect width="20" height="20" rx="10" fill="#e2e8f0"/>
+                      <path d="M6 10h8M6 7h8M6 13h8" stroke="#475569" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </Box>
+                  Car Features
+                </Typography>
+                
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr', md: 'repeat(5, 1fr)' },
+                  gap: 1.5,
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  boxShadow: 'inset 0 1px 5px rgba(100,116,139,0.05)'
+                }}>
+                  {carFeatures.map((feature) => (
+                    <Box 
+                      key={feature.id}
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          features: {
+                            ...prev.features,
+                            [feature.id]: !prev.features[feature.id]
+                          }
+                        }));
+                      }}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        p: 1.5,
+                        borderRadius: 2,
+                        cursor: 'pointer',
+                        bgcolor: formData.features[feature.id] ? '#e2e8f0' : 'transparent',
+                        border: formData.features[feature.id] ? '1px solid #cbd5e1' : '1px solid transparent',
+                        boxShadow: formData.features[feature.id] ? '0 2px 4px rgba(15,23,42,0.06)' : 'none',
+                        '&:hover': {
+                          bgcolor: formData.features[feature.id] ? '#e2e8f0' : '#f1f5f9',
+                          borderColor: formData.features[feature.id] ? '#94a3b8' : '#cbd5e1'
+                        },
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Box sx={{ 
+                        mr: 1.5, 
+                        fontSize: '1.2rem',
+                        width: 28,
+                        height: 28,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: formData.features[feature.id] ? '#475569' : '#f1f5f9',
+                        color: formData.features[feature.id] ? 'white' : '#64748b',
+                        borderRadius: '50%',
+                        transition: 'all 0.2s ease'
+                      }}>
+                        {feature.icon}
+                      </Box>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: formData.features[feature.id] ? '#334155' : '#64748b',
+                          fontWeight: formData.features[feature.id] ? 600 : 400
+                        }}
+                      >
+                        {feature.label}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
             </Box>
             <DialogActions sx={{ p: 0, pt: 4 }}>
               <Button
@@ -707,6 +1270,180 @@ function PostCarDialog({ open, onClose }) {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Map Dialog */}
+      <Dialog 
+        open={mapDialogOpen} 
+        onClose={handleCloseMapDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: '0 12px 50px -12px rgba(30,41,59,0.25)',
+            height: '80vh',
+            maxHeight: '700px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          p: 0, 
+          bgcolor: '#475569', 
+          borderBottom: '1px solid #334155',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          color: 'white',
+          height: 64
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
+            <LocationOnIcon sx={{ mr: 1.5, fontSize: 24 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, letterSpacing: 0.3 }}>
+              Select Pickup Location
+            </Typography>
+          </Box>
+          <IconButton onClick={handleCloseMapDialog} sx={{ color: 'white', mr: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        
+        <DialogContent sx={{ p: 0, position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {/* Map */}
+          <Box sx={{ flex: 1, position: 'relative' }}>
+            <MapContainer
+              center={formData.location || [36.7529, 3.0420]} // Default to Algiers if no position
+              zoom={formData.location ? 15 : 6}
+              style={{ height: '100%', width: '100%' }}
+              ref={mapRef}
+              zoomControl={true} // Use default zoom controls
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              <LocationMarker 
+                position={formData.location} 
+                setPosition={(pos) => setFormData(prev => ({ ...prev, location: pos }))} 
+              />
+            </MapContainer>
+            
+            {/* Search control rendered outside MapContainer */}
+            <SearchControl 
+              onLocationFound={(location) => setFormData(prev => ({ ...prev, location }))}
+              mapRef={mapRef}
+            />
+            
+            {/* Instructions panel removed as requested */}
+            
+            {/* Current location button - improved design */}
+            <Box sx={{ 
+              position: 'absolute', 
+              bottom: 16, 
+              right: 16, 
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
+              <Button
+                variant="contained"
+                onClick={handleUseCurrentLocation}
+                startIcon={<MyLocationIcon />}
+                sx={{
+                  borderRadius: 3,
+                  bgcolor: '#475569',
+                  color: 'white',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  py: 1.2,
+                  px: 2.5,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  '&:hover': { 
+                    bgcolor: '#334155',
+                    boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.2s ease',
+                  mb: 1
+                }}
+              >
+                Use My Location
+              </Button>
+              <Paper sx={{ 
+                p: 1, 
+                borderRadius: 2, 
+                bgcolor: 'rgba(255,255,255,0.9)', 
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                display: formData.location ? 'block' : 'none'
+              }}>
+                <Typography variant="caption" sx={{ color: '#475569', fontWeight: 500, display: 'flex', alignItems: 'center' }}>
+                  <LocationOnIcon sx={{ fontSize: 14, mr: 0.5, color: '#64748b' }} />
+                  {formData.location ? 'Location selected' : ''}
+                </Typography>
+              </Paper>
+            </Box>
+          </Box>
+        </DialogContent>
+        
+        <DialogActions sx={{ 
+          p: 2.5, 
+          borderTop: '1px solid #e2e8f0',
+          bgcolor: '#f8fafc',
+          display: 'flex',
+          justifyContent: 'space-between'
+        }}>
+          <Box>
+            {formData.location && (
+              <Typography variant="body2" sx={{ 
+                color: '#475569', 
+                display: 'flex', 
+                alignItems: 'center',
+                fontWeight: 500
+              }}>
+                <LocationOnIcon sx={{ fontSize: 18, mr: 0.8, color: '#64748b' }} />
+                Location selected
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Button 
+              onClick={handleCloseMapDialog}
+              sx={{ 
+                color: '#64748b', 
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2.5,
+                '&:hover': { bgcolor: '#f1f5f9' }
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="contained" 
+              onClick={handleCloseMapDialog}
+              disabled={!formData.location}
+              sx={{
+                bgcolor: '#475569',
+                color: 'white',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                '&:hover': { 
+                  bgcolor: '#334155',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.12)'
+                },
+                '&.Mui-disabled': { bgcolor: '#94a3b8', color: '#f1f5f9' }
+              }}
+            >
+              Confirm Location
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

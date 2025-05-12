@@ -533,7 +533,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <DirectionsCarIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
+                  <LocalGasStationIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
                   Diesel
                 </Box>
               </ToggleButton>
