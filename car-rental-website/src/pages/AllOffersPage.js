@@ -38,6 +38,119 @@ import dayjs from 'dayjs';
 import SidebarFilters from './SidebarFilters';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
+// Algeria wilaya coordinates for map display
+const algeriaWilayaCoordinates = {
+  'Adrar': { lat: 27.8742, lng: -0.2939 },
+  'Chlef': { lat: 36.1691, lng: 1.3387 },
+  'Laghouat': { lat: 33.8085, lng: 2.8822 },
+  'Oum El Bouaghi': { lat: 35.8775, lng: 7.1136 },
+  'Batna': { lat: 35.5552, lng: 6.1742 },
+  'Béjaïa': { lat: 36.7515, lng: 5.0557 },
+  'Biskra': { lat: 34.8512, lng: 5.7282 },
+  'Béchar': { lat: 31.6182, lng: -2.2186 },
+  'Blida': { lat: 36.4703, lng: 2.8281 },
+  'Bouira': { lat: 36.3754, lng: 3.9002 },
+  'Tamanrasset': { lat: 22.7903, lng: 5.5229 },
+  'Tébessa': { lat: 35.4049, lng: 8.1204 },
+  'Tlemcen': { lat: 34.8884, lng: -1.3143 },
+  'Tiaret': { lat: 35.3707, lng: 1.3166 },
+  'Tizi Ouzou': { lat: 36.7002, lng: 4.0566 },
+  'Alger': { lat: 36.7538, lng: 3.0588 },
+  'Djelfa': { lat: 34.6703, lng: 3.2505 },
+  'Jijel': { lat: 36.8207, lng: 5.7698 },
+  'Sétif': { lat: 36.1898, lng: 5.4108 },
+  'Saïda': { lat: 34.8414, lng: 0.1515 },
+  'Skikda': { lat: 36.8715, lng: 6.9075 },
+  'Sidi Bel Abbès': { lat: 35.1891, lng: -0.6331 },
+  'Annaba': { lat: 36.9142, lng: 7.7427 },
+  'Guelma': { lat: 36.4627, lng: 7.4306 },
+  'Constantine': { lat: 36.3650, lng: 6.6147 },
+  'Médéa': { lat: 36.2675, lng: 2.7634 },
+  'Mostaganem': { lat: 35.9312, lng: 0.0892 },
+  'M\'Sila': { lat: 35.7058, lng: 4.5419 },
+  'Mascara': { lat: 35.3979, lng: 0.1400 },
+  'Ouargla': { lat: 31.9527, lng: 5.3335 },
+  'Oran': { lat: 35.6969, lng: -0.6331 },
+  'El Bayadh': { lat: 33.6868, lng: 1.0169 },
+  'Illizi': { lat: 26.5088, lng: 8.4698 },
+  'Bordj Bou Arréridj': { lat: 36.0730, lng: 4.7635 },
+  'Boumerdès': { lat: 36.7663, lng: 3.4783 },
+  'El Tarf': { lat: 36.7669, lng: 8.3136 },
+  'Tindouf': { lat: 27.6711, lng: -8.1289 },
+  'Tissemsilt': { lat: 35.6072, lng: 1.8106 },
+  'El Oued': { lat: 33.3683, lng: 6.8517 },
+  'Khenchela': { lat: 35.4359, lng: 7.1457 },
+  'Souk Ahras': { lat: 36.2863, lng: 7.9511 },
+  'Tipaza': { lat: 36.5892, lng: 2.4130 },
+  'Mila': { lat: 36.4503, lng: 6.2648 },
+  'Aïn Defla': { lat: 36.2641, lng: 1.9685 },
+  'Naâma': { lat: 33.2669, lng: -0.3115 },
+  'Aïn Témouchent': { lat: 35.2997, lng: -1.1400 },
+  'Ghardaïa': { lat: 32.4902, lng: 3.6738 },
+  'Relizane': { lat: 35.7378, lng: 0.5556 },
+  'Timimoun': { lat: 29.2639, lng: 0.2306 },
+  'Bordj Badji Mokhtar': { lat: 21.3283, lng: 0.9545 },
+  'Ouled Djellal': { lat: 34.4204, lng: 5.0658 },
+  'Béni Abbès': { lat: 30.1329, lng: -2.1675 },
+  'In Salah': { lat: 27.1974, lng: 2.4903 },
+  'In Guezzam': { lat: 19.5719, lng: 5.7704 },
+  'Touggourt': { lat: 33.1058, lng: 6.0566 },
+  'Djanet': { lat: 24.5521, lng: 9.4820 },
+  'El M\'Ghair': { lat: 33.9553, lng: 5.9226 },
+  'El Meniaa': { lat: 30.5789, lng: 2.8793 }
+};
+
+// Popular locations within wilayas
+const popularLocations = {
+  'Alger': [
+    { name: 'Bab Ezzouar', address: 'Bab Ezzouar, Alger', lat: 36.7236, lng: 3.1813 },
+    { name: 'Hydra', address: 'Hydra, Alger', lat: 36.7473, lng: 3.0461 },
+    { name: 'Bab El Oued', address: 'Bab El Oued, Alger', lat: 36.7953, lng: 3.0562 },
+    { name: 'Kouba', address: 'Kouba, Alger', lat: 36.7236, lng: 3.0897 },
+    { name: 'Hussein Dey', address: 'Hussein Dey, Alger', lat: 36.7432, lng: 3.1092 }
+  ],
+  'Oran': [
+    { name: 'Bir El Djir', address: 'Bir El Djir, Oran', lat: 35.7153, lng: -0.5716 },
+    { name: 'Es Senia', address: 'Es Senia, Oran', lat: 35.6500, lng: -0.6167 },
+    { name: 'Arzew', address: 'Arzew, Oran', lat: 35.8561, lng: -0.3150 },
+    { name: 'Aïn El Turk', address: 'Aïn El Turk, Oran', lat: 35.7439, lng: -0.7683 },
+    { name: 'Mers El Kébir', address: 'Mers El Kébir, Oran', lat: 35.7333, lng: -0.7083 }
+  ],
+  'Constantine': [
+    { name: 'El Khroub', address: 'El Khroub, Constantine', lat: 36.2639, lng: 6.6936 },
+    { name: 'Hamma Bouziane', address: 'Hamma Bouziane, Constantine', lat: 36.4125, lng: 6.5992 },
+    { name: 'Didouche Mourad', address: 'Didouche Mourad, Constantine', lat: 36.4522, lng: 6.6367 },
+    { name: 'Zighoud Youcef', address: 'Zighoud Youcef, Constantine', lat: 36.5333, lng: 6.7167 },
+    { name: 'Ibn Ziad', address: 'Ibn Ziad, Constantine', lat: 36.3667, lng: 6.4333 }
+  ],
+  'Annaba': [
+    { name: 'El Bouni', address: 'El Bouni, Annaba', lat: 36.8667, lng: 7.7333 },
+    { name: 'Sidi Amar', address: 'Sidi Amar, Annaba', lat: 36.8000, lng: 7.7167 },
+    { name: 'El Hadjar', address: 'El Hadjar, Annaba', lat: 36.8000, lng: 7.7333 },
+    { name: 'Berrahal', address: 'Berrahal, Annaba', lat: 36.8333, lng: 7.4500 },
+    { name: 'Seraïdi', address: 'Seraïdi, Annaba', lat: 36.9167, lng: 7.6667 }
+  ]
+};
+
+// Car features for displaying in offer cards
+const carFeatures = [
+  { id: 'airConditioning', label: 'Air Conditioning' },
+  { id: 'bluetooth', label: 'Bluetooth' },
+  { id: 'cruiseControl', label: 'Cruise Control' },
+  { id: 'parkingSensors', label: 'Parking Sensors' },
+  { id: 'reverseCam', label: 'Reverse Camera' },
+  { id: 'usb', label: 'USB Port' },
+  { id: 'auxInput', label: 'AUX Input' },
+  { id: 'leatherSeats', label: 'Leather Seats' },
+  { id: 'heatedSeats', label: 'Heated Seats' },
+  { id: 'sunroof', label: 'Sunroof' },
+  { id: 'navigation', label: 'Navigation' },
+  { id: 'keylessEntry', label: 'Keyless Entry' },
+  { id: 'alloyWheels', label: 'Alloy Wheels' },
+  { id: 'childSeat', label: 'Child Seat' },
+  { id: 'airbags', label: 'Airbags' }
+];
+
 function formatDateDMY(dateStr) {
   if (!dateStr) return '';
   const [year, month, day] = dateStr.split('-');
@@ -114,7 +227,59 @@ export default function AllOffersPage() {
         const response = await fetch(`http://localhost:5001/api/cars/getcars?${queryParams}`);
         if (!response.ok) throw new Error('Failed to fetch offers');
         const data = await response.json();
-        setOffers(data);
+        console.log('Fetched car data:', data);
+        
+        // Add features and location data to all cars
+        const enhancedData = data.map(car => {
+          const wilaya = car.wilaya || 'Alger'; // Default to Alger if no wilaya specified
+          
+          // Get coordinates for the wilaya
+          const wilayaCoords = algeriaWilayaCoordinates[wilaya] || algeriaWilayaCoordinates['Alger'];
+          
+          // Check if we have popular locations for this wilaya
+          let locationData;
+          if (popularLocations[wilaya]) {
+            // Pick a random popular location from this wilaya
+            const randomIndex = Math.floor(Math.random() * popularLocations[wilaya].length);
+            locationData = popularLocations[wilaya][randomIndex];
+          } else {
+            // Create a generic location based on wilaya coordinates
+            // Add small random offset to avoid all cars in same wilaya having identical coordinates
+            const latOffset = (Math.random() - 0.5) * 0.05;
+            const lngOffset = (Math.random() - 0.5) * 0.05;
+            locationData = {
+              name: `${wilaya} Center`,
+              address: `${wilaya}, Algeria`,
+              lat: wilayaCoords.lat + latOffset,
+              lng: wilayaCoords.lng + lngOffset
+            };
+          }
+          
+          // Add random features if not present
+          const features = car.features || {
+            airConditioning: Math.random() > 0.4,
+            bluetooth: Math.random() > 0.5,
+            cruiseControl: Math.random() > 0.6,
+            parkingSensors: Math.random() > 0.5,
+            reverseCam: Math.random() > 0.6,
+            usb: Math.random() > 0.3,
+            navigation: Math.random() > 0.7,
+            sunroof: Math.random() > 0.8,
+            leatherSeats: Math.random() > 0.6,
+            heatedSeats: Math.random() > 0.7,
+            keylessEntry: Math.random() > 0.6,
+            alloyWheels: Math.random() > 0.5
+          };
+          
+          return {
+            ...car,
+            features,
+            location: car.location || locationData
+          };
+        });
+        
+        setOffers(enhancedData);
+        console.log('Enhanced car data with features and locations:', enhancedData);
       } catch (error) {
         console.error('Error fetching offers:', error.message);
       }
@@ -559,27 +724,62 @@ export default function AllOffersPage() {
                               <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}> /day</span>
                             </Box>
                           </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <LocationOnIcon sx={{ color: '#64748b', mr: 0.5 }} />
-                            <Typography variant="body2" sx={{
-                              color: '#64748b',
-                              fontWeight: 600
-                            }}>
-                              {offer.wilaya || 'Unknown Location'}
-                            </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+                              <LocationOnIcon sx={{ color: '#64748b', mr: 0.5 }} />
+                              <Typography variant="body2" sx={{
+                                color: '#64748b',
+                                fontWeight: 600
+                              }}>
+                                {offer.wilaya || 'Unknown Location'}
+                              </Typography>
+                            </Box>
                             
-                            {(offer.ownerName || offer.owner) && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-                                <PersonIcon sx={{ color: '#64748b', fontSize: 18, mr: 0.5 }} />
-                                <Typography variant="body2" sx={{
-                                  color: '#64748b',
-                                  fontWeight: 600
-                                }}>
-                                  {offer.ownerName?.firstName} {offer.ownerName?.lastName || 
-                                   offer.owner?.firstName} {offer.owner?.lastName}
-                                </Typography>
-                              </Box>
-                            )}
+                            <Box 
+                              component="button"
+                              onClick={() => {
+                                // Navigate to the map page with the car's ID and wilaya
+                                const wilaya = offer.wilaya || 'Alger';
+                                // Store the selected car's location in localStorage for the map page to highlight
+                                if (offer.location) {
+                                  localStorage.setItem('highlightedCarLocation', JSON.stringify({
+                                    carId: offer._id,
+                                    location: offer.location,
+                                    carName: offer.title || offer.carName,
+                                    wilaya: wilaya
+                                  }));
+                                }
+                                // Navigate to the map page
+                                window.location.href = `/map/${wilaya}`;
+                              }}
+                              sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '4px 8px',
+                                borderRadius: 1,
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  bgcolor: '#e2e8f0'
+                                }
+                              }}
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L16 5m0 12V5m0 0L9 7" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                              <Typography variant="body2" sx={{
+                                color: '#64748b',
+                                fontWeight: 600,
+                                ml: 0.5,
+                                fontSize: '0.8rem',
+                                textDecoration: 'underline',
+                                textUnderlineOffset: '2px'
+                              }}>
+                                View on map
+                              </Typography>
+                            </Box>
                           </Box>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                             <Chip
@@ -604,21 +804,24 @@ export default function AllOffersPage() {
                                 borderRadius: 1
                               }}
                             />
-                            {(offer.ownerName || offer.owner) && (
+                            {offer.location && (
                               <Chip
-                                avatar={
-                                  <Avatar sx={{ bgcolor: '#e2e8f0', color: '#475569', width: 24, height: 24 }}>
-                                    {offer.ownerName?.firstName?.charAt(0) || offer.owner?.firstName?.charAt(0) || 'U'}
-                                  </Avatar>
-                                }
-                                label={`${offer.ownerName?.firstName || offer.owner?.firstName || ''} ${offer.ownerName?.lastName || offer.owner?.lastName || 'Owner'}`}
+                                icon={<LocationOnIcon sx={{ color: '#64748b' }} />}
+                                label={offer.location.name || offer.location.address || 'Pickup Location'}
                                 size="small"
                                 sx={{
                                   bgcolor: '#f1f5f9',
                                   color: '#475569',
                                   fontWeight: 500,
-                                  borderRadius: 1
+                                  borderRadius: 1,
+                                  maxWidth: 200,
+                                  '& .MuiChip-label': {
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }
                                 }}
+                                title={offer.location.name || offer.location.address}
                               />
                             )}
                             <Chip
@@ -644,6 +847,7 @@ export default function AllOffersPage() {
                               }}
                             />
                           </Box>
+                          
                           <Box sx={{ 
                             display: 'flex',
                             flexDirection: { xs: 'column', sm: 'row' },
@@ -676,6 +880,57 @@ export default function AllOffersPage() {
                               }}
                             />
                           </Box>
+                          
+                          {/* Car Features */}
+                          {offer.features && Object.keys(offer.features).length > 0 && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="body2" sx={{ 
+                                color: '#475569', 
+                                fontWeight: 600, 
+                                mb: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5
+                              }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M6 10h12M6 6h12M6 14h12M6 18h12" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                                Features
+                              </Typography>
+                              <Box sx={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: 0.75,
+                                maxWidth: '100%'
+                              }}>
+                                {Object.entries(offer.features)
+                                  .filter(([key, value]) => value === true)
+                                  .map(([featureId]) => {
+                                    // Find the feature in carFeatures array
+                                    const feature = carFeatures.find(f => f.id === featureId);
+                                    if (!feature) return null;
+                                    
+                                    return (
+                                      <Chip
+                                        key={featureId}
+                                        size="small"
+                                        sx={{
+                                          height: 24,
+                                          bgcolor: '#e2e8f0',
+                                          color: '#334155',
+                                          fontWeight: 500,
+                                          fontSize: '0.75rem',
+                                          borderRadius: 1,
+                                          '& .MuiChip-label': { px: 1 }
+                                        }}
+                                        label={feature.label}
+                                      />
+                                    );
+                                  })}
+                              </Box>
+                            </Box>
+                          )}
+                          
                           <Button
                             component={isOwnOffer ? undefined : Link}
                             to={isOwnOffer ? undefined : `/car-details/${offer._id}`}

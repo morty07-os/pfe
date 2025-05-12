@@ -34,7 +34,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 // Import Leaflet CSS and components
 import 'leaflet/dist/leaflet.css';
-import '../styles/MapStyles.css'; // Import custom map styles
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 
@@ -46,22 +45,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// Custom car marker icon (blue-grey)
+// Custom car marker icon
 const carIcon = new L.Icon({
   iconUrl: 'https://cdn-icons-png.flaticon.com/512/3097/3097144.png',
   iconSize: [32, 32],
   iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
-  className: 'blue-grey-marker'
+  popupAnchor: [0, -32]
 });
 
-// Custom highlighted car marker icon (red)
+// Custom highlighted car marker icon
 const highlightedCarIcon = new L.Icon({
   iconUrl: 'https://cdn-icons-png.flaticon.com/512/3097/3097144.png',
   iconSize: [40, 40],
   iconAnchor: [20, 40],
   popupAnchor: [0, -40],
-  className: 'red-marker'
+  className: 'highlighted-marker'
 });
 
 // Custom user location marker icon

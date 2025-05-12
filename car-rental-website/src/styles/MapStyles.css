@@ -1,0 +1,32 @@
+/* Map marker styles */
+.blue-grey-marker {
+  filter: hue-rotate(200deg) saturate(0.8) brightness(0.9);
+}
+
+.red-marker {
+  filter: hue-rotate(320deg) saturate(1.5) brightness(1.2);
+  transform: scale(1.2);
+  z-index: 1000 !important;
+}
+
+/* Add a subtle pulsing effect to the selected marker */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.red-marker {
+  animation: pulse 1.5s infinite;
+}
+
+/* Ensure the selected marker is always on top */
+.leaflet-marker-icon.red-marker {
+  z-index: 1000 !important;
+}
