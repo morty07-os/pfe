@@ -436,6 +436,7 @@ const carFeatures = [
 function PostCarDialog({ open, onClose }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const mapRef = useRef(null);
 
   // Move state declarations outside of conditional blocks
   const [formData, setFormData] = useState({
@@ -451,6 +452,7 @@ function PostCarDialog({ open, onClose }) {
   });
   const [imagePreviews, setImagePreviews] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
 
   // Add authentication check when dialog opens and check for selected location
   useEffect(() => {
@@ -476,12 +478,9 @@ function PostCarDialog({ open, onClose }) {
     }
   }, [open, onClose, navigate, token]);
 
-  // Add immediate check on render
+  // If no token and dialog is open, don't render the component
   if (!token && open) {
-    // If component renders with open=true but no token, close immediately
-    setTimeout(() => onClose(), 0);
-    navigate('/SignIn'); // Redirect to sign-in page
-    return null; // Don't render anything
+    return null;
   }
 
   const handleChange = (e) => {
@@ -506,8 +505,6 @@ function PostCarDialog({ open, onClose }) {
     setImagePreviews(newPreviews);
   };
 
-  const [mapDialogOpen, setMapDialogOpen] = useState(false);
-  
   const handleOpenMapDialog = () => {
     setMapDialogOpen(true);
     // If we already have a location, center the map on it
@@ -670,9 +667,6 @@ function PostCarDialog({ open, onClose }) {
   const handleSnackbarClose = () => {
     setSnackbar({ open: false, message: '', severity: 'success' });
   };
-
-  // Map and marker references
-  const mapRef = useRef(null);
 
   return (
     <>
@@ -861,8 +855,9 @@ function PostCarDialog({ open, onClose }) {
                 <TextField
                   fullWidth
                   onClick={handleOpenMapDialog}
-                  value={formData.location ? 'Location Selected' : 'Click to set pickup location'}
+                  value={formData.location ? 'Pickup Location Set ✓' : 'Click to set pickup location'}
                   sx={{ 
+                    cursor: 'pointer',
                     '& .MuiInputBase-input': { 
                       color: formData.location ? '#334155' : '#64748b',
                       fontWeight: formData.location ? 500 : 400
@@ -894,9 +889,6 @@ function PostCarDialog({ open, onClose }) {
                       pl: 2
                     }
                   }}
-                  value={formData.location ? 'Pickup Location Set ✓' : 'Click to set pickup location'}
-                  onClick={handleOpenMapDialog}
-                  sx={{ cursor: 'pointer' }}
                 />
               </Box>
               
