@@ -16,6 +16,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import MailIcon from '@mui/icons-material/Mail'; // Import the messages icon
 import SignIn from './SignIn';
 import SignUp from './SignUp';
 import { PostCarDialog } from './PostCarDialog';
@@ -165,6 +166,17 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             >
               <KeyIcon sx={{ color: '#fff' }} />
             </IconButton>
+            {isLoggedIn && ( // Show messages icon only if user is logged in
+              <Tooltip title="Messages" arrow placement="bottom">
+                <IconButton 
+                  color="inherit" 
+                  sx={{ color: '#fff' }}
+                  onClick={() => navigate('/messages')}
+                >
+                  <MailIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
+                </IconButton>
+              </Tooltip>
+            )}
             <Tooltip 
               title={isLoggedIn ? "Post a car" : "Sign in to post a car"} 
               arrow

@@ -1,25 +1,43 @@
 // Import required modules
 import express from "express";
+import { createServer } from 'http';
+import { Server } from 'socket.io'; // Import Server from socket.io
 import authRoutes from "./routes/auth.routes.js";
 import dotenv from "dotenv";
-import connectMongoDB from './db/connectMONGODB.js'; 
+import connectMongoDB from './db/connectMONGODB.js';
 import cookieParser from "cookie-parser";
 import { ProtectedRoute } from "./midleware/ProtectedRoute.js";
 import { errorHandler } from './midleware/errorHandler.js';
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import cors from "cors"; // Import CORS
-import User from './models/user.models.js'; // Import the User model
-import path from "path"; // Import path
-import carRoutes from "./routes/car.routes.js"; // Import car routes
-import bookingRoutes from "./routes/booking.routes.js"; // Import booking routes
+import cors from "cors";
+import User from './models/user.models.js';
+import path from "path";
+import carRoutes from "./routes/car.routes.js";
+import bookingRoutes from "./routes/booking.routes.js";
+
 
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = 5001; 
+const PORT = 5001;
+
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Initialize socket.io with the HTTP server
+const io = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:3000", // Allow frontend origin
+        methods: ["GET", "POST"], // Allow specific methods
+        credentials: true // Allow cookies to be sent
+    },
+});
+
+
+
 
 // Apply security headers using Helmet
 app.use(helmet());
@@ -72,12 +90,14 @@ app.use("/api/cars", carRoutes);
 app.use("/api/bookings", bookingRoutes);
 
 
+
+
 // Centralized error handling middleware
 app.use(errorHandler);
 
 // Start the server and connect to MongoDB
-app.listen(PORT, async () => {
-    console.log(`server is running on port: ${PORT}`);
+httpServer.listen(PORT, async () => {
+    console.log(`Server is running on port: ${PORT}`);
     await connectMongoDB();
     await removeUsernameIndex(); // Ensure the username index is removed
 });

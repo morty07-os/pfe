@@ -8,7 +8,7 @@ import {
   CardContent,
   Button,
   Container,
-  Paper,
+  Paper, 
   Chip,
   Avatar,
   Divider,
@@ -535,41 +535,65 @@ export default function CarDetailsPage() {
                           €{car.price}/day
                         </Typography>
                       </Box>
-                      <Tooltip 
-                        title={isOwnCar ? "You cannot book your own car" : ""}
-                        placement="top"
-                      >
-                        <span> {/* Wrapper needed for disabled buttons with tooltip */}
-                          <Button
-                            variant="contained"
-                            onClick={() => navigate(`/booking/${carId}`)}
-                            disabled={isOwnCar}
-                            sx={{
-                              borderRadius: 99,
-                              background: isOwnCar 
-                                ? '#e0e0e0' 
-                                : 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
-                              color: isOwnCar ? '#a0a0a0' : '#fff',
-                              fontWeight: 600,
-                              py: { xs: 0.8, sm: 1 },
-                              px: { xs: 2, sm: 3 },
-                              textTransform: 'none',
-                              fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                              whiteSpace: 'nowrap', // Prevent text wrapping
-                              '&:hover': {
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Tooltip 
+                          title={isOwnCar ? "You cannot book your own car" : ""}
+                          placement="top"
+                        >
+                          <span> {/* Wrapper needed for disabled buttons with tooltip */}
+                            <Button
+                              variant="contained"
+                              onClick={() => navigate(`/booking/${carId}`)}
+                              disabled={isOwnCar}
+                              sx={{
+                                borderRadius: 99,
                                 background: isOwnCar 
                                   ? '#e0e0e0' 
-                                  : 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
-                                boxShadow: isOwnCar ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
-                              },
-                              transition: 'all 0.2s ease-in-out',
-                              cursor: isOwnCar ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            {isOwnCar ? "Your Own Car" : "Book Now"}
-                          </Button>
-                        </span>
-                      </Tooltip>
+                                  : 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                                color: isOwnCar ? '#a0a0a0' : '#fff',
+                                fontWeight: 600,
+                                py: { xs: 0.8, sm: 1 },
+                                px: { xs: 2, sm: 3 },
+                                textTransform: 'none',
+                                fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                                whiteSpace: 'nowrap',
+                                '&:hover': {
+                                  background: isOwnCar 
+                                    ? '#e0e0e0' 
+                                    : 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
+                                  boxShadow: isOwnCar ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
+                                },
+                                transition: 'all 0.2s ease-in-out',
+                                cursor: isOwnCar ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              {isOwnCar ? "Your Own Car" : "Book Now"}
+                            </Button>
+                          </span>
+                        </Tooltip>
+                        <Button
+                          variant="outlined"
+                          onClick={() => navigate(`/conversation/${carId}/${car.owner?._id || car.owner}`)}
+                          sx={{
+                            borderRadius: 99,
+                            borderColor: '#475569',
+                            color: '#475569',
+                            fontWeight: 600,
+                            py: { xs: 0.8, sm: 1 },
+                            px: { xs: 2, sm: 3 },
+                            textTransform: 'none',
+                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                            whiteSpace: 'nowrap',
+                            '&:hover': {
+                              background: 'rgba(71, 85, 105, 0.1)',
+                              borderColor: '#334155',
+                            },
+                            transition: 'all 0.2s ease-in-out',
+                          }}
+                        >
+                          Start Conversation
+                        </Button>
+                      </Box>
                     </Box>
                   </Grid>
 

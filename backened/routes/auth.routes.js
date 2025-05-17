@@ -4,7 +4,7 @@ import { login, signup, logout, getMe, refreshToken } from "../controllers/auth.
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 
-import { processPayment } from "../controllers/payment.controller.js";
+//import { processPayment } from "../controllers/payment.controller.js";
 
 const router = express.Router();
 
@@ -61,6 +61,6 @@ router.delete("/deletecars/:id", ProtectedRoute, deleteCar); // Delete a car
 
 
 // Payment route
-router.post("/payments", ProtectedRoute, processPayment); // Process a payment
+//router.post("/payments", ProtectedRoute, processPayment); // Process a payment
 
 export default router;
