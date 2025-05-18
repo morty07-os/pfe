@@ -1,0 +1,4189 @@
+Okay, I will list the files within each subdirectory of the `backened/` directory.
+
+```
+backened/
+├── .env
+├── controllers/
+│   ├── auth.controller.js
+│   ├── booking.controller.js
+│   ├── car.controller.js
+│   └── rating.controller.js
+├── db/
+│   └── connectMONGODB.js
+├── lib/
+│   └── utils/
+│       └── generateToken.js
+├── midleware/
+│   ├── errorHandler.js
+│   └── ProtectedRoute.js
+├── models/
+│   ├── booking.models.js
+│   ├── car.models.js
+│   ├── payment.models.js
+│   ├── rating.models.js
+│   └── user.models.js
+├── routes/
+│   ├── auth.routes.js
+│   ├── booking.routes.js
+│   ├── car.routes.js
+├── server.js
+├── utils/
+│   └── auth.utils.js
+└── validators/
+    └── car.validator.js
+```
+// backened/.env
+JWT_SECRET=YourStrongSecretKey123!@#
+JWT_REFRESH_SECRET=YourStrongRefreshSecretKey456!@#
+MONGO_URI=mongodb://localhost:27017/car-rental
+MONGODB_URI=mongodb://localhost:27017/car-rental
+PORT=5001
+NODE_ENV=development
+
+// backened/server.js
+// Import required modules
+import express from "express";
+import { createServer } from 'http';
+import { Server } from 'socket.io'; // Import Server from socket.io
+import authRoutes from "./routes/auth.routes.js";
+import dotenv from "dotenv";
+import connectMongoDB from './db/connectMONGODB.js';
+import cookieParser from "cookie-parser";
+import { ProtectedRoute } from "./midleware/ProtectedRoute.js";
+import { errorHandler } from './midleware/errorHandler.js';
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import cors from "cors";
+import User from './models/user.models.js';
+import path from "path";
+import carRoutes from "./routes/car.routes.js";
+import bookingRoutes from "./routes/booking.routes.js";
+
+
+
+// Load environment variables
+dotenv.config();
+
+const app = express();
+const PORT = 5001;
+
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Initialize socket.io with the HTTP server
+const io = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:3000", // Allow frontend origin
+        methods: ["GET", "POST"], // Allow specific methods
+        credentials: true // Allow cookies to be sent
+    },
+});
+
+
+
+
+// Apply security headers using Helmet
+app.use(helmet());
+
+// Enable CORS for the frontend
+app.use(cors({
+    origin: "http://localhost:3000", // Ensure this matches the frontend's URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific HTTP methods
+    credentials: true, // Allow cookies to be sent
+}));
+
+// Rate limiting middleware to prevent abuse
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+// Middleware for parsing JSON and URL-encoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware for parsing cookies
+app.use(cookieParser());
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), { setHeaders: (res) => res.set('Cross-Origin-Resource-Policy', 'cross-origin') }));
+
+// Function to remove the username index if it exists
+const removeUsernameIndex = async () => {
+    try {
+        const indexes = await User.collection.indexes();
+        const usernameIndex = indexes.find(index => index.name === "username_1");
+        if (usernameIndex) {
+            await User.collection.dropIndex("username_1");
+            console.log("Dropped username index successfully.");
+        }
+    } catch (error) {
+        console.error("Error dropping username index:", error.message);
+    }
+};
+
+// Mount authentication routes
+app.use("/api/auth", authRoutes);
+
+// Mount car routes
+app.use("/api/cars", carRoutes);
+
+// Mount booking routes
+app.use("/api/bookings", bookingRoutes);
+
+
+
+
+// Centralized error handling middleware
+app.use(errorHandler);
+
+// Start the server and connect to MongoDB
+httpServer.listen(PORT, async () => {
+    console.log(`Server is running on port: ${PORT}`);
+    await connectMongoDB();
+    await removeUsernameIndex(); // Ensure the username index is removed
+});
+
+// backened/controllers/auth.controller.js
+import User from '../models/user.models.js';
+import bcrypt from 'bcryptjs';
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
+import jwt from 'jsonwebtoken';
+
+// Handles user signup
+export const signup = async (req, res) => {
+    try {
+        console.log("Signup request body:", req.body); // Log the request body
+
+        const { firstName, lastName, birthDate, phone, residence, email, password } = req.body;
+
+        // Validate required fields
+        if (!email) {
+            return res.status(400).json({ error: "Email is required" });
+        }
+
+        // Validate required fields
+        if (!req.files || !req.files.licenceFront || !req.files.licenceBack) {
+            return res.status(400).json({ error: "Driving licence images are required" });
+        }
+
+        const licenceFront = req.files.licenceFront[0].path; // Get file path
+        const licenceBack = req.files.licenceBack[0].path; // Get file path
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.toLowerCase())) {
+            console.log("Invalid email format"); // Log invalid email
+            return res.status(400).json({ error: "Invalid email format" });
+        }
+
+        // Check if email or phone already exists
+        const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { phone }] });
+        if (existingUser) {
+            console.log("Email or phone already in use"); // Log duplicate email/phone
+            return res.status(400).json({ error: "Email or phone number already in use" });
+        }
+
+        // Validate password length
+        if (password.length < 6) {
+            console.log("Password too short"); // Log invalid password length
+            return res.status(400).json({ error: "Password must be at least 6 characters long" });
+        }
+
+        // Hash the password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(this.password, salt);
+
+        console.log("Password hashed successfully"); // Log successful password hashing
+
+        // Create a new user
+        const newUser = new User({
+            firstName,
+            lastName,
+            birthDate,
+            phone,
+            residence,
+            email: email.toLowerCase(),
+            password: hashedPassword,
+            licenceFront,
+            licenceBack,
+        });
+
+        await newUser.save();
+        console.log("User saved successfully:", newUser); // Log successful user creation
+
+        // Generate token and set it in the cookie
+        // Generate token and set it in the cookie
+        const token = generateTokenAndSetCookie(newUser._id, res);
+
+        if (!token) {
+            // Handle case where token generation failed, though generateTokenAndSetCookie logs errors
+            console.error('Failed to generate token during signup');
+            return res.status(500).json({ error: 'Failed to generate authentication token during signup' });
+        }
+
+        res.status(201).json({
+            message: "User registered successfully",
+            token, // Include the token in the response
+            user: {
+                _id: newUser._id,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                email: newUser.email,
+                phone: newUser.phone,
+                residence: newUser.residence,
+            },
+        });
+    } catch (error) {
+        console.error("Error in signup controller:", error.message); // Log the error message
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles user login
+export const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            console.log('Missing credentials');
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
+
+        console.log('Login attempt for email:', email);
+
+        // Find the user by email (case insensitive)
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            console.log('User not found for email:', email);
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        // Check if password is correct
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            console.log('Invalid password for email:', email);
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        // Generate token and set it in the cookie
+        const token = generateTokenAndSetCookie(user._id, res);
+
+        if (!token) {
+            console.error('Failed to generate token');
+            return res.status(500).json({ error: 'Failed to generate authentication token' });
+        }
+
+        console.log('Login successful for user:', user._id);
+
+        // Return user data without sensitive information
+        const userResponse = {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            residence: user.residence,
+            createdAt: user.createdAt
+        };
+
+        res.status(200).json({
+            message: 'Login successful',
+            token,
+            user: userResponse
+        });
+    } catch (error) {
+        console.error('Error in login controller:', error);
+        res.status(500).json({
+            error: 'An error occurred during login',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+// Handles user logout
+export const logout = (req, res) => {
+    try {
+        res.cookie("jwt", "", { maxAge: 0 });
+        res.status(200).json({ message: "User logged out successfully" });
+    } catch (error) {
+        console.error("Error in logout controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Fetches details of the logged-in user
+export const getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select("-password");
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        res.status(200).json({
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            residence: user.residence,
+        });
+    } catch (error) {
+        console.error("Error in getMe controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Deletes a user account
+export const deleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findByIdAndDelete(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        console.error("Error in deleteUser controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Refreshes the JWT token
+export const refreshToken = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).json({ error: "No refresh token provided" });
+        }
+
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.cookie("jwt", newToken, {
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.NODE_ENV !== "development",
+        });
+
+        res.status(200).json({ message: "Token refreshed successfully" });
+    } catch (error) {
+        console.error("Error refreshing token:", error.message);
+        res.status(401).json({ error: "Invalid or expired refresh token" });
+    }
+};
+
+// backened/controllers/booking.controller.js
+import Booking from '../models/booking.models.js';
+import Car from '../models/car.models.js';
+import User from '../models/user.models.js'; // To get owner details
+import mongoose from 'mongoose';
+
+// Helper function to check for overlapping bookings
+const checkOverlappingBookings = async (carId, startDate, endDate, excludeBookingId = null) => {
+    const query = {
+        car: carId,
+        status: { $in: ['pending', 'confirmed'] }, // Check against active bookings
+        $or: [
+            { startDate: { $lt: endDate }, endDate: { $gt: startDate } }, // Overlaps
+        ],
+    };
+    if (excludeBookingId) {
+        query._id = { $ne: excludeBookingId };
+    }
+    return Booking.find(query);
+};
+
+// 1. Create a new booking request (initiates chat)
+export const createBookingRequest = async (req, res, next) => {
+    try {
+        const { carId, startDate, endDate, totalCost } = req.body;
+        const renterId = req.user.userId; // Assuming ProtectedRoute adds userId to req.user
+
+        if (!carId || !startDate || !endDate || !totalCost) {
+            return res.status(400).json({ message: 'Car ID, start date, end date, and total cost are required.' });
+        }
+
+        const car = await Car.findById(carId).populate('owner', 'id');
+        if (!car) {
+            return res.status(404).json({ message: 'Car not found.' });
+        }
+
+        if (car.owner.id.toString() === renterId) {
+            return res.status(400).json({ message: 'You cannot book your own car.' });
+        }
+
+        // Validate dates
+        const sDate = new Date(startDate);
+        const eDate = new Date(endDate);
+        if (sDate >= eDate) {
+            return res.status(400).json({ message: 'End date must be after start date.' });
+        }
+        if (sDate < new Date(car.availabilityStart) || eDate > new Date(car.availabilityEnd)) {
+            return res.status(400).json({ message: 'Selected dates are outside the car’s availability range.' });
+        }
+
+        // Check for overlapping bookings
+        const overlapping = await checkOverlappingBookings(carId, sDate, eDate);
+        if (overlapping.length > 0) {
+            return res.status(409).json({ message: 'Car is not available for the selected dates (already booked).' });
+        }
+
+        const newBooking = new Booking({
+            car: carId,
+            renter: renterId,
+            owner: car.owner.id,
+            startDate: sDate,
+            endDate: eDate,
+            totalCost,
+            status: 'pending', // Initial status
+        });
+
+        await newBooking.save();
+
+        // Populate necessary fields for the response
+        const populatedBooking = await Booking.findById(newBooking._id)
+            .populate('car', 'carName brand images price owner')
+            .populate('renter', 'firstName lastName avatar')
+            .populate('owner', 'firstName lastName avatar');
+
+        res.status(201).json({ message: 'Booking request created successfully. Please proceed to chat.', booking: populatedBooking });
+
+    } catch (error) {
+        console.error("Error in createBookingRequest:", error);
+        next(error);
+    }
+};
+
+// 2. Get details of a specific booking
+export const getBookingDetails = async (req, res, next) => {
+    try {
+        const { bookingId } = req.params;
+        const userId = req.user.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({ message: 'Invalid booking ID format.' });
+        }
+
+        const booking = await Booking.findById(bookingId)
+            .populate('car', 'carName brand year images price energy transmission seats doors wilaya address owner')
+            .populate('renter', 'firstName lastName avatar email phone')
+            .populate('owner', 'firstName lastName avatar email phone');
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        // Ensure the user is either the renter or the owner of the car associated with the booking
+        if (booking.renter._id.toString() !== userId && booking.owner._id.toString() !== userId) {
+            return res.status(403).json({ message: 'You are not authorized to view this booking.' });
+        }
+
+        res.status(200).json(booking);
+    } catch (error) {
+        console.error("Error in getBookingDetails:", error);
+        next(error);
+    }
+};
+
+// 3. Update booking status (e.g., confirm, cancel)
+export const updateBookingStatus = async (req, res, next) => {
+    try {
+        const { bookingId } = req.params;
+        const { status, paymentId } = req.body; // paymentId is optional
+        const userId = req.user.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({ message: 'Invalid booking ID format.' });
+        }
+
+        const validStatuses = ['confirmed', 'cancelled_by_renter', 'cancelled_by_owner', 'completed', 'payment_failed'];
+        if (!status || !validStatuses.includes(status)) {
+            return res.status(400).json({ message: 'Invalid or missing status.' });
+        }
+
+        const booking = await Booking.findById(bookingId).populate('owner').populate('renter');
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        // Authorization: Only owner or renter can update status, with specific rules
+        const isOwner = booking.owner._id.toString() === userId;
+        const isRenter = booking.renter._id.toString() === userId;
+
+        if (!isOwner && !isRenter) {
+            return res.status(403).json({ message: 'You are not authorized to update this booking.' });
+        }
+
+        if (status === 'confirmed') {
+            // Typically, confirmation happens after payment or agreement in chat.
+            // For now, let's assume only owner can mark as confirmed after agreement (or system after payment)
+            if (!isOwner && booking.status !== 'pending') { // Allow renter to confirm if it's still pending (e.g. after owner agrees)
+                 // Or if a system role confirms after payment
+            }
+             // Check for overlaps again if confirming, in case availability changed
+            const overlapping = await checkOverlappingBookings(booking.car, booking.startDate, booking.endDate, booking._id);
+            if (overlapping.length > 0) {
+                return res.status(409).json({ message: 'Cannot confirm booking. Car is no longer available for these dates.' });
+            }
+            booking.paymentId = paymentId || booking.paymentId; // Update paymentId if provided
+        } else if (status === 'cancelled_by_renter' && !isRenter) {
+            return res.status(403).json({ message: 'Only the renter can cancel with this status.' });
+        } else if (status === 'cancelled_by_owner' && !isOwner) {
+            return res.status(403).json({ message: 'Only the owner can cancel with this status.' });
+        }
+        // Add more logic for 'completed', 'payment_failed' as needed
+
+        booking.status = status;
+        await booking.save();
+
+        const populatedBooking = await Booking.findById(booking._id)
+            .populate('car', 'carName brand images price owner')
+            .populate('renter', 'firstName lastName avatar')
+            .populate('owner', 'firstName lastName avatar');
+
+        res.status(200).json({ message: `Booking status updated to ${status}.`, booking: populatedBooking });
+    } catch (error) {
+        console.error("Error in updateBookingStatus:", error);
+        next(error);
+    }
+};
+
+// 4. Get car availability (check against existing bookings)
+export const getCarAvailability = async (req, res, next) => {
+    try {
+        const { carId } = req.params;
+        const { startDate, endDate } = req.query; // Dates to check for
+
+        if (!mongoose.Types.ObjectId.isValid(carId)) {
+            return res.status(400).json({ message: 'Invalid car ID format.' });
+        }
+
+        const car = await Car.findById(carId);
+        if (!car) {
+            return res.status(404).json({ message: 'Car not found.' });
+        }
+
+        let query = {
+            car: carId,
+            status: { $in: ['pending', 'confirmed'] }, // Consider pending and confirmed bookings as unavailable slots
+        };
+
+        // If specific dates are provided for checking a range
+        if (startDate && endDate) {
+            const sDate = new Date(startDate);
+            const eDate = new Date(endDate);
+            if (sDate >= eDate) {
+                return res.status(400).json({ message: 'End date must be after start date.' });
+            }
+            query.$or = [
+                { startDate: { $lt: eDate }, endDate: { $gt: sDate } },
+            ];
+        }
+
+        const bookings = await Booking.find(query).select('startDate endDate status');
+
+        // Also return the car's general availability window
+        const carGeneralAvailability = {
+            availabilityStart: car.availabilityStart,
+            availabilityEnd: car.availabilityEnd,
+        };
+
+        res.status(200).json({
+            carGeneralAvailability,
+            bookedPeriods: bookings
+        });
+
+    } catch (error) {
+        console.error("Error in getCarAvailability:", error);
+        next(error);
+    }
+};
+
+// 5. Add a message to the booking's chat
+export const addChatMessage = async (req, res, next) => {
+    try {
+        const { bookingId } = req.params;
+        const { message } = req.body;
+        const senderId = req.user.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({ message: 'Invalid booking ID format.' });
+        }
+        if (!message || typeof message !== 'string' || message.trim() === '') {
+            return res.status(400).json({ message: 'Message content is required and must be a non-empty string.' });
+        }
+
+        const booking = await Booking.findById(bookingId);
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        // Ensure the sender is part of the booking (renter or owner)
+        if (booking.renter.toString() !== senderId && booking.owner.toString() !== senderId) {
+            return res.status(403).json({ message: 'You are not authorized to send messages for this booking.' });
+        }
+
+        const chatMessage = {
+            sender: senderId,
+            message: message.trim(),
+            timestamp: new Date(),
+        };
+
+        booking.chatHistory.push(chatMessage);
+        await booking.save();
+
+        // Populate sender info for the new message before sending back
+        const newMessagePopulated = booking.chatHistory[booking.chatHistory.length -1];
+        await Booking.populate(newMessagePopulated, {path: "sender", select: "firstName lastName avatar"});
+
+
+        // TODO: Emit message via Socket.IO to other participant if implementing real-time
+        // req.io.to(bookingId).emit('newMessage', newMessagePopulated);
+
+
+        res.status(201).json({ message: 'Message added successfully.', chatMessage: newMessagePopulated });
+    } catch (error) {
+        console.error("Error in addChatMessage:", error);
+        next(error);
+    }
+};
+
+// 6. Get all bookings for the logged-in renter
+export const getUserBookings = async (req, res, next) => {
+    try {
+        const renterId = req.user.userId;
+        const bookings = await Booking.find({ renter: renterId })
+            .populate('car', 'carName brand year images price wilaya address')
+            .populate('owner', 'firstName lastName avatar')
+            .sort({ createdAt: -1 }); // Sort by most recent
+
+        if (!bookings) {
+            return res.status(404).json({ message: 'No bookings found for this user.' });
+        }
+        res.status(200).json(bookings);
+    } catch (error) {
+        console.error("Error in getUserBookings:", error);
+        next(error);
+    }
+};
+
+// 7. Get all bookings for cars owned by the logged-in user
+export const getOwnerBookings = async (req, res, next) => {
+    try {
+        const ownerId = req.user.userId;
+        const bookings = await Booking.find({ owner: ownerId })
+            .populate('car', 'carName brand year images price wilaya address')
+            .populate('renter', 'firstName lastName avatar email')
+            .sort({ createdAt: -1 }); // Sort by most recent
+
+        if (!bookings) {
+            return res.status(404).json({ message: 'No bookings found for your listings.' });
+        }
+        res.status(200).json(bookings);
+    } catch (error) {
+        console.error("Error in getOwnerBookings:", error);
+        next(error);
+    }
+};
+
+// backened/controllers/car.controller.js
+import Car from '../models/car.models.js';
+import User from '../models/user.models.js';
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
+
+// Function to create a new car
+export const createCar = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        console.log("Request body:", req.body); // Log request body
+        console.log("Uploaded files:", req.files); // Log uploaded files
+
+        const { body, files } = req;
+        if (!files || files.length === 0) {
+            return res.status(400).json({ error: 'No images uploaded' });
+        }
+
+        const images = files.map((file) => `uploads/${file.filename}`);
+
+        // Parse location if it's a string
+        let locationData = body.location;
+        if (typeof locationData === 'string') {
+            try {
+                locationData = JSON.parse(locationData);
+            } catch (e) {
+                console.error('Error parsing location:', e);
+                return res.status(400).json({ error: 'Invalid location format' });
+            }
+        }
+
+        // Create location object for GeoJSON
+        const location = {
+            type: 'Point',
+            coordinates: [
+                parseFloat(locationData.lng || locationData[0]),
+                parseFloat(locationData.lat || locationData[1])
+            ]
+        };
+
+        // Get user information for owner details
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const newCar = new Car({
+            ...body,
+            location,
+            images,
+            owner: req.user.userId,
+            ownerName: {
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
+        });
+
+        await newCar.save();
+        console.log("Car created successfully:", newCar); // Log success
+        res.status(201).json({ message: 'Car created successfully', car: newCar });
+    } catch (error) {
+        console.error("Error creating car:", error.message); // Log error
+        res.status(500).json({ error: 'Failed to create car', details: error.message });
+    }
+};
+
+// Function to fetch cars based on query parameters
+export const getCars = async (req, res) => {
+    try {
+        // Extract query parameters
+        const { location, minPrice, maxPrice, available, page = 1, limit = 10 } = req.query;
+        const query = { isDeleted: false };
+
+        // Build the query object
+        if (location) query.location = location;
+        if (minPrice) query.pricePerDay = { $gte: minPrice };
+        if (maxPrice) query.pricePerDay = { ...query.pricePerDay, $lte: maxPrice };
+        if (available) query.availability = available === "true";
+
+        // Pagination
+        const skip = (page - 1) * limit;
+        const cars = await Car.find(query).skip(skip).limit(parseInt(limit));
+        const totalCars = await Car.countDocuments(query);
+
+        res.status(200).json({ cars, totalCars, page: parseInt(page), totalPages: Math.ceil(totalCars / limit) });
+    } catch (error) {
+        console.error("Error fetching cars:", error.message);
+        res.status(500).json({ error: error.message || "Server error" });
+    }
+};
+
+// Function to update car details
+export const updateCar = async (req, res) => {
+    try {
+        // Extract car ID from request parameters
+        const { id } = req.params;
+        const { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity, images, doors, transmission, mileage, engine, availabilityStart, availabilityEnd } = req.body;
+
+        // Update the car with the provided data
+        const updatedCar = await Car.findByIdAndUpdate(
+            id,
+            { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity, images, doors, transmission, mileage, engine, availabilityStart, availabilityEnd },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedCar) {
+            return res.status(404).json({ error: "Car not found" });
+        }
+
+        res.status(200).json(updatedCar);
+    } catch (error) {
+        console.error("Error updating car:", error.message);
+        res.status(500).json({ error: error.message || "Server error" });
+    }
+};
+
+// Function to delete a car (soft delete)
+export const deleteCar = async (req, res) => {
+    try {
+        // Extract car ID from request parameters
+        const { id } = req.params;
+
+        // Soft delete the car by setting isDeleted to true
+        const deletedCar = await Car.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
+
+        if (!deletedCar) {
+            return res.status(404).json({ error: "Car not found" });
+        }
+
+        res.status(200).send("Car deleted successfully");
+    } catch (error) {
+        console.error("Error deleting car:", error.message);
+        res.status(500).json({ error: error.message || "Server error" });
+    }
+};
+
+// backened/controllers/rating.controller.js
+import Rating from '../models/rating.models.js';
+
+// Function to create a new rating
+export const createRating = async (req, res) => {
+    try {
+        // Extract rating details from the request body
+        const { userId, carId, rating, review } = req.body;
+
+        // Validate required fields
+        if (!userId || !carId || !rating) {
+            return res.status(400).send("Missing required fields: userId, carId, rating");
+        }
+
+        // Create and save the new rating
+        const newRating = new Rating({ userId, carId, rating, review });
+        await newRating.save();
+
+        res.status(201).json(newRating);
+    } catch (error) {
+        console.error("Error creating rating:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Function to fetch all ratings
+export const getRatings = async (req, res) => {
+    try {
+        // Retrieve all ratings and populate car details
+        const ratings = await Rating.find().populate('carId', 'make model');
+        res.status(200).json(ratings);
+    } catch (error) {
+        console.error("Error fetching ratings:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// backened/db/connectMONGODB.js
+import mongoose from "mongoose";
+import Car from "../models/car.models.js";
+
+// Function to connect to MongoDB
+const connectMongoDB = async () => {
+    try {
+        // Connect to the database using the URI from environment variables
+        const conn = await mongoose.connect(process.env.MONGO_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log(`MongoDB connected: ${conn.connection.host}`); // Log successful connection
+
+        // Create 2dsphere index for location-based queries
+        try {
+            await Car.collection.createIndex({ location: '2dsphere' });
+            console.log('2dsphere index created for Car location field');
+        } catch (indexError) {
+            if (indexError.codeName === 'IndexOptionsConflict') {
+                console.log('2dsphere index already exists');
+            } else {
+                console.error('Error creating 2dsphere index:', indexError);
+            }
+        }
+    } catch (error) {
+        console.error(`Cannot connect to MongoDB: ${error.message}`); // Log connection error
+        process.exit(1); // Exit the process on failure
+    }
+};
+
+export default connectMongoDB;
+
+// backened/lib/utils/generateToken.js
+import jwt from 'jsonwebtoken';
+
+// Function to generate JWT tokens and set them as cookies
+export const generateTokenAndSetCookie = (userId, res) => {
+    try {
+        if (!userId) {
+            console.error('No user ID provided for token generation');
+            return null;
+        }
+
+        if (!process.env.JWT_SECRET) {
+            console.error('JWT_SECRET is not defined');
+            return null;
+        }
+
+        // Generate token with user ID
+        const token = jwt.sign(
+            { userId },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' } // Increased to 7 days for better user experience
+        );
+
+        if (!token) {
+            console.error('Failed to generate token');
+            return null;
+        }
+
+        // Set HTTP-only cookie with the token
+        const cookieOptions = {
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+        };
+
+        res.cookie('jwt', token, cookieOptions);
+        console.log('Token generated and cookie set for user:', userId);
+
+        return token;
+    } catch (error) {
+        console.error('Error in generateTokenAndSetCookie:', error);
+        return null;
+    }
+};
+
+// backened/midleware/errorHandler.js
+// Centralized error-handling middleware
+export const errorHandler = (err, req, res, next) => {
+    console.error(err.stack); // Log the error stack for debugging
+    res.status(err.status || 500).json({ error: err.message || "Server Error" }); // Send error response
+};
+
+// backened/midleware/ProtectedRoute.js
+import User from "../models/user.models.js";
+import jwt from "jsonwebtoken";
+
+// Middleware to protect routes and restrict access based on roles
+export const ProtectedRoute = (options = { required: true }) => (req, res, next) => {
+    let token = null;
+
+    // 1. Try to get token from cookie
+    if (req.cookies && req.cookies.jwt) {
+        token = req.cookies.jwt;
+    }
+    // 2. If not in cookie, try to get token from Authorization header
+    else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+        token = req.headers.authorization.split(" ")[1];
+    }
+
+    // If no token is found
+    if (!token) {
+        if (options.required) {
+            return res.status(401).json({ error: "Not authorized: no token provided" });
+        }
+        // If authentication is not strictly required, proceed without user context
+        next();
+        return;
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // Attach user info to the request (e.g., { userId: '...' })
+        next();
+    } catch (error) {
+        // If token verification fails
+        if (options.required) {
+            console.error("Token verification failed:", error.message); // Log error for debugging
+            return res.status(401).json({ error: "Not authorized: invalid or malformed token" });
+        }
+        // If authentication is not strictly required but token is invalid, proceed without user context
+        // Optionally, clear the invalid cookie if it exists
+        if (req.cookies && req.cookies.jwt) {
+            res.clearCookie('jwt');
+        }
+        next();
+    }
+};
+
+// backened/models/booking.models.js
+import mongoose from 'mongoose';
+
+const bookingSchema = new mongoose.Schema({
+  car: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Car',
+    required: true,
+  },
+  renter: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  startDate: {
+    type: Date,
+    required: true,
+  },
+  endDate: {
+    type: Date,
+    required: true,
+  },
+  totalCost: {
+    type: Number,
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'cancelled_by_renter', 'cancelled_by_owner', 'completed', 'payment_failed'],
+    default: 'pending', // Initial status when chat is initiated
+  },
+  paymentId: { // Link to a payment record if applicable
+    type: String,
+    // ref: 'Payment' // If you have a Payment model
+  },
+  chatHistory: [
+    {
+      sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      message: String,
+      timestamp: { type: Date, default: Date.now },
+    },
+  ],
+  // Timestamps for booking creation and updates
+}, { timestamps: true });
+
+// Index to efficiently query bookings by car and dates
+bookingSchema.index({ car: 1, startDate: 1, endDate: 1 });
+// Index for querying bookings by renter or owner
+bookingSchema.index({ renter: 1 });
+bookingSchema.index({ owner: 1 });
+
+
+const Booking = mongoose.model('Booking', bookingSchema);
+
+export default Booking;
+
+// backened/models/car.models.js
+import mongoose from "mongoose";
+
+const carSchema = new mongoose.Schema(
+    {
+        id: {
+            type: String,
+            unique: true,
+            default: () => new mongoose.Types.ObjectId().toString(),
+        },
+        carName: {
+            type: String,
+            required: true,
+        },
+        brand: {
+            type: String,
+            required: true,
+        },
+        description: {
+            type: String,
+            required: true, // Ensure description is required
+            maxlength: 500, // Limit the description length
+        },
+        energy: {
+            type: String,
+            enum: ["Essence", "Diesel", "Hybrid", "Electric"],
+            required: true,
+        },
+        seats: {
+            type: Number,
+            required: true,
+        },
+        doors: {
+            type: Number,
+            required: true,
+        },
+        transmission: {
+            type: String,
+            enum: ["Manual", "Automatic"],
+            required: true,
+        },
+        mileage: {
+            type: Number,
+            required: true,
+        },
+        engine: {
+            type: String,
+            required: true,
+        },
+        wilaya: {
+            type: String,
+            required: true,
+        },
+        availabilityStart: {
+            type: Date,
+            required: true,
+        },
+        availabilityEnd: {
+            type: Date,
+            required: true,
+        },
+        price: {
+            type: Number,
+            required: true,
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
+        images: {
+            type: [String], // Array of image paths
+            required: true,
+            validate: {
+                validator: function (images) {
+                    return images.length >= 1 && images.length <= 5 && images.every((img) => img.startsWith('uploads/'));
+                },
+                message: 'You must upload between 1 and 5 images, and all image paths must start with "uploads/".',
+            },
+        },
+        owner: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        ownerName: {
+            firstName: {
+                type: String,
+                required: true
+            },
+            lastName: {
+                type: String,
+                required: true
+            }
+        }
+    },
+    { timestamps: true }
+);
+
+const Car = mongoose.model("Car", carSchema);
+export default Car;
+
+
+// backened/models/user.models.js
+import mongoose from "mongoose";
+import bcrypt from 'bcryptjs';
+
+const userSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        required: [true, 'First name is required'],
+        trim: true
+    },
+    lastName: {
+        type: String,
+        required: [true, 'Last name is required'],
+        trim: true
+    },
+    email: {
+        type: String,
+        required: [true, 'Email is required'],
+        unique: true,
+        trim: true,
+        lowercase: true,
+        match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, 'Please enter a valid email']
+    },
+    password: {
+        type: String,
+        required: [true, 'Password is required'],
+        minlength: [6, 'Password must be at least 6 characters long']
+    },
+    birthDate: {
+        type: Date,
+        required: [true, 'Birth date is required']
+    },
+    phone: {
+        type: String,
+        required: [true, 'Phone number is required'],
+        trim: true,
+        unique: true
+    },
+    residence: {
+        type: String,
+        required: [true, 'Residence is required'],
+        trim: true
+    },
+    licenceFront: {
+        type: String,
+        required: [true, 'Front of driving licence is required']
+    },
+    licenceBack: {
+        type: String,
+        required: [true, 'Back of driving licence is required']
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    verificationToken: String,
+    verificationTokenExpires: Date,
+    refreshToken: String
+}, {
+    timestamps: true
+});
+
+// Pre-save hook to hash password before saving
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) return next();
+
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
+
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+export default User;
+
+// backened/routes/auth.routes.js
+import express from "express";
+import multer from "multer";
+import { login, signup, logout, getMe, refreshToken } from "../controllers/auth.controller.js";
+import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
+import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
+
+//import { processPayment } from "../controllers/payment.controller.js";
+
+const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+// Enable CORS for all routes
+router.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  next();
+});
+
+// User routes
+router.get("/me", ProtectedRoute(), getMe);
+router.get("/profile", ProtectedRoute(), getMe);
+router.post("/signup",
+  upload.fields([
+    { name: "licenceFront", maxCount: 1 },
+    { name: "licenceBack", maxCount: 1 }
+  ]),
+  signup
+);
+router.post("/login", login);
+router.post("/logout", logout);
+router.post("/refresh-token", refreshToken);
+
+// Car routes
+router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload
+router.get("/listcars", ProtectedRoute, getCars); // Get a list of cars
+router.put("/updatecars/:id", ProtectedRoute, updateCar); // Update car details
+router.delete("/deletecars/:id", ProtectedRoute, deleteCar); // Delete a car
+
+
+
+// Payment route
+//router.post("/payments", ProtectedRoute, processPayment); // Process a payment
+
+export default router;
+
+// backened/routes/booking.routes.js
+import express from 'express';
+import { ProtectedRoute } from '../midleware/ProtectedRoute.js'; // Corrected middleware path
+import {
+    createBookingRequest,
+    getBookingDetails,
+    updateBookingStatus,
+    getCarAvailability,
+    addChatMessage,
+    getUserBookings,
+    getOwnerBookings
+} from '../controllers/booking.controller.js';
+
+const router = express.Router();
+
+// POST /api/bookings/request - Create a new booking request (initiates chat)
+router.post('/request', ProtectedRoute, createBookingRequest);
+
+// GET /api/bookings/:bookingId - Get details of a specific booking
+router.get('/:bookingId', ProtectedRoute, getBookingDetails);
+
+// PUT /api/bookings/:bookingId/status - Update booking status (e.g., confirm, cancel)
+router.put('/:bookingId/status', ProtectedRoute, updateBookingStatus);
+
+// GET /api/bookings/availability/:carId - Check car availability for given dates
+router.get('/availability/:carId', getCarAvailability); // Can be public or protected
+
+// POST /api/bookings/:bookingId/chat - Add a message to the booking's chat
+router.post('/:bookingId/chat', ProtectedRoute, addChatMessage);
+
+// GET /api/bookings/user - Get all bookings for the logged-in renter
+router.get('/user/my-bookings', ProtectedRoute, getUserBookings);
+
+// GET /api/bookings/owner - Get all bookings for cars owned by the logged-in user
+router.get('/owner/my-listings-bookings', ProtectedRoute, getOwnerBookings);
+
+
+export default router;
+
+// backened/routes/car.routes.js
+import express from "express";
+import multer from "multer";
+import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
+import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
+import Car from "../models/car.models.js";
+
+const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/"); // Save files to the "uploads" directory
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
+});
+const upload = multer({ storage });
+
+// Car routes
+router.post("/add", ProtectedRoute(), upload.array("images", 5), createCar); // Add a new car with image upload
+router.get("/list", getCars); // Get a list of cars
+router.put("/update/:id", ProtectedRoute(), upload.array("images", 5), updateCar); // Update car details with image upload
+router.delete("/delete/:id", ProtectedRoute(), deleteCar); // Delete a car
+
+// Route to post a car
+router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req, res) => {
+    try {
+        console.log("Request body:", req.body); // Log request body
+        console.log("Uploaded files:", req.files); // Log uploaded files
+
+        const { body, files } = req;
+        if (!files || files.length === 0) {
+            return res.status(400).json({ error: 'No images uploaded' });
+        }
+
+        const imagePaths = files.map((file) => `uploads/${file.filename}`);
+
+        // Get user information for owner details
+        const User = (await import('../models/user.models.js')).default;
+        const user = await User.findById(req.user.userId);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const car = new Car({
+            ...body,
+            images: imagePaths,
+            owner: req.user.userId,
+            ownerName: {
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
+        });
+
+        await car.save();
+        res.status(201).json({ message: 'Car posted successfully!', car });
+    } catch (error) {
+        console.error("Error posting car:", error.message); // Log error
+        res.status(500).json({ error: 'Failed to post the car.', details: error.message });
+    }
+});
+
+// Route to fetch all cars posted by users
+router.get('/getcars', async (req, res) => {
+    try {
+        const {
+            brand,
+            energy,
+            transmission,
+            wilaya,
+            location,
+            seats,
+            doors,
+            priceMin,
+            priceMax,
+            availableFrom,
+            availableTo
+        } = req.query;
+
+        const query = { isDeleted: false };
+
+        if (brand) query.brand = brand;
+        if (energy) query.energy = energy;
+        if (transmission) query.transmission = transmission;
+        if (wilaya) query.wilaya = wilaya;
+        if (location) query.location = location;
+        if (seats) query.seats = parseInt(seats);
+        if (doors) query.doors = parseInt(doors);
+        if (priceMin || priceMax) {
+            query.price = {};
+            if (priceMin) query.price.$gte = parseFloat(priceMin);
+            if (priceMax) query.price.$lte = parseFloat(priceMax);
+        }
+        if (availableFrom || availableTo) {
+            query.$and = [];
+            if (availableFrom) {
+                query.$and.push({ availabilityEnd: { $gte: new Date(availableFrom) } });
+            }
+            if (availableTo) {
+                query.$and.push({ availabilityStart: { $lte: new Date(availableTo) } });
+            }
+        }
+
+        // Fetch cars with owner information
+        const cars = await Car.find(query)
+            .select('-__v')
+            .populate('owner', 'firstName lastName -_id'); // Populate owner information
+
+        res.status(200).json(cars);
+    } catch (error) {
+        console.error("Error fetching cars:", error.message);
+        res.status(500).json({ error: 'Failed to fetch cars.', details: error.message });
+    }
+});
+
+// Route to fetch cars owned by the current user
+router.get('/user-cars', ProtectedRoute(), async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // Find all cars where the owner is the current user
+        const userCars = await Car.find({
+            owner: userId,
+            isDeleted: false
+        }).sort({ createdAt: -1 }); // Sort by newest first
+
+        res.status(200).json(userCars);
+    } catch (error) {
+        console.error("Error fetching user's cars:", error.message);
+        res.status(500).json({ error: 'Failed to fetch your cars.', details: error.message });
+    }
+};
+
+// Route to fetch car details by ID
+router.get('/details/:id', ProtectedRoute({ required: false }), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const car = await Car.findById(id)
+            .select('-__v')
+            .populate('owner', 'firstName lastName email'); // Populate owner information with email
+
+        if (!car) {
+            return res.status(404).json({ error: 'Car not found' });
+        }
+
+        // Check if the car is available based on its availability dates
+        const now = new Date();
+        const isAvailable = !car.isDeleted &&
+                           new Date(car.availabilityStart) <= now &&
+                           new Date(car.availabilityEnd) >= now;
+
+        // Add isAvailable property to the response
+        const carResponse = car.toObject();
+        carResponse.isAvailable = isAvailable;
+
+        // Get user ID from request if authenticated
+        const userId = req.user?.userId || null;
+
+        // Check if the current user is the owner of the car
+        carResponse.isOwner = userId && car.owner._id.toString() === userId.toString();
+
+        res.status(200).json(carResponse);
+    } catch (error) {
+        console.error("Error fetching car details:", error.message);
+        res.status(500).json({ error: 'Failed to fetch car details.', details: error.message });
+    }
+});
+
+export default router;
+
+// backened/utils/auth.utils.js
+this is the backend of my project 
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  Avatar,
+  Divider,
+  Grid,
+  Button,
+  CircularProgress,
+  TextField,
+  IconButton,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SendIcon from '@mui/icons-material/Send';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import Navbar from '../components/Navbar';
+
+const ConversationPage = () => {
+  const { carId } = useParams();
+  const [car, setCar] = useState(null);
+  const [owner, setOwner] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    const fetchCarDetails = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+        const carResponse = await axios.get(`http://localhost:5001/api/cars/details/${carId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const carData = carResponse.data;
+        setCar(carData);
+        setOwner(carData.owner);
+      } catch (error) {
+        // Optionally handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCarDetails();
+  }, [carId]);
+
+  // Scroll to bottom when chatMessages change
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages]);
+
+  // Simulate owner reply for demo
+  useEffect(() => {
+    if (chatMessages.length > 0 && chatMessages[chatMessages.length - 1].sender === 'user') {
+      const timer = setTimeout(() => {
+        setChatMessages(prev => [...prev, {
+          text: "Thanks for your message! I'll get back to you soon.",
+          createdAt: new Date().toISOString(),
+          sender: 'owner',
+        }]);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [chatMessages]);
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
+  const handleSendChat = () => {
+    if (chatInput.trim()) {
+      setChatMessages(prev => [...prev, { text: chatInput, createdAt: new Date().toISOString(), sender: 'user' }]);
+      setChatInput('');
+    }
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '80vh',
+          bgcolor: '#f8fafc',
+          flexDirection: 'column',
+          gap: 2
+        }}>
+          <CircularProgress />
+          <Typography variant="body1" color="textSecondary">
+            Loading car details...
+          </Typography>
+        </Box>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+      <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pt: 4, pb: 8 }}>
+        <Container maxWidth="lg">
+          <Button 
+            startIcon={<ArrowBackIcon />}
+            onClick={handleGoBack}
+            sx={{ 
+              mb: 3, 
+              color: '#475569',
+              fontWeight: 500,
+              '&:hover': { 
+                bgcolor: 'rgba(71, 85, 105, 0.08)',
+                transform: 'translateX(-4px)',
+              },
+              transition: 'all 0.2s ease',
+            }}
+          >
+            Back to car details
+          </Button>
+          <Grid container spacing={3}>
+            {/* Left side: Car and owner details */}
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={2}
+                sx={{
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 24px rgba(71, 85, 105, 0.12)',
+                  bgcolor: '#fff',
+                  mb: { xs: 3, md: 0 },
+                }}
+              >
+                {/* Car image */}
+                <Box sx={{ position: 'relative', height: 200 }}>
+                  <img
+                    src={`http://localhost:5001/${car?.images?.[0]}`}
+                    alt={car?.carName}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                </Box>
+                {/* Car details */}
+                <Box sx={{ p: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
+                    {car?.carName}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <AttachMoneyIcon sx={{ color: '#3b82f6' }} />
+                    <Typography sx={{ color: '#3b82f6', fontWeight: 600 }}>
+                      €{car?.price}/day
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <LocationOnIcon sx={{ color: '#475569' }} />
+                    <Typography sx={{ color: '#475569' }}>
+                      {car?.wilaya}, {car?.address}
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ my: 2 }} />
+                  {/* Owner details */}
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1e293b' }}>
+                    About the Owner
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar 
+                      sx={{ 
+                        bgcolor: '#e2e8f0', 
+                        color: '#3b82f6',
+                        width: 50,
+                        height: 50,
+                        border: '2px solid #cbd5e1'
+                      }}
+                    >
+                      {owner?.firstName?.charAt(0) || 'O'}
+                    </Avatar>
+                    <Box>
+                      <Typography sx={{ fontWeight: 600, color: '#1e293b' }}>
+                        {owner?.firstName} {owner?.lastName}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#64748b' }}>
+                        Car Owner
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {owner?.email && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" sx={{ color: '#64748b' }}>
+                        Email:
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#475569' }}>
+                        {owner.email}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Paper>
+            </Grid>
+            {/* Right side: Chat */}
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={3}
+                sx={{
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 32px rgba(59, 130, 246, 0.10)',
+                  bgcolor: '#fff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 420,
+                  maxHeight: 540,
+                  height: { md: 500, xs: 'auto' },
+                }}
+              >
+                {/* Chat header */}
+                <Box sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 2,
+                  py: 1.5,
+                  bgcolor: '#3b82f6',
+                  color: 'white',
+                  borderTopLeftRadius: 12,
+                  borderTopRightRadius: 12,
+                  borderBottom: '1px solid #e2e8f0',
+                }}>
+                  <ChatBubbleOutlineIcon sx={{ fontSize: 22, mr: 1 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    Chat with Owner
+                  </Typography>
+                </Box>
+                {/* Chat messages area */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    px: 2,
+                    py: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.5,
+                    bgcolor: '#f8fafc',
+                    minHeight: 120,
+                  }}
+                >
+                  {chatMessages.length === 0 ? (
+                    <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 4 }}>
+                      No messages yet. Start the conversation!
+                    </Typography>
+                  ) : (
+                    chatMessages.map((msg, idx) => {
+                      const isUser = msg.sender === 'user';
+                      return (
+                        <Box
+                          key={idx}
+                          sx={{
+                            alignSelf: isUser ? 'flex-end' : 'flex-start',
+                            bgcolor: isUser ? '#3b82f6' : '#fff',
+                            color: isUser ? 'white' : '#1e293b',
+                            px: 2,
+                            py: 1,
+                            borderRadius: 2,
+                            mb: 0.5,
+                            maxWidth: '80%',
+                            boxShadow: isUser ? '0 1px 4px rgba(59,130,246,0.10)' : '0 1px 4px rgba(71,85,105,0.06)',
+                            borderTopLeftRadius: isUser ? 12 : 4,
+                            borderTopRightRadius: isUser ? 4 : 12,
+                            fontSize: '1rem',
+                            transition: 'background 0.2s',
+                            border: isUser ? '1px solid #3b82f6' : '1px solid #e2e8f0',
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 400 }}>{msg.text}</Typography>
+                          <Typography variant="caption" sx={{ opacity: 0.7, fontSize: '0.7rem', display: 'block', mt: 0.5, textAlign: isUser ? 'right' : 'left' }}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Typography>
+                        </Box>
+                      );
+                    })
+                  )}
+                  <div ref={chatEndRef} />
+                </Box>
+                {/* Chat input area */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1,
+                    px: 2,
+                    py: 1.5,
+                    bgcolor: '#fff',
+                    borderTop: '1px solid #e2e8f0',
+                    position: 'sticky',
+                    bottom: 0,
+                    zIndex: 1,
+                  }}
+                >
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Type your message..."
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyPress={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendChat())}
+                    sx={{ bgcolor: '#f8fafc', borderRadius: 2 }}
+                    inputProps={{ maxLength: 300 }}
+                    disabled={false}
+                  />
+                  <IconButton
+                    color="primary"
+                    onClick={handleSendChat}
+                    disabled={!chatInput.trim()}
+                    sx={{
+                      bgcolor: !chatInput.trim() ? '#e2e8f0' : '#3b82f6',
+                      color: !chatInput.trim() ? '#94a3b8' : 'white',
+                      '&:hover': {
+                        bgcolor: !chatInput.trim() ? '#e2e8f0' : '#2563eb',
+                      },
+                      transition: 'all 0.2s',
+                      borderRadius: 2,
+                      boxShadow: '0 1px 4px rgba(59,130,246,0.08)',
+                    }}
+                  >
+                    <SendIcon />
+                  </IconButton>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+    </>
+  );
+};
+
+export default ConversationPage; 
+I am working on a messaging app using between owner and  renter both are users  Node.js, Express, and Socket.IO. I want to enable sending and saving messages in real-time using Socket.IO. Please provide the full code for any parts you modify or add.
+
+Messages should be emitted to connected clients using Socket.IO.
+
+Messages should be saved to a database. MongoDB.
+
+I want the code for the backend (server-side) and the necessary part of the frontend (client-side).
+
+Please igive me the full codes
+
+
+import express from "express";
+import { createServer } from 'http';
+import { Server } from 'socket.io'; // Import Server from socket.io
+import authRoutes from "./routes/auth.routes.js";
+import dotenv from "dotenv";
+import connectMongoDB from './db/connectMONGODB.js';
+import cookieParser from "cookie-parser";
+import { ProtectedRoute } from "./midleware/ProtectedRoute.js";
+import { errorHandler } from './midleware/errorHandler.js';
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import cors from "cors";
+import User from './models/user.models.js';
+import path from "path";
+import carRoutes from "./routes/car.routes.js";
+import bookingRoutes from "./routes/booking.routes.js";
+
+
+
+// Load environment variables
+dotenv.config();
+
+const app = express();
+const PORT = 5001;
+
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Initialize socket.io with the HTTP server
+const io = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:3000", // Allow frontend origin
+        methods: ["GET", "POST"], // Allow specific methods
+        credentials: true // Allow cookies to be sent
+    },
+});
+
+
+
+
+// Apply security headers using Helmet
+app.use(helmet());
+
+// Enable CORS for the frontend
+app.use(cors({
+    origin: "http://localhost:3000", // Ensure this matches the frontend's URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific HTTP methods
+    credentials: true, // Allow cookies to be sent
+}));
+
+// Rate limiting middleware to prevent abuse
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+// Middleware for parsing JSON and URL-encoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware for parsing cookies
+app.use(cookieParser());
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), { setHeaders: (res) => res.set('Cross-Origin-Resource-Policy', 'cross-origin') }));
+
+// Function to remove the username index if it exists
+const removeUsernameIndex = async () => {
+    try {
+        const indexes = await User.collection.indexes();
+        const usernameIndex = indexes.find(index => index.name === "username_1");
+        if (usernameIndex) {
+            await User.collection.dropIndex("username_1");
+            console.log("Dropped username index successfully.");
+        }
+    } catch (error) {
+        console.error("Error dropping username index:", error.message);
+    }
+};
+
+// Mount authentication routes
+app.use("/api/auth", authRoutes);
+
+// Mount car routes
+app.use("/api/cars", carRoutes);
+
+// Mount booking routes
+app.use("/api/bookings", bookingRoutes);
+
+
+
+
+// Centralized error handling middleware
+app.use(errorHandler);
+
+// Start the server and connect to MongoDB
+httpServer.listen(PORT, async () => {
+    console.log(`Server is running on port: ${PORT}`);
+    await connectMongoDB();
+    await removeUsernameIndex(); // Ensure the username index is removed
+});
+
+// backened/controllers/auth.controller.js
+import User from '../models/user.models.js';
+import bcrypt from 'bcryptjs';
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
+import jwt from 'jsonwebtoken';
+
+// Handles user signup
+export const signup = async (req, res) => {
+    try {
+        console.log("Signup request body:", req.body); // Log the request body
+
+        const { firstName, lastName, birthDate, phone, residence, email, password } = req.body;
+
+        // Validate required fields
+        if (!email) {
+            return res.status(400).json({ error: "Email is required" });
+        }
+
+        // Validate required fields
+        if (!req.files || !req.files.licenceFront || !req.files.licenceBack) {
+            return res.status(400).json({ error: "Driving licence images are required" });
+        }
+
+        const licenceFront = req.files.licenceFront[0].path; // Get file path
+        const licenceBack = req.files.licenceBack[0].path; // Get file path
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.toLowerCase())) {
+            console.log("Invalid email format"); // Log invalid email
+            return res.status(400).json({ error: "Invalid email format" });
+        }
+
+        // Check if email or phone already exists
+        const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { phone }] });
+        if (existingUser) {
+            console.log("Email or phone already in use"); // Log duplicate email/phone
+            return res.status(400).json({ error: "Email or phone number already in use" });
+        }
+
+        // Validate password length
+        if (password.length < 6) {
+            console.log("Password too short"); // Log invalid password length
+            return res.status(400).json({ error: "Password must be at least 6 characters long" });
+        }
+
+        // Hash the password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(this.password, salt);
+
+        console.log("Password hashed successfully"); // Log successful password hashing
+
+        // Create a new user
+        const newUser = new User({
+            firstName,
+            lastName,
+            birthDate,
+            phone,
+            residence,
+            email: email.toLowerCase(),
+            password: hashedPassword,
+            licenceFront,
+            licenceBack,
+        });
+
+        await newUser.save();
+        console.log("User saved successfully:", newUser); // Log successful user creation
+
+        // Generate token and set it in the cookie
+        // Generate token and set it in the cookie
+        const token = generateTokenAndSetCookie(newUser._id, res);
+
+        if (!token) {
+            // Handle case where token generation failed, though generateTokenAndSetCookie logs errors
+            console.error('Failed to generate token during signup');
+            return res.status(500).json({ error: 'Failed to generate authentication token during signup' });
+        }
+
+        res.status(201).json({
+            message: "User registered successfully",
+            token, // Include the token in the response
+            user: {
+                _id: newUser._id,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                email: newUser.email,
+                phone: newUser.phone,
+                residence: newUser.residence,
+            },
+        });
+    } catch (error) {
+        console.error("Error in signup controller:", error.message); // Log the error message
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles user login
+export const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            console.log('Missing credentials');
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
+
+        console.log('Login attempt for email:', email);
+
+        // Find the user by email (case insensitive)
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            console.log('User not found for email:', email);
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        // Check if password is correct
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            console.log('Invalid password for email:', email);
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        // Generate token and set it in the cookie
+        const token = generateTokenAndSetCookie(user._id, res);
+
+        if (!token) {
+            console.error('Failed to generate token');
+            return res.status(500).json({ error: 'Failed to generate authentication token' });
+        }
+
+        console.log('Login successful for user:', user._id);
+
+        // Return user data without sensitive information
+        const userResponse = {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            residence: user.residence,
+            createdAt: user.createdAt
+        };
+
+        res.status(200).json({
+            message: 'Login successful',
+            token,
+            user: userResponse
+        });
+    } catch (error) {
+        console.error('Error in login controller:', error);
+        res.status(500).json({
+            error: 'An error occurred during login',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+// Handles user logout
+export const logout = (req, res) => {
+    try {
+        res.cookie("jwt", "", { maxAge: 0 });
+        res.status(200).json({ message: "User logged out successfully" });
+    } catch (error) {
+        console.error("Error in logout controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Fetches details of the logged-in user
+export const getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select("-password");
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        res.status(200).json({
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            residence: user.residence,
+        });
+    } catch (error) {
+        console.error("Error in getMe controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Deletes a user account
+export const deleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findByIdAndDelete(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        console.error("Error in deleteUser controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Refreshes the JWT token
+export const refreshToken = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).json({ error: "No refresh token provided" });
+        }
+
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.cookie("jwt", newToken, {
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.NODE_ENV !== "development",
+        });
+
+        res.status(200).json({ message: "Token refreshed successfully" });
+    } catch (error) {
+        console.error("Error refreshing token:", error.message);
+        res.status(401).json({ error: "Invalid or expired refresh token" });
+    }
+};
+
+// backened/controllers/booking.controller.js
+import Booking from '../models/booking.models.js';
+import Car from '../models/car.models.js';
+import User from '../models/user.models.js'; // To get owner details
+import mongoose from 'mongoose';
+
+// Helper function to check for overlapping bookings
+const checkOverlappingBookings = async (carId, startDate, endDate, excludeBookingId = null) => {
+    const query = {
+        car: carId,
+        status: { $in: ['pending', 'confirmed'] }, // Check against active bookings
+        $or: [
+            { startDate: { $lt: endDate }, endDate: { $gt: startDate } }, // Overlaps
+        ],
+    };
+    if (excludeBookingId) {
+        query._id = { $ne: excludeBookingId };
+    }
+    return Booking.find(query);
+};
+
+// 1. Create a new booking request (initiates chat)
+export const createBookingRequest = async (req, res, next) => {
+    try {
+        const { carId, startDate, endDate, totalCost } = req.body;
+        const renterId = req.user.userId; // Assuming ProtectedRoute adds userId to req.user
+
+        if (!carId || !startDate || !endDate || !totalCost) {
+            return res.status(400).json({ message: 'Car ID, start date, end date, and total cost are required.' });
+        }
+
+        const car = await Car.findById(carId).populate('owner', 'id');
+        if (!car) {
+            return res.status(404).json({ message: 'Car not found.' });
+        }
+
+        if (car.owner.id.toString() === renterId) {
+            return res.status(400).json({ message: 'You cannot book your own car.' });
+        }
+
+        // Validate dates
+        const sDate = new Date(startDate);
+        const eDate = new Date(endDate);
+        if (sDate >= eDate) {
+            return res.status(400).json({ message: 'End date must be after start date.' });
+        }
+        if (sDate < new Date(car.availabilityStart) || eDate > new Date(car.availabilityEnd)) {
+            return res.status(400).json({ message: 'Selected dates are outside the car’s availability range.' });
+        }
+
+        // Check for overlapping bookings
+        const overlapping = await checkOverlappingBookings(carId, sDate, eDate);
+        if (overlapping.length > 0) {
+            return res.status(409).json({ message: 'Car is not available for the selected dates (already booked).' });
+        }
+
+        const newBooking = new Booking({
+            car: carId,
+            renter: renterId,
+            owner: car.owner.id,
+            startDate: sDate,
+            endDate: eDate,
+            totalCost,
+            status: 'pending', // Initial status
+        });
+
+        await newBooking.save();
+
+        // Populate necessary fields for the response
+        const populatedBooking = await Booking.findById(newBooking._id)
+            .populate('car', 'carName brand images price owner')
+            .populate('renter', 'firstName lastName avatar')
+            .populate('owner', 'firstName lastName avatar');
+
+        res.status(201).json({ message: 'Booking request created successfully. Please proceed to chat.', booking: populatedBooking });
+
+    } catch (error) {
+        console.error("Error in createBookingRequest:", error);
+        next(error);
+    }
+};
+
+// 2. Get details of a specific booking
+export const getBookingDetails = async (req, res, next) => {
+    try {
+        const { bookingId } = req.params;
+        const userId = req.user.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({ message: 'Invalid booking ID format.' });
+        }
+
+        const booking = await Booking.findById(bookingId)
+            .populate('car', 'carName brand year images price energy transmission seats doors wilaya address owner')
+            .populate('renter', 'firstName lastName avatar email phone')
+            .populate('owner', 'firstName lastName avatar email phone');
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        // Ensure the user is either the renter or the owner of the car associated with the booking
+        if (booking.renter._id.toString() !== userId && booking.owner._id.toString() !== userId) {
+            return res.status(403).json({ message: 'You are not authorized to view this booking.' });
+        }
+
+        res.status(200).json(booking);
+    } catch (error) {
+        console.error("Error in getBookingDetails:", error);
+        next(error);
+    }
+};
+
+// 3. Update booking status (e.g., confirm, cancel)
+export const updateBookingStatus = async (req, res, next) => {
+    try {
+        const { bookingId } = req.params;
+        const { status, paymentId } = req.body; // paymentId is optional
+        const userId = req.user.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({ message: 'Invalid booking ID format.' });
+        }
+
+        const validStatuses = ['confirmed', 'cancelled_by_renter', 'cancelled_by_owner', 'completed', 'payment_failed'];
+        if (!status || !validStatuses.includes(status)) {
+            return res.status(400).json({ message: 'Invalid or missing status.' });
+        }
+
+        const booking = await Booking.findById(bookingId).populate('owner').populate('renter');
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        // Authorization: Only owner or renter can update status, with specific rules
+        const isOwner = booking.owner._id.toString() === userId;
+        const isRenter = booking.renter._id.toString() === userId;
+
+        if (!isOwner && !isRenter) {
+            return res.status(403).json({ message: 'You are not authorized to update this booking.' });
+        }
+
+        if (status === 'confirmed') {
+            // Typically, confirmation happens after payment or agreement in chat.
+            // For now, let's assume only owner can mark as confirmed after agreement (or system after payment)
+            if (!isOwner && booking.status !== 'pending') { // Allow renter to confirm if it's still pending (e.g. after owner agrees)
+                 // Or if a system role confirms after payment
+            }
+             // Check for overlaps again if confirming, in case availability changed
+            const overlapping = await checkOverlappingBookings(booking.car, booking.startDate, booking.endDate, booking._id);
+            if (overlapping.length > 0) {
+                return res.status(409).json({ message: 'Cannot confirm booking. Car is no longer available for these dates.' });
+            }
+            booking.paymentId = paymentId || booking.paymentId; // Update paymentId if provided
+        } else if (status === 'cancelled_by_renter' && !isRenter) {
+            return res.status(403).json({ message: 'Only the renter can cancel with this status.' });
+        } else if (status === 'cancelled_by_owner' && !isOwner) {
+            return res.status(403).json({ message: 'Only the owner can cancel with this status.' });
+        }
+        // Add more logic for 'completed', 'payment_failed' as needed
+
+        booking.status = status;
+        await booking.save();
+
+        const populatedBooking = await Booking.findById(booking._id)
+            .populate('car', 'carName brand images price owner')
+            .populate('renter', 'firstName lastName avatar')
+            .populate('owner', 'firstName lastName avatar');
+
+        res.status(200).json({ message: `Booking status updated to ${status}.`, booking: populatedBooking });
+    } catch (error) {
+        console.error("Error in updateBookingStatus:", error);
+        next(error);
+    }
+};
+
+// 4. Get car availability (check against existing bookings)
+export const getCarAvailability = async (req, res, next) => {
+    try {
+        const { carId } = req.params;
+        const { startDate, endDate } = req.query; // Dates to check for
+
+        if (!mongoose.Types.ObjectId.isValid(carId)) {
+            return res.status(400).json({ message: 'Invalid car ID format.' });
+        }
+
+        const car = await Car.findById(carId);
+        if (!car) {
+            return res.status(404).json({ message: 'Car not found.' });
+        }
+
+        let query = {
+            car: carId,
+            status: { $in: ['pending', 'confirmed'] }, // Consider pending and confirmed bookings as unavailable slots
+        };
+
+        // If specific dates are provided for checking a range
+        if (startDate && endDate) {
+            const sDate = new Date(startDate);
+            const eDate = new Date(endDate);
+            if (sDate >= eDate) {
+                return res.status(400).json({ message: 'End date must be after start date.' });
+            }
+            query.$or = [
+                { startDate: { $lt: eDate }, endDate: { $gt: sDate } },
+            ];
+        }
+
+        const bookings = await Booking.find(query).select('startDate endDate status');
+
+        // Also return the car's general availability window
+        const carGeneralAvailability = {
+            availabilityStart: car.availabilityStart,
+            availabilityEnd: car.availabilityEnd,
+        };
+
+        res.status(200).json({
+            carGeneralAvailability,
+            bookedPeriods: bookings
+        });
+
+    } catch (error) {
+        console.error("Error in getCarAvailability:", error);
+        next(error);
+    }
+};
+
+// 5. Add a message to the booking's chat
+export const addChatMessage = async (req, res, next) => {
+    try {
+        const { bookingId } = req.params;
+        const { message } = req.body;
+        const senderId = req.user.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({ message: 'Invalid booking ID format.' });
+        }
+        if (!message || typeof message !== 'string' || message.trim() === '') {
+            return res.status(400).json({ message: 'Message content is required and must be a non-empty string.' });
+        }
+
+        const booking = await Booking.findById(bookingId);
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        // Ensure the sender is part of the booking (renter or owner)
+        if (booking.renter.toString() !== senderId && booking.owner.toString() !== senderId) {
+            return res.status(403).json({ message: 'You are not authorized to send messages for this booking.' });
+        }
+
+        const chatMessage = {
+            sender: senderId,
+            message: message.trim(),
+            timestamp: new Date(),
+        };
+
+        booking.chatHistory.push(chatMessage);
+        await booking.save();
+
+        // Populate sender info for the new message before sending back
+        const newMessagePopulated = booking.chatHistory[booking.chatHistory.length -1];
+        await Booking.populate(newMessagePopulated, {path: "sender", select: "firstName lastName avatar"});
+
+
+        // TODO: Emit message via Socket.IO to other participant if implementing real-time
+        // req.io.to(bookingId).emit('newMessage', newMessagePopulated);
+
+
+        res.status(201).json({ message: 'Message added successfully.', chatMessage: newMessagePopulated });
+    } catch (error) {
+        console.error("Error in addChatMessage:", error);
+        next(error);
+    }
+};
+
+// 6. Get all bookings for the logged-in renter
+export const getUserBookings = async (req, res, next) => {
+    try {
+        const renterId = req.user.userId;
+        const bookings = await Booking.find({ renter: renterId })
+            .populate('car', 'carName brand year images price wilaya address')
+            .populate('owner', 'firstName lastName avatar')
+            .sort({ createdAt: -1 }); // Sort by most recent
+
+        if (!bookings) {
+            return res.status(404).json({ message: 'No bookings found for this user.' });
+        }
+        res.status(200).json(bookings);
+    } catch (error) {
+        console.error("Error in getUserBookings:", error);
+        next(error);
+    }
+};
+
+// 7. Get all bookings for cars owned by the logged-in user
+export const getOwnerBookings = async (req, res, next) => {
+    try {
+        const ownerId = req.user.userId;
+        const bookings = await Booking.find({ owner: ownerId })
+            .populate('car', 'carName brand year images price wilaya address')
+            .populate('renter', 'firstName lastName avatar email')
+            .sort({ createdAt: -1 }); // Sort by most recent
+
+        if (!bookings) {
+            return res.status(404).json({ message: 'No bookings found for your listings.' });
+        }
+        res.status(200).json(bookings);
+    } catch (error) {
+        console.error("Error in getOwnerBookings:", error);
+        next(error);
+    }
+};
+
+// backened/controllers/car.controller.js
+import Car from '../models/car.models.js';
+import User from '../models/user.models.js';
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
+
+// Function to create a new car
+export const createCar = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        console.log("Request body:", req.body); // Log request body
+        console.log("Uploaded files:", req.files); // Log uploaded files
+
+        const { body, files } = req;
+        if (!files || files.length === 0) {
+            return res.status(400).json({ error: 'No images uploaded' });
+        }
+
+        const images = files.map((file) => `uploads/${file.filename}`);
+
+        // Parse location if it's a string
+        let locationData = body.location;
+        if (typeof locationData === 'string') {
+            try {
+                locationData = JSON.parse(locationData);
+            } catch (e) {
+                console.error('Error parsing location:', e);
+                return res.status(400).json({ error: 'Invalid location format' });
+            }
+        }
+
+        // Create location object for GeoJSON
+        const location = {
+            type: 'Point',
+            coordinates: [
+                parseFloat(locationData.lng || locationData[0]),
+                parseFloat(locationData.lat || locationData[1])
+            ]
+        };
+
+        // Get user information for owner details
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const newCar = new Car({
+            ...body,
+            location,
+            images,
+            owner: req.user.userId,
+            ownerName: {
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
+        });
+
+        await newCar.save();
+        console.log("Car created successfully:", newCar); // Log success
+        res.status(201).json({ message: 'Car created successfully', car: newCar });
+    } catch (error) {
+        console.error("Error creating car:", error.message); // Log error
+        res.status(500).json({ error: 'Failed to create car', details: error.message });
+    }
+};
+
+// Function to fetch cars based on query parameters
+export const getCars = async (req, res) => {
+    try {
+        // Extract query parameters
+        const { location, minPrice, maxPrice, available, page = 1, limit = 10 } = req.query;
+        const query = { isDeleted: false };
+
+        // Build the query object
+        if (location) query.location = location;
+        if (minPrice) query.pricePerDay = { $gte: minPrice };
+        if (maxPrice) query.pricePerDay = { ...query.pricePerDay, $lte: maxPrice };
+        if (available) query.availability = available === "true";
+
+        // Pagination
+        const skip = (page - 1) * limit;
+        const cars = await Car.find(query).skip(skip).limit(parseInt(limit));
+        const totalCars = await Car.countDocuments(query);
+
+        res.status(200).json({ cars, totalCars, page: parseInt(page), totalPages: Math.ceil(totalCars / limit) });
+    } catch (error) {
+        console.error("Error fetching cars:", error.message);
+        res.status(500).json({ error: error.message || "Server error" });
+    }
+};
+
+// Function to update car details
+export const updateCar = async (req, res) => {
+    try {
+        // Extract car ID from request parameters
+        const { id } = req.params;
+        const { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity, images, doors, transmission, mileage, engine, availabilityStart, availabilityEnd } = req.body;
+
+        // Update the car with the provided data
+        const updatedCar = await Car.findByIdAndUpdate(
+            id,
+            { make, model, year, pricePerDay, location, description, color, fuelType, seatingCapacity, images, doors, transmission, mileage, engine, availabilityStart, availabilityEnd },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedCar) {
+            return res.status(404).json({ error: "Car not found" });
+        }
+
+        res.status(200).json(updatedCar);
+    } catch (error) {
+        console.error("Error updating car:", error.message);
+        res.status(500).json({ error: error.message || "Server error" });
+    }
+};
+
+// Function to delete a car (soft delete)
+export const deleteCar = async (req, res) => {
+    try {
+        // Extract car ID from request parameters
+        const { id } = req.params;
+
+        // Soft delete the car by setting isDeleted to true
+        const deletedCar = await Car.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
+
+        if (!deletedCar) {
+            return res.status(404).json({ error: "Car not found" });
+        }
+
+        res.status(200).send("Car deleted successfully");
+    } catch (error) {
+        console.error("Error deleting car:", error.message);
+        res.status(500).json({ error: error.message || "Server error" });
+    }
+};
+
+// backened/controllers/rating.controller.js
+import Rating from '../models/rating.models.js';
+
+// Function to create a new rating
+export const createRating = async (req, res) => {
+    try {
+        // Extract rating details from the request body
+        const { userId, carId, rating, review } = req.body;
+
+        // Validate required fields
+        if (!userId || !carId || !rating) {
+            return res.status(400).send("Missing required fields: userId, carId, rating");
+        }
+
+        // Create and save the new rating
+        const newRating = new Rating({ userId, carId, rating, review });
+        await newRating.save();
+
+        res.status(201).json(newRating);
+    } catch (error) {
+        console.error("Error creating rating:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Function to fetch all ratings
+export const getRatings = async (req, res) => {
+    try {
+        // Retrieve all ratings and populate car details
+        const ratings = await Rating.find().populate('carId', 'make model');
+        res.status(200).json(ratings);
+    } catch (error) {
+        console.error("Error fetching ratings:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// backened/db/connectMONGODB.js
+import mongoose from "mongoose";
+import Car from "../models/car.models.js";
+
+// Function to connect to MongoDB
+const connectMongoDB = async () => {
+    try {
+        // Connect to the database using the URI from environment variables
+        const conn = await mongoose.connect(process.env.MONGO_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log(`MongoDB connected: ${conn.connection.host}`); // Log successful connection
+
+        // Create 2dsphere index for location-based queries
+        try {
+            await Car.collection.createIndex({ location: '2dsphere' });
+            console.log('2dsphere index created for Car location field');
+        } catch (indexError) {
+            if (indexError.codeName === 'IndexOptionsConflict') {
+                console.log('2dsphere index already exists');
+            } else {
+                console.error('Error creating 2dsphere index:', indexError);
+            }
+        }
+    } catch (error) {
+        console.error(`Cannot connect to MongoDB: ${error.message}`); // Log connection error
+        process.exit(1); // Exit the process on failure
+    }
+};
+
+export default connectMongoDB;
+
+// backened/lib/utils/generateToken.js
+import jwt from 'jsonwebtoken';
+
+// Function to generate JWT tokens and set them as cookies
+export const generateTokenAndSetCookie = (userId, res) => {
+    try {
+        if (!userId) {
+            console.error('No user ID provided for token generation');
+            return null;
+        }
+
+        if (!process.env.JWT_SECRET) {
+            console.error('JWT_SECRET is not defined');
+            return null;
+        }
+
+        // Generate token with user ID
+        const token = jwt.sign(
+            { userId },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' } // Increased to 7 days for better user experience
+        );
+
+        if (!token) {
+            console.error('Failed to generate token');
+            return null;
+        }
+
+        // Set HTTP-only cookie with the token
+        const cookieOptions = {
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+        };
+
+        res.cookie('jwt', token, cookieOptions);
+        console.log('Token generated and cookie set for user:', userId);
+
+        return token;
+    } catch (error) {
+        console.error('Error in generateTokenAndSetCookie:', error);
+        return null;
+    }
+};
+
+// backened/midleware/errorHandler.js
+// Centralized error-handling middleware
+export const errorHandler = (err, req, res, next) => {
+    console.error(err.stack); // Log the error stack for debugging
+    res.status(err.status || 500).json({ error: err.message || "Server Error" }); // Send error response
+};
+
+// backened/midleware/ProtectedRoute.js
+import User from "../models/user.models.js";
+import jwt from "jsonwebtoken";
+
+// Middleware to protect routes and restrict access based on roles
+export const ProtectedRoute = (options = { required: true }) => (req, res, next) => {
+    let token = null;
+
+    // 1. Try to get token from cookie
+    if (req.cookies && req.cookies.jwt) {
+        token = req.cookies.jwt;
+    }
+    // 2. If not in cookie, try to get token from Authorization header
+    else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+        token = req.headers.authorization.split(" ")[1];
+    }
+
+    // If no token is found
+    if (!token) {
+        if (options.required) {
+            return res.status(401).json({ error: "Not authorized: no token provided" });
+        }
+        // If authentication is not strictly required, proceed without user context
+        next();
+        return;
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // Attach user info to the request (e.g., { userId: '...' })
+        next();
+    } catch (error) {
+        // If token verification fails
+        if (options.required) {
+            console.error("Token verification failed:", error.message); // Log error for debugging
+            return res.status(401).json({ error: "Not authorized: invalid or malformed token" });
+        }
+        // If authentication is not strictly required but token is invalid, proceed without user context
+        // Optionally, clear the invalid cookie if it exists
+        if (req.cookies && req.cookies.jwt) {
+            res.clearCookie('jwt');
+        }
+        next();
+    }
+};
+
+// backened/models/booking.models.js
+import mongoose from 'mongoose';
+
+const bookingSchema = new mongoose.Schema({
+  car: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Car',
+    required: true,
+  },
+  renter: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  startDate: {
+    type: Date,
+    required: true,
+  },
+  endDate: {
+    type: Date,
+    required: true,
+  },
+  totalCost: {
+    type: Number,
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'cancelled_by_renter', 'cancelled_by_owner', 'completed', 'payment_failed'],
+    default: 'pending', // Initial status when chat is initiated
+  },
+  paymentId: { // Link to a payment record if applicable
+    type: String,
+    // ref: 'Payment' // If you have a Payment model
+  },
+  chatHistory: [
+    {
+      sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      message: String,
+      timestamp: { type: Date, default: Date.now },
+    },
+  ],
+  // Timestamps for booking creation and updates
+}, { timestamps: true });
+
+// Index to efficiently query bookings by car and dates
+bookingSchema.index({ car: 1, startDate: 1, endDate: 1 });
+// Index for querying bookings by renter or owner
+bookingSchema.index({ renter: 1 });
+bookingSchema.index({ owner: 1 });
+
+
+const Booking = mongoose.model('Booking', bookingSchema);
+
+export default Booking;
+
+// backened/models/car.models.js
+import mongoose from "mongoose";
+
+const carSchema = new mongoose.Schema(
+    {
+        id: {
+            type: String,
+            unique: true,
+            default: () => new mongoose.Types.ObjectId().toString(),
+        },
+        carName: {
+            type: String,
+            required: true,
+        },
+        brand: {
+            type: String,
+            required: true,
+        },
+        description: {
+            type: String,
+            required: true, // Ensure description is required
+            maxlength: 500, // Limit the description length
+        },
+        energy: {
+            type: String,
+            enum: ["Essence", "Diesel", "Hybrid", "Electric"],
+            required: true,
+        },
+        seats: {
+            type: Number,
+            required: true,
+        },
+        doors: {
+            type: Number,
+            required: true,
+        },
+        transmission: {
+            type: String,
+            enum: ["Manual", "Automatic"],
+            required: true,
+        },
+        mileage: {
+            type: Number,
+            required: true,
+        },
+        engine: {
+            type: String,
+            required: true,
+        },
+        wilaya: {
+            type: String,
+            required: true,
+        },
+        availabilityStart: {
+            type: Date,
+            required: true,
+        },
+        availabilityEnd: {
+            type: Date,
+            required: true,
+        },
+        price: {
+            type: Number,
+            required: true,
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
+        images: {
+            type: [String], // Array of image paths
+            required: true,
+            validate: {
+                validator: function (images) {
+                    return images.length >= 1 && images.length <= 5 && images.every((img) => img.startsWith('uploads/'));
+                },
+                message: 'You must upload between 1 and 5 images, and all image paths must start with "uploads/".',
+            },
+        },
+        owner: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        ownerName: {
+            firstName: {
+                type: String,
+                required: true
+            },
+            lastName: {
+                type: String,
+                required: true
+            }
+        }
+    },
+    { timestamps: true }
+);
+
+const Car = mongoose.model("Car", carSchema);
+export default Car;
+
+// backened/models/conversation.models.js
+import mongoose from 'mongoose';
+
+const conversationSchema = new mongoose.Schema({
+  participants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    validate: {
+      validator: function(participants) {
+        return participants.length === 2;
+      },
+      message: 'A conversation must have exactly 2 participants.'
+    }
+  }],
+  car: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Car',
+    required: true,
+  },
+  lastMessage: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Message',
+  },
+  readBy: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    lastRead: {
+      type: Date,
+      default: Date.now,
+    },
+  }],
+}, {
+  timestamps: true,
+});
+
+// Ensure there's only one conversation between two users for a specific car
+conversationSchema.index({ participants: 1, car: 1 }, { unique: true });
+
+// Add a method to get the other participant
+conversationSchema.methods.getOtherParticipant = function(userId) {
+  return this.participants.find(participant => !participant.equals(userId));
+};
+
+const Conversation = mongoose.model('Conversation', conversationSchema);
+
+export default Conversation;
+
+// backened/models/message.models.js
+import mongoose from 'mongoose';
+
+const messageSchema = new mongoose.Schema({
+  conversationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Conversation',
+    required: true,
+  },
+  sender: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  text: {
+    type: String,
+    required: true,
+  },
+  read: {
+    type: Boolean,
+    default: false,
+  },
+}, {
+  timestamps: true,
+});
+
+const Message = mongoose.model('Message', messageSchema);
+
+export default Message;
+
+// backened/models/rating.models.js
+import mongoose from "mongoose";
+
+const ratingSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
+    carId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Car",
+        required: true,
+    },
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+        required: true,
+    },
+    review: {
+        type: String,
+    },
+}, { timestamps: true });
+
+const Rating = mongoose.model("Rating", ratingSchema);
+export default Rating;
+
+// backened/models/user.models.js
+import mongoose from "mongoose";
+import bcrypt from 'bcryptjs';
+
+const userSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        required: [true, 'First name is required'],
+        trim: true
+    },
+    lastName: {
+        type: String,
+        required: [true, 'Last name is required'],
+        trim: true
+    },
+    email: {
+        type: String,
+        required: [true, 'Email is required'],
+        unique: true,
+        trim: true,
+        lowercase: true,
+        match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, 'Please enter a valid email']
+    },
+    password: {
+        type: String,
+        required: [true, 'Password is required'],
+        minlength: [6, 'Password must be at least 6 characters long']
+    },
+    birthDate: {
+        type: Date,
+        required: [true, 'Birth date is required']
+    },
+    phone: {
+        type: String,
+        required: [true, 'Phone number is required'],
+        trim: true,
+        unique: true
+    },
+    residence: {
+        type: String,
+        required: [true, 'Residence is required'],
+        trim: true
+    },
+    licenceFront: {
+        type: String,
+        required: [true, 'Front of driving licence is required']
+    },
+    licenceBack: {
+        type: String,
+        required: [true, 'Back of driving licence is required']
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    verificationToken: String,
+    verificationTokenExpires: Date,
+    refreshToken: String
+}, {
+    timestamps: true
+});
+
+// Pre-save hook to hash password before saving
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) return next();
+
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
+
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+export default User;
+
+// backened/routes/auth.routes.js
+import express from "express";
+import multer from "multer";
+import { login, signup, logout, getMe, refreshToken } from "../controllers/auth.controller.js";
+import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
+import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
+
+//import { processPayment } from "../controllers/payment.controller.js";
+
+const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+// Enable CORS for all routes
+router.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  next();
+});
+
+// User routes
+router.get("/me", ProtectedRoute(), getMe);
+router.get("/profile", ProtectedRoute(), getMe);
+router.post("/signup",
+  upload.fields([
+    { name: "licenceFront", maxCount: 1 },
+    { name: "licenceBack", maxCount: 1 }
+  ]),
+  signup
+);
+router.post("/login", login);
+router.post("/logout", logout);
+router.post("/refresh-token", refreshToken);
+
+// Car routes
+router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload
+router.get("/listcars", ProtectedRoute, getCars); // Get a list of cars
+router.put("/updatecars/:id", ProtectedRoute, updateCar); // Update car details
+router.delete("/deletecars/:id", ProtectedRoute, deleteCar); // Delete a car
+
+
+
+// Payment route
+//router.post("/payments", ProtectedRoute, processPayment); // Process a payment
+
+export default router;
+
+// backened/routes/booking.routes.js
+import express from 'express';
+import { ProtectedRoute } from '../midleware/ProtectedRoute.js'; // Corrected middleware path
+import {
+    createBookingRequest,
+    getBookingDetails,
+    updateBookingStatus,
+    getCarAvailability,
+    addChatMessage,
+    getUserBookings,
+    getOwnerBookings
+} from '../controllers/booking.controller.js';
+
+const router = express.Router();
+
+// POST /api/bookings/request - Create a new booking request (initiates chat)
+router.post('/request', ProtectedRoute, createBookingRequest);
+
+// GET /api/bookings/:bookingId - Get details of a specific booking
+router.get('/:bookingId', ProtectedRoute, getBookingDetails);
+
+// PUT /api/bookings/:bookingId/status - Update booking status (e.g., confirm, cancel)
+router.put('/:bookingId/status', ProtectedRoute, updateBookingStatus);
+
+// GET /api/bookings/availability/:carId - Check car availability for given dates
+router.get('/availability/:carId', getCarAvailability); // Can be public or protected
+
+// POST /api/bookings/:bookingId/chat - Add a message to the booking's chat
+router.post('/:bookingId/chat', ProtectedRoute, addChatMessage);
+
+// GET /api/bookings/user - Get all bookings for the logged-in renter
+router.get('/user/my-bookings', ProtectedRoute, getUserBookings);
+
+// GET /api/bookings/owner - Get all bookings for cars owned by the logged-in user
+router.get('/owner/my-listings-bookings', ProtectedRoute, getOwnerBookings);
+
+
+export default router;
+
+// backened/routes/car.routes.js
+import express from "express";
+import multer from "multer";
+import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
+import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
+import Car from "../models/car.models.js";
+
+const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/"); // Save files to the "uploads" directory
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
+});
+const upload = multer({ storage });
+
+// Car routes
+router.post("/add", ProtectedRoute(), upload.array("images", 5), createCar); // Add a new car with image upload
+router.get("/list", getCars); // Get a list of cars
+router.put("/update/:id", ProtectedRoute(), upload.array("images", 5), updateCar); // Update car details with image upload
+router.delete("/delete/:id", ProtectedRoute(), deleteCar); // Delete a car
+
+// Route to post a car
+router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req, res) => {
+    try {
+        console.log("Request body:", req.body); // Log request body
+        console.log("Uploaded files:", req.files); // Log uploaded files
+
+        const { body, files } = req;
+        if (!files || files.length === 0) {
+            return res.status(400).json({ error: 'No images uploaded' });
+        }
+
+        const imagePaths = files.map((file) => `uploads/${file.filename}`);
+
+        // Get user information for owner details
+        const User = (await import('../models/user.models.js')).default;
+        const user = await User.findById(req.user.userId);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const car = new Car({
+            ...body,
+            images: imagePaths,
+            owner: req.user.userId,
+            ownerName: {
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
+        });
+
+        await car.save();
+        res.status(201).json({ message: 'Car posted successfully!', car });
+    } catch (error) {
+        console.error("Error posting car:", error.message); // Log error
+        res.status(500).json({ error: 'Failed to post the car.', details: error.message });
+    }
+});
+
+// Route to fetch all cars posted by users
+router.get('/getcars', async (req, res) => {
+    try {
+        const {
+            brand,
+            energy,
+            transmission,
+            wilaya,
+            location,
+            seats,
+            doors,
+            priceMin,
+            priceMax,
+            availableFrom,
+            availableTo
+        } = req.query;
+
+        const query = { isDeleted: false };
+
+        if (brand) query.brand = brand;
+        if (energy) query.energy = energy;
+        if (transmission) query.transmission = transmission;
+        if (wilaya) query.wilaya = wilaya;
+        if (location) query.location = location;
+        if (seats) query.seats = parseInt(seats);
+        if (doors) query.doors = parseInt(doors);
+        if (priceMin || priceMax) {
+            query.price = {};
+            if (priceMin) query.price.$gte = parseFloat(priceMin);
+            if (priceMax) query.price.$lte = parseFloat(priceMax);
+        }
+        if (availableFrom || availableTo) {
+            query.$and = [];
+            if (availableFrom) {
+                query.$and.push({ availabilityEnd: { $gte: new Date(availableFrom) } });
+            }
+            if (availableTo) {
+                query.$and.push({ availabilityStart: { $lte: new Date(availableTo) } });
+            }
+        }
+
+        // Fetch cars with owner information
+        const cars = await Car.find(query)
+            .select('-__v')
+            .populate('owner', 'firstName lastName -_id'); // Populate owner information
+
+        res.status(200).json(cars);
+    } catch (error) {
+        console.error("Error fetching cars:", error.message);
+        res.status(500).json({ error: 'Failed to fetch cars.', details: error.message });
+    }
+});
+
+// Route to fetch cars owned by the current user
+router.get('/user-cars', ProtectedRoute(), async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // Find all cars where the owner is the current user
+        const userCars = await Car.find({
+            owner: userId,
+            isDeleted: false
+        }).sort({ createdAt: -1 }); // Sort by newest first
+
+        res.status(200).json(userCars);
+    } catch (error) {
+        console.error("Error fetching user's cars:", error.message);
+        res.status(500).json({ error: 'Failed to fetch your cars.', details: error.message });
+    }
+};
+
+// Route to fetch car details by ID
+router.get('/details/:id', ProtectedRoute({ required: false }), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const car = await Car.findById(id)
+            .select('-__v')
+            .populate('owner', 'firstName lastName email'); // Populate owner information with email
+
+        if (!car) {
+            return res.status(404).json({ error: 'Car not found' });
+        }
+
+        // Check if the car is available based on its availability dates
+        const now = new Date();
+        const isAvailable = !car.isDeleted &&
+                           new Date(car.availabilityStart) <= now &&
+                           new Date(car.availabilityEnd) >= now;
+
+        // Add isAvailable property to the response
+        const carResponse = car.toObject();
+        carResponse.isAvailable = isAvailable;
+
+        // Get user ID from request if authenticated
+        const userId = req.user?.userId || null;
+
+        // Check if the current user is the owner of the car
+        carResponse.isOwner = userId && car.owner._id.toString() === userId.toString();
+
+        res.status(200).json(carResponse);
+    } catch (error) {
+        console.error("Error fetching car details:", error.message);
+        res.status(500).json({ error: 'Failed to fetch car details.', details: error.message });
+    }
+});
+
+export default router;
+
+// backened/utils/auth.utils.js
+this is the backend of my project 
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  Avatar,
+  Divider,
+  Grid,
+  Button,
+  CircularProgress,
+  TextField,
+  IconButton,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SendIcon from '@mui/icons-material/Send';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import Navbar from '../components/Navbar';
+
+const ConversationPage = () => {
+  const { carId } = useParams();
+  const [car, setCar] = useState(null);
+  const [owner, setOwner] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    const fetchCarDetails = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+        const carResponse = await axios.get(`http://localhost:5001/api/cars/details/${carId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const carData = carResponse.data;
+        setCar(carData);
+        setOwner(carData.owner);
+      } catch (error) {
+        // Optionally handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCarDetails();
+  }, [carId]);
+
+  // Scroll to bottom when chatMessages change
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages]);
+
+  // Simulate owner reply for demo
+  useEffect(() => {
+    if (chatMessages.length > 0 && chatMessages[chatMessages.length - 1].sender === 'user') {
+      const timer = setTimeout(() => {
+        setChatMessages(prev => [...prev, {
+          text: "Thanks for your message! I'll get back to you soon.",
+          createdAt: new Date().toISOString(),
+          sender: 'owner',
+        }]);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [chatMessages]);
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
+  const handleSendChat = () => {
+    if (chatInput.trim()) {
+      setChatMessages(prev => [...prev, { text: chatInput, createdAt: new Date().toISOString(), sender: 'user' }]);
+      setChatInput('');
+    }
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '80vh',
+          bgcolor: '#f8fafc',
+          flexDirection: 'column',
+          gap: 2
+        }}>
+          <CircularProgress />
+          <Typography variant="body1" color="textSecondary">
+            Loading car details...
+          </Typography>
+        </Box>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+      <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pt: 4, pb: 8 }}>
+        <Container maxWidth="lg">
+          <Button 
+            startIcon={<ArrowBackIcon />}
+            onClick={handleGoBack}
+            sx={{ 
+              mb: 3, 
+              color: '#475569',
+              fontWeight: 500,
+              '&:hover': { 
+                bgcolor: 'rgba(71, 85, 105, 0.08)',
+                transform: 'translateX(-4px)',
+              },
+              transition: 'all 0.2s ease',
+            }}
+          >
+            Back to car details
+          </Button>
+          <Grid container spacing={3}>
+            {/* Left side: Car and owner details */}
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={2}
+                sx={{
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 24px rgba(71, 85, 105, 0.12)',
+                  bgcolor: '#fff',
+                  mb: { xs: 3, md: 0 },
+                }}
+              >
+                {/* Car image */}
+                <Box sx={{ position: 'relative', height: 200 }}>
+                  <img
+                    src={`http://localhost:5001/${car?.images?.[0]}`}
+                    alt={car?.carName}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                </Box>
+                {/* Car details */}
+                <Box sx={{ p: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
+                    {car?.carName}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <AttachMoneyIcon sx={{ color: '#3b82f6' }} />
+                    <Typography sx={{ color: '#3b82f6', fontWeight: 600 }}>
+                      €{car?.price}/day
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <LocationOnIcon sx={{ color: '#475569' }} />
+                    <Typography sx={{ color: '#475569' }}>
+                      {car?.wilaya}, {car?.address}
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ my: 2 }} />
+                  {/* Owner details */}
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1e293b' }}>
+                    About the Owner
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar 
+                      sx={{ 
+                        bgcolor: '#e2e8f0', 
+                        color: '#3b82f6',
+                        width: 50,
+                        height: 50,
+                        border: '2px solid #cbd5e1'
+                      }}
+                    >
+                      {owner?.firstName?.charAt(0) || 'O'}
+                    </Avatar>
+                    <Box>
+                      <Typography sx={{ fontWeight: 600, color: '#1e293b' }}>
+                        {owner?.firstName} {owner?.lastName}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#64748b' }}>
+                        Car Owner
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {owner?.email && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" sx={{ color: '#64748b' }}>
+                        Email:
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#475569' }}>
+                        {owner.email}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Paper>
+            </Grid>
+            {/* Right side: Chat */}
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={3}
+                sx={{
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 32px rgba(59, 130, 246, 0.10)',
+                  bgcolor: '#fff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 420,
+                  maxHeight: 540,
+                  height: { md: 500, xs: 'auto' },
+                }}
+              >
+                {/* Chat header */}
+                <Box sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 2,
+                  py: 1.5,
+                  bgcolor: '#3b82f6',
+                  color: 'white',
+                  borderTopLeftRadius: 12,
+                  borderTopRightRadius: 12,
+                  borderBottom: '1px solid #e2e8f0',
+                }}>
+                  <ChatBubbleOutlineIcon sx={{ fontSize: 22, mr: 1 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    Chat with Owner
+                  </Typography>
+                </Box>
+                {/* Chat messages area */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    px: 2,
+                    py: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.5,
+                    bgcolor: '#f8fafc',
+                    minHeight: 120,
+                  }}
+                >
+                  {chatMessages.length === 0 ? (
+                    <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 4 }}>
+                      No messages yet. Start the conversation!
+                    </Typography>
+                  ) : (
+                    chatMessages.map((msg, idx) => {
+                      const isUser = msg.sender === 'user';
+                      return (
+                        <Box
+                          key={idx}
+                          sx={{
+                            alignSelf: isUser ? 'flex-end' : 'flex-start',
+                            bgcolor: isUser ? '#3b82f6' : '#fff',
+                            color: isUser ? 'white' : '#1e293b',
+                            px: 2,
+                            py: 1,
+                            borderRadius: 2,
+                            mb: 0.5,
+                            maxWidth: '80%',
+                            boxShadow: isUser ? '0 1px 4px rgba(59,130,246,0.10)' : '0 1px 4px rgba(71,85,105,0.06)',
+                            borderTopLeftRadius: isUser ? 12 : 4,
+                            borderTopRightRadius: isUser ? 4 : 12,
+                            fontSize: '1rem',
+                            transition: 'background 0.2s',
+                            border: isUser ? '1px solid #3b82f6' : '1px solid #e2e8f0',
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 400 }}>{msg.text}</Typography>
+                          <Typography variant="caption" sx={{ opacity: 0.7, fontSize: '0.7rem', display: 'block', mt: 0.5, textAlign: isUser ? 'right' : 'left' }}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Typography>
+                        </Box>
+                      );
+                    })
+                  )}
+                  <div ref={chatEndRef} />
+                </Box>
+                {/* Chat input area */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1,
+                    px: 2,
+                    py: 1.5,
+                    bgcolor: '#fff',
+                    borderTop: '1px solid #e2e8f0',
+                    position: 'sticky',
+                    bottom: 0,
+                    zIndex: 1,
+                  }}
+                >
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Type your message..."
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyPress={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendChat())}
+                    sx={{ bgcolor: '#f8fafc', borderRadius: 2 }}
+                    inputProps={{ maxLength: 300 }}
+                    disabled={false}
+                  />
+                  <IconButton
+                    color="primary"
+                    onClick={handleSendChat}
+                    disabled={!chatInput.trim()}
+                    sx={{
+                      bgcolor: !chatInput.trim() ? '#e2e8f0' : '#3b82f6',
+                      color: !chatInput.trim() ? '#94a3b8' : 'white',
+                      '&:hover': {
+                        bgcolor: !chatInput.trim() ? '#e2e8f0' : '#2563eb',
+                      },
+                      transition: 'all 0.2s',
+                      borderRadius: 2,
+                      boxShadow: '0 1px 4px rgba(59,130,246,0.08)',
+                    }}
+                  >
+                    <SendIcon />
+                  </IconButton>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+    </>
+  );
+};
+export default ConversationPage; 
+
+App.js
+import './App.css';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import QuickSearch from './components/QuickSearch';
+import CarTypesCarousel from './components/CarTypesCarousel';
+import MapSection from './components/MapSection';
+import MapPage from './pages/MapPage';
+import AllOffersPage from './pages/AllOffersPage';
+import OfferDetailsPage from './pages/OfferDetailsPage';
+// import ChatPage from './pages/ChatPage'; // Will be replaced by the new ChatPage import
+import ProfilePage from './pages/ProfilePage';
+import CarDetailsPage from './pages/CarDetailsPage'; // Import the CarDetailsPage component
+import BookingPage from './pages/BookingPage'; // Import the BookingPage component
+import MapSelectPage from './pages/MapSelectPage'; // Import the MapSelectPage component
+import ConversationPage from './pages/ConversationPage';
+import ConversationListPage from './pages/ConversationListPage';
+
+function App() {
+  return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <BrowserRouter>
+        <div className="App">
+          <Routes>
+            <Route path="/" element={
+              <>
+                <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+                <QuickSearch />
+                <CarTypesCarousel />
+                <MapSection />
+              </>
+            } />
+            <Route path="/map/:wilaya" element={<MapPage />} />
+            <Route path="/offers" element={<AllOffersPage />} />
+            <Route path="/offer/:offerId" element={<OfferDetailsPage />} />
+            {/* <Route path="/chat/:posterName" element={<ChatPage />} /> */} {/* Old chat route, to be updated or removed */}
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/car-details/:carId" element={<CarDetailsPage />} /> {/* Add route for CarDetailsPage */}
+            <Route path="/booking/:carId" element={<BookingPage />} /> {/* Add route for BookingPage */}
+            <Route path="/map-select" element={<MapSelectPage />} /> {/* Add route for MapSelectPage */}
+            <Route path="/conversation/:carId/:ownerId" element={<ConversationPage />} />
+            <Route path="/messages" element={<ConversationListPage />} /> {/* Add route for ConversationListPage */}
+          </Routes>
+        </div>
+      </BrowserRouter>
+    </LocalizationProvider>
+  );
+}
+
+export default App;
+SignIn.js
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  IconButton,
+  InputAdornment,
+  useTheme,
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
+import { useNavigate } from 'react-router-dom';
+
+const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Sign-in form data:", formData);
+
+    try {
+      const response = await fetch('http://localhost:5001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+      console.log("Backend response:", result);
+
+      if (response.ok) {
+        setMessage('Sign in successful');
+        console.log("Sign in successful:", result);
+        localStorage.setItem('token', result.token);
+        
+        // Close the dialog
+        onClose();
+        
+        // Call onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess();
+        }
+        
+        // Dispatch custom event to notify other components about login state change
+        window.dispatchEvent(new Event('loginStateChanged'));
+        
+        // Navigate to profile page
+        navigate('/profile');
+      } else {
+        setMessage(result.error || 'Sign in failed');
+        console.error("Sign in failed:", result);
+      }
+    } catch (error) {
+      setMessage('Sign in failed');
+      console.error("Error during sign in:", error.message);
+    }
+  };
+
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: '0 12px 50px -12px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+        }
+      }}
+    >
+      <Box sx={{
+        position: 'relative',
+        background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+        p: 3,
+        color: 'white',
+      }}>
+        <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+          Welcome Back
+        </Typography>
+        <Typography variant="body2" sx={{ opacity: 0.8 }}>
+          Sign in to continue your journey
+        </Typography>
+        <IconButton
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'white',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              required
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              variant="outlined"
+              onFocus={() => setFocused('email')}
+              onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon 
+                      sx={{ 
+                        color: focused === 'email' ? '#475569' : '#94a3b8',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#3498db',
+                  },
+                },
+              }}
+            />
+            <TextField
+              required
+              fullWidth
+              label="Password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={handleChange}
+              variant="outlined"
+              onFocus={() => setFocused('password')}
+              onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon 
+                      sx={{ 
+                        color: focused === 'password' ? '#475569' : '#94a3b8',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      sx={{ color: showPassword ? '#475569' : '#94a3b8' }}
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#3498db',
+                  },
+                },
+              }}
+            />
+            <Button
+              variant="text"
+              sx={{
+                alignSelf: 'flex-end',
+                color: '#64748b',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  color: '#475569',
+                }
+              }}
+            >
+              Forgot Password?
+            </Button>
+          </Box>
+          {message && (
+            <Typography 
+              variant="body2" 
+              sx={{ color: message === 'Sign in successful' ? 'green' : 'red', mt: 2 }}
+            >
+              {message}
+            </Typography>
+          )}
+        </DialogContent>
+
+        <DialogActions 
+          sx={{ 
+            p: 4, 
+            pt: 0,
+            flexDirection: 'column',
+            gap: 2
+          }}
+        >
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{
+              bgcolor: '#475569',
+              color: 'white',
+              py: 1.5,
+              fontSize: '1rem',
+              textTransform: 'none',
+              '&:hover': {
+                bgcolor: '#334155',
+              },
+            }}
+          >
+            Sign In
+          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" sx={{ color: '#64748b' }}>
+              Don't have an account?
+            </Typography>
+            <Button
+              onClick={() => onSwitchToSignUp()}
+              sx={{
+                color: '#3498db',
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  color: '#334155',
+                }
+              }}
+            >
+              Sign Up
+            </Button>
+          </Box>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+};
+
+export default SignIn;
+
+
+
+
