@@ -33,6 +33,10 @@ const ConversationPage = () => {
   const [conversationId, setConversationId] = useState('');
 
   const fetchMessages = React.useCallback(async (page = 1, limit = 10) => {
+    if (!carId || !conversationId) {
+      console.warn("Skipping fetchMessages: carId or conversationId is missing");
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`http://localhost:5001/api/messages/${carId}?conversationId=${conversationId}&page=${page}&limit=${limit}`, {
@@ -44,7 +48,6 @@ const ConversationPage = () => {
       setChatMessages(response.data);
     } catch (error) {
       console.error("Error fetching messages:", error);
-      setLoading(false);
     }
   }, [carId, conversationId]);
 
@@ -74,17 +77,24 @@ const ConversationPage = () => {
       }
     };
 
-    const generateConversationId = () => {
+    if (carId && /^[0-9a-fA-F]{24}$/.test(carId)) {
+      fetchCarDetails();
+    } else {
+      console.error("Invalid carId:", carId);
+      setLoading(false);
+    }
+  }, [carId]);
+
+  useEffect(() => {
+    if (owner) {
       const token = localStorage.getItem('token');
       const userId = token ? JSON.parse(atob(token.split('.')[1])).userId : null;
-      if (owner) {
-        setConversationId(`${carId}-${userId}-${owner._id}`);
+      if (userId) {
+        const userIds = [userId, owner._id].sort();
+        setConversationId(`${carId}-${userIds[0]}-${userIds[1]}`);
       }
-    };
-
-    fetchCarDetails();
-    generateConversationId();
-  }, [carId, owner]);
+    }
+  }, [owner, carId]);
 
   useEffect(() => {
     if (conversationId) {
@@ -92,7 +102,6 @@ const ConversationPage = () => {
     }
   }, [conversationId, fetchMessages]);
 
-  // Scroll to bottom when chatMessages change
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -120,24 +129,11 @@ const ConversationPage = () => {
 
       setChatMessages(prev => [...prev, response.data]);
       setChatInput('');
+      await fetchMessages();
     } catch (error) {
       console.error("Error sending message:", error);
     }
   };
-
-  // Simulate owner reply for demo
-  // useEffect(() => {
-  //   if (chatMessages.length > 0 && chatMessages[chatMessages.length - 1].sender === 'user') {
-  //     const timer = setTimeout(() => {
-  //       setChatMessages(prev => [...prev, {
-  //         text: "Thanks for your message! I'll get back to you soon.",
-  //         createdAt: new Date().toISOString(),
-  //         sender: 'owner',
-  //       }]);
-  //     }, 1200);
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [chatMessages]);
 
   if (loading) {
     return (
@@ -183,7 +179,6 @@ const ConversationPage = () => {
             Back to car details
           </Button>
           <Grid container spacing={3}>
-            {/* Left side: Car and owner details */}
             <Grid item xs={12} md={6}>
               <Paper
                 elevation={2}
@@ -195,7 +190,6 @@ const ConversationPage = () => {
                   mb: { xs: 3, md: 0 },
                 }}
               >
-                {/* Car image */}
                 <Box sx={{ position: 'relative', height: 200 }}>
                   <img
                     src={`http://localhost:5001/${car?.images?.[0]}`}
@@ -207,7 +201,6 @@ const ConversationPage = () => {
                     }}
                   />
                 </Box>
-                {/* Car details */}
                 <Box sx={{ p: 3 }}>
                   <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
                     {car?.carName}
@@ -225,7 +218,6 @@ const ConversationPage = () => {
                     </Typography>
                   </Box>
                   <Divider sx={{ my: 2 }} />
-                  {/* Owner details */}
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1e293b' }}>
                     About the Owner
                   </Typography>
@@ -263,7 +255,6 @@ const ConversationPage = () => {
                 </Box>
               </Paper>
             </Grid>
-            {/* Right side: Chat */}
             <Grid item xs={12} md={6}>
               <Paper
                 elevation={3}
@@ -279,7 +270,6 @@ const ConversationPage = () => {
                   height: { md: 500, xs: 'auto' },
                 }}
               >
-                {/* Chat header */}
                 <Box sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -297,7 +287,6 @@ const ConversationPage = () => {
                     Chat with Owner
                   </Typography>
                 </Box>
-                {/* Chat messages area */}
                 <Box
                   sx={{
                     flex: 1,
@@ -317,7 +306,8 @@ const ConversationPage = () => {
                     </Typography>
                   ) : (
                     chatMessages.map((msg, idx) => {
-                      const isUser = msg.sender === 'user';
+                      const userId = localStorage.getItem('token') ? JSON.parse(atob(localStorage.getItem('token').split('.')[1])).userId : null;
+                      const isUser = msg.sender._id.toString() === userId;
                       return (
                         <Box
                           key={idx}
@@ -348,7 +338,6 @@ const ConversationPage = () => {
                   )}
                   <div ref={chatEndRef} />
                 </Box>
-                {/* Chat input area */}
                 <Box
                   sx={{
                     display: 'flex',
