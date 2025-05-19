@@ -1,126 +1,53 @@
 import Message from '../models/message.models.js';
-import Conversation from '../models/conversation.models.js';
-import { validationResult } from 'express-validator';
 
-export const getOrCreateConversation = async (req, res) => {
+// Save a new message
+export const saveMessage = async (req, res) => {
   try {
-    const { participant1, participant2, carId } = req.body;
-    
-    console.log('Creating/fetching conversation with:', { participant1, participant2, carId });
+    const { carId, receiver, text, conversationId } = req.body;
+    const sender = req.user.userId;
 
-    // Validate input
-    if (!participant1 || !participant2 || !carId) {
-      return res.status(400).json({ message: 'Missing required fields' });
+    let convoId = conversationId;
+    if (!convoId) {
+      convoId = `${carId}-${sender}-${receiver}`;
     }
 
-    // Check if conversation already exists
-    let conversation = await Conversation.findOne({
-      participants: { $all: [participant1, participant2] },
-      car: carId
-    })
-    .populate('participants', 'firstName lastName avatar')
-    .populate('car', 'title images');
+    const newMessage = new Message({
+      carId,
+      sender,
+      receiver,
+      conversationId: convoId,
+      text
+    });
 
-    // If not, create a new one
-    if (!conversation) {
-      console.log('Creating new conversation');
-      conversation = new Conversation({
-        participants: [participant1, participant2],
-        car: carId,
-        lastMessage: null
-      });
-      await conversation.save();
-      
-      // Populate the participants and car after saving
-      conversation = await Conversation.findById(conversation._id)
-        .populate('participants', 'firstName lastName avatar')
-        .populate('car', 'title images');
-    }
+    const savedMessage = await newMessage.save();
 
-    console.log('Returning conversation:', conversation);
-    res.status(200).json(conversation);
+    res.status(201).json(savedMessage);
   } catch (error) {
-    console.error('Error in getOrCreateConversation:', error);
-    res.status(500).json({ message: 'Failed to get or create conversation' });
+    console.error("Error saving message:", error.message);
+    res.status(500).json({ error: 'Failed to save message.', details: error.message });
   }
 };
 
-export const getConversationMessages = async (req, res) => {
+// Get messages for a car
+export const getMessages = async (req, res) => {
   try {
-    const { conversationId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { carId } = req.params;
+    const { conversationId } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
 
-    console.log('Fetching messages for conversation:', conversationId);
+    const skip = (page - 1) * limit;
 
-    if (!conversationId) {
-      return res.status(400).json({ message: 'Conversation ID is required' });
-    }
-
-    // Check if conversation exists
-    const conversation = await Conversation.findById(conversationId);
-    if (!conversation) {
-      return res.status(404).json({ message: 'Conversation not found' });
-    }
-
-    const messages = await Message.find({ conversationId })
-      .sort({ createdAt: 1 }) // Sort by oldest first for proper display
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .populate('sender', 'firstName lastName avatar')
-      .lean();
-
-    console.log(`Found ${messages.length} messages`);
-
-    // Mark messages as read if current user is not the sender
-    if (req.user && req.user._id) {
-      await Message.updateMany(
-        { 
-          conversationId, 
-          sender: { $ne: req.user._id },
-          read: false 
-        },
-        { $set: { read: true } }
-      );
-    }
+    const messages = await Message.find({ carId, conversationId })
+      .populate('sender', 'firstName lastName')
+      .populate('receiver', 'firstName lastName')
+      .sort({ createdAt: 1 })
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json(messages);
   } catch (error) {
-    console.error('Error getting conversation messages:', error);
-    res.status(500).json({ 
-      message: 'Failed to get messages',
-      error: error.message 
-    });
-  }
-};
-
-export const getUserConversations = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    
-    const conversations = await Conversation.find({
-      participants: userId
-    })
-    .populate('participants', 'firstName lastName avatar')
-    .populate('car', 'title images')
-    .populate('lastMessage')
-    .sort({ updatedAt: -1 });
-
-    res.status(200).json(conversations);
-  } catch (error) {
-    console.error('Error getting user conversations:', error);
-    res.status(500).json({ message: 'Failed to get conversations' });
-  }
-};
-
-export const markAsRead = async (req, res) => {
-  try {
-    const { messageId } = req.params;
-    
-    await Message.findByIdAndUpdate(messageId, { read: true });
-    
-    res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('Error marking message as read:', error);
-    res.status(500).json({ message: 'Failed to mark message as read' });
+    console.error("Error getting messages:", error.message);
+    res.status(500).json({ error: 'Failed to get messages.', details: error.message });
   }
 };

@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 // Handles user signup
 export const signup = async (req, res) => {
     try {
-        console.log("Signup request body:", req.body); // Log the request body
+        console.log("Signup request body:", req.body);
 
         const { firstName, lastName, birthDate, phone, residence, email, password } = req.body;
 
@@ -15,41 +15,31 @@ export const signup = async (req, res) => {
             return res.status(400).json({ error: "Email is required" });
         }
 
-        // Validate required fields
         if (!req.files || !req.files.licenceFront || !req.files.licenceBack) {
             return res.status(400).json({ error: "Driving licence images are required" });
         }
 
-        const licenceFront = req.files.licenceFront[0].path; // Get file path
-        const licenceBack = req.files.licenceBack[0].path; // Get file path
+        const licenceFront = req.files.licenceFront[0].path;
+        const licenceBack = req.files.licenceBack[0].path;
 
-        // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.toLowerCase())) {
-            console.log("Invalid email format"); // Log invalid email
+            console.log("Invalid email format");
             return res.status(400).json({ error: "Invalid email format" });
         }
 
-        // Check if email or phone already exists
         const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { phone }] });
         if (existingUser) {
-            console.log("Email or phone already in use"); // Log duplicate email/phone
+            console.log("Email or phone already in use");
             return res.status(400).json({ error: "Email or phone number already in use" });
         }
 
-        // Validate password length
         if (password.length < 6) {
-            console.log("Password too short"); // Log invalid password length
+            console.log("Password too short");
             return res.status(400).json({ error: "Password must be at least 6 characters long" });
         }
 
-        // Hash the password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        console.log("Password hashed successfully"); // Log successful password hashing
-
-        // Create a new user
+        // Create a new user with the plain password
         const newUser = new User({
             firstName,
             lastName,
@@ -57,27 +47,24 @@ export const signup = async (req, res) => {
             phone,
             residence,
             email: email.toLowerCase(),
-            password: hashedPassword,
+            password, // Pass the plain password here
             licenceFront,
             licenceBack,
         });
 
         await newUser.save();
-        console.log("User saved successfully:", newUser); // Log successful user creation
+        console.log("User saved successfully:", newUser);
 
-        // Generate token and set it in the cookie
-        // Generate token and set it in the cookie
         const token = generateTokenAndSetCookie(newUser._id, res);
 
         if (!token) {
-            // Handle case where token generation failed, though generateTokenAndSetCookie logs errors
             console.error('Failed to generate token during signup');
             return res.status(500).json({ error: 'Failed to generate authentication token during signup' });
         }
 
         res.status(201).json({
             message: "User registered successfully",
-            token, // Include the token in the response
+            token,
             user: {
                 _id: newUser._id,
                 firstName: newUser.firstName,
@@ -88,7 +75,7 @@ export const signup = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error("Error in signup controller:", error.message); // Log the error message
+        console.error("Error in signup controller:", error.message);
         res.status(500).json({ error: "Server error" });
     }
 };

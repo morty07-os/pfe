@@ -574,10 +574,11 @@ export default function CarDetailsPage() {
                         <Button
                           variant="outlined"
                           onClick={() => navigate(`/conversation/${carId}/${car.owner?._id || car.owner}`)}
+                          disabled={isOwnCar}
                           sx={{
                             borderRadius: 99,
                             borderColor: '#475569',
-                            color: '#475569',
+                            color: isOwnCar ? '#a0a0a0' : '#475569',
                             fontWeight: 600,
                             py: { xs: 0.8, sm: 1 },
                             px: { xs: 2, sm: 3 },
@@ -585,10 +586,11 @@ export default function CarDetailsPage() {
                             fontSize: { xs: '0.8rem', sm: '0.9rem' },
                             whiteSpace: 'nowrap',
                             '&:hover': {
-                              background: 'rgba(71, 85, 105, 0.1)',
+                              background: isOwnCar ? 'none' : 'rgba(71, 85, 105, 0.1)',
                               borderColor: '#334155',
                             },
                             transition: 'all 0.2s ease-in-out',
+                            cursor: isOwnCar ? 'not-allowed' : 'pointer',
                           }}
                         >
                           Start Conversation

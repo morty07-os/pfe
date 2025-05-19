@@ -15,6 +15,7 @@ import User from './models/user.models.js';
 import path from "path";
 import carRoutes from "./routes/car.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
+import messageRoutes from "./routes/message.routes.js";
 
 
 
@@ -88,6 +89,7 @@ app.use("/api/cars", carRoutes);
 
 // Mount booking routes
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/messages", messageRoutes);
 
 
 
