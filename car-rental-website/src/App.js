@@ -16,6 +16,14 @@ import BookingPage from './pages/BookingPage'; // Import the BookingPage compone
 import MapSelectPage from './pages/MapSelectPage'; // Import the MapSelectPage component
 import ConversationPage from './pages/ConversationPage';
 import ConversationListPage from './pages/ConversationListPage';
+// Import new pages
+import CategoriesPage from './pages/CategoriesPage';
+import DealsPage from './pages/DealsPage';
+import AboutPage from './pages/AboutPage';
+import FaqPage from './pages/FaqPage';
+import ContactPage from './pages/ContactPage';
+import ReviewsPage from './pages/ReviewsPage';
+import AddCarPage from './pages/AddCarPage'; // Import the new AddCarPage
 
 function App() {
   return (
@@ -31,6 +39,7 @@ function App() {
                 <MapSection />
               </>
             } />
+            <Route path="/map" element={<MapPage />} />
             <Route path="/map/:wilaya" element={<MapPage />} />
             <Route path="/offers" element={<AllOffersPage />} />
             <Route path="/offer/:offerId" element={<OfferDetailsPage />} />
@@ -41,6 +50,14 @@ function App() {
             <Route path="/map-select" element={<MapSelectPage />} /> {/* Add route for MapSelectPage */}
             <Route path="/conversation/:carId/:ownerId" element={<ConversationPage />} />
             <Route path="/messages" element={<ConversationListPage />} /> {/* Add route for ConversationListPage */}
+            {/* New Routes */}
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/deals" element={<DealsPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/faq" element={<FaqPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
+            <Route path="/add-car" element={<AddCarPage />} /> {/* Add route for AddCarPage */}
           </Routes>
         </div>
       </BrowserRouter>

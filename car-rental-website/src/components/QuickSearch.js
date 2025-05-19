@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Paper, 
@@ -26,6 +26,23 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
   const [endDate, setEndDate] = useState(dayjs().add(3, 'day'));
   const [location, setLocation] = useState(null);
   const [locationInput, setLocationInput] = useState('');
+  const [isDateInvalid, setIsDateInvalid] = useState(false);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      // Check if endDate is strictly before startDate (ignoring time for this specific validation if needed, or include time)
+      // For DateTimePicker, comparing directly should work with time.
+      if (dayjs(endDate).isBefore(dayjs(startDate))) {
+        setIsDateInvalid(true);
+      } else {
+        setIsDateInvalid(false);
+      }
+    } else {
+      // If either date is not set, consider it invalid for submission purposes
+      setIsDateInvalid(true); 
+    }
+  }, [startDate, endDate]);
+
   return (
     <Box
       sx={{
@@ -141,7 +158,7 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
                 label="End Date & Time"
                 value={endDate}
                 onChange={(newValue) => setEndDate(newValue)}
-                minDate={startDate}
+                minDate={startDate} // Keeps visual cue, but button logic is main guard
                 sx={{ width: '100%' }}
               />
             </Box>
@@ -151,6 +168,7 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
             variant="contained"
             size="large"
             startIcon={<DirectionsCarIcon />}
+            disabled={isDateInvalid} // Disable button if dates are invalid
             sx={{
               flex: 1,
               height: '56px',

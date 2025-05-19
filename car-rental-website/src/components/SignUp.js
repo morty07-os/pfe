@@ -20,7 +20,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 import WilayaDropdown from './WilayaDropdown';
 
-const SignUp = ({ open, onClose, onSwitchToSignIn }) => {
+const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   const theme = useTheme();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -71,7 +71,7 @@ const SignUp = ({ open, onClose, onSwitchToSignIn }) => {
 
     try {
       // Send POST request to the backend
-      const response = await fetch('http://localhost:5001/api/auth/signup', { // Updated endpoint
+      const response = await fetch('http://localhost:5001/api/auth/signup', { 
         method: 'POST',
         body: formDataToSend,
       });
@@ -82,23 +82,26 @@ const SignUp = ({ open, onClose, onSwitchToSignIn }) => {
         // Store token in localStorage
         localStorage.setItem('token', result.token);
         
+        const userName = result.user?.firstName || 'User';
         // Close the dialog
         onClose();
+        
+        // Call onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess(userName); 
+        }
         
         // Log success message
         console.log("Signup successful");
         
         // Dispatch custom event to notify other components about login state change
         window.dispatchEvent(new Event('loginStateChanged'));
-        
-        // Navigate to profile page
-        window.location.href = '/profile';
       } else {
-        alert(result.error || 'Registration failed'); // Show error message
-        console.log("Signup not successful"); // Log failure message
+        alert(result.error || 'Registration failed'); 
+        console.log("Signup not successful"); 
       }
     } catch (error) {
-      console.error("Error during registration:", error.message); // Log error
+      console.error("Error during registration:", error.message); 
       alert('An error occurred during registration');
     }
   };

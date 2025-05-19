@@ -200,14 +200,10 @@ export default function AllOffersPage() {
       console.error('Error fetching user cars:', error.message);
     }
   };
-  const query = React.useMemo(() => {
-    const params = new URLSearchParams(locationObj.search);
-    return {
-      wilaya: params.get('wilaya'),
-      startDate: params.get('startDate'),
-      endDate: params.get('endDate')
-    };
-  }, [locationObj.search]);
+
+  // Extract category from query parameters
+  const queryParams = React.useMemo(() => new URLSearchParams(locationObj.search), [locationObj.search]);
+  const categoryFilter = queryParams.get('category');
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -228,14 +224,13 @@ export default function AllOffersPage() {
         if (!response.ok) throw new Error('Failed to fetch offers');
         const data = await response.json();
         console.log('Fetched car data:', data);
-        
-        // Add features and location data to all cars
+
         const enhancedData = data.map(car => {
           const wilaya = car.wilaya || 'Alger'; // Default to Alger if no wilaya specified
-          
+
           // Get coordinates for the wilaya
           const wilayaCoords = algeriaWilayaCoordinates[wilaya] || algeriaWilayaCoordinates['Alger'];
-          
+
           // Check if we have popular locations for this wilaya
           let locationData;
           if (popularLocations[wilaya]) {
@@ -254,7 +249,7 @@ export default function AllOffersPage() {
               lng: wilayaCoords.lng + lngOffset
             };
           }
-          
+
           // Add random features if not present
           const features = car.features || {
             airConditioning: Math.random() > 0.4,
@@ -270,14 +265,16 @@ export default function AllOffersPage() {
             keylessEntry: Math.random() > 0.6,
             alloyWheels: Math.random() > 0.5
           };
-          
+
           return {
             ...car,
             features,
-            location: car.location || locationData
+            location: car.location || locationData,
+            // Assuming car data has a 'category' field, if not, this needs to be derived
+            // category: car.category || 'Unknown' // Example, adjust as per your data structure
           };
         });
-        
+
         setOffers(enhancedData);
         console.log('Enhanced car data with features and locations:', enhancedData);
       } catch (error) {
@@ -287,6 +284,42 @@ export default function AllOffersPage() {
     fetchOffers();
   }, [sidebarFilters]);
 
+  const filteredOffers = React.useMemo(() => {
+    let tempOffers = [...offers];
+
+    // Apply category filter from URL query param first
+    if (categoryFilter) {
+      tempOffers = tempOffers.filter(offer =>
+        offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase()
+      );
+    }
+
+    // Apply search term filter
+    if (search) {
+      tempOffers = tempOffers.filter(offer =>
+        offer.brand?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.model?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.description?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.wilaya?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Apply sidebar filters
+    tempOffers = tempOffers.filter(offer =>
+      (!sidebarFilters.brand || offer.brand === sidebarFilters.brand) &&
+      (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
+      (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
+      (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) &&
+      (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
+      (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
+      (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1])) &&
+      (!sidebarFilters.availableFrom || dayjs(offer.availableFrom).isSameOrAfter(dayjs(sidebarFilters.availableFrom), 'day')) &&
+      (!sidebarFilters.availableTo || dayjs(offer.availableTo).isSameOrBefore(dayjs(sidebarFilters.availableTo), 'day'))
+    );
+
+    return tempOffers;
+  }, [offers, search, sidebarFilters, categoryFilter]); // Added categoryFilter to dependency array
+
   function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
     if (!selectedFrom || !selectedTo) return true;
     const offerStart = dayjs(offerFrom);
@@ -294,38 +327,6 @@ export default function AllOffersPage() {
     const selStart = dayjs(selectedFrom);
     const selEnd = dayjs(selectedTo);
     return offerEnd.isAfter(selStart) && offerStart.isBefore(selEnd);
-  }
-
-  const filteredOffers = offers.filter(offer => {
-    const matchesSearch =
-      offer.carName.toLowerCase().includes(search.toLowerCase()) ||
-      offer.brand.toLowerCase().includes(search.toLowerCase()) ||
-      offer.wilaya.toLowerCase().includes(search.toLowerCase());
-    const matchesWilaya = !query.wilaya || offer.wilaya === query.wilaya;
-    const matchesDate =
-      !query.startDate || !query.endDate ||
-      isDateRangeOverlap(
-        offer.availabilityStart,
-        offer.availabilityEnd,
-        query.startDate,
-        query.endDate
-      );
-    const matchesSidebar = matchesSidebarFilters(offer);
-    return matchesSearch && matchesWilaya && matchesDate && matchesSidebar;
-  });
-
-  function matchesSidebarFilters(offer) {
-    const f = sidebarFilters;
-    if (f.brand && offer.brand !== f.brand) return false;
-    if (f.energy && offer.energy !== f.energy) return false;
-    if (f.transmission && offer.transmission !== f.transmission) return false;
-    if (f.wilaya && offer.wilaya !== f.wilaya) return false;
-    if (f.seatsRange && (Number(offer.seats) < f.seatsRange[0] || Number(offer.seats) > f.seatsRange[1])) return false;
-    if (f.doorsRange && (Number(offer.doors) < f.doorsRange[0] || Number(offer.doors) > f.doorsRange[1])) return false;
-    if (f.priceRange && (offer.price < f.priceRange[0] || offer.price > f.priceRange[1])) return false;
-    if (f.availableFrom && dayjs(offer.availableFrom).isBefore(dayjs(f.availableFrom))) return false;
-    if (f.availableTo && dayjs(offer.availableTo).isAfter(dayjs(f.availableTo))) return false;
-    return true;
   }
 
   const getFilterLabel = (key) => {
@@ -612,354 +613,354 @@ export default function AllOffersPage() {
                   }
 
                   return (
-                  <Grid item xs={12} key={offer._id || offer.id} sx={{ width: '100%' }}>
-                    <Card sx={{
-                      borderRadius: 2,
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                      border: isOwnOffer ? '2px solid #ef4444' : '1px solid #e2e8f0',
-                      backgroundColor: isOwnOffer ? '#fff5f5' : 'inherit',
-                      transition: 'all 0.2s ease-in-out',
-                      '&:hover': {
-                        boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
-                        transform: 'translateY(-4px)',
-                      },
-                      mb: 3,
-                      overflow: 'visible',
-                      position: 'relative',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        height: '100%',
-                        width: 5,
-                        bgcolor: isOwnOffer ? '#ef4444' : '#64748b',
-                        borderRadius: '4px 0 0 4px',
-                      }
-                    }}>
-                      {isOwnOffer && (
-                        <Box sx={{ 
-                          position: 'absolute', 
-                          top: 8, 
-                          right: 8, 
-                          zIndex: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1
-                        }}>
-                          <Chip
-                            icon={<CheckCircleIcon sx={{ color: 'white !important' }} />}
-                            label="Your Car"
-                            sx={{
-                              bgcolor: '#ef4444',
-                              color: 'white',
-                              fontWeight: 600,
-                              '& .MuiChip-label': { px: 1 }
-                            }}
-                          />
-                          </Box>
-                      )}
-                      <Box sx={{
-                        display: 'flex',
-                        flexDirection: { xs: 'column', md: 'row' },
-                        gap: 2,
-                        p: 2
+                    <Grid item xs={12} key={offer._id || offer.id} sx={{ width: '100%' }}>
+                      <Card sx={{
+                        borderRadius: 2,
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+                        border: isOwnOffer ? '2px solid #ef4444' : '1px solid #e2e8f0',
+                        backgroundColor: isOwnOffer ? '#fff5f5' : 'inherit',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:hover': {
+                          boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+                          transform: 'translateY(-4px)',
+                        },
+                        mb: 3,
+                        overflow: 'visible',
+                        position: 'relative',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          height: '100%',
+                          width: 5,
+                          bgcolor: isOwnOffer ? '#ef4444' : '#64748b',
+                          borderRadius: '4px 0 0 4px',
+                        }
                       }}>
-                        <Box sx={{
-                          flexShrink: 0,
-                          width: { xs: '100%', md: 120 },
-                          height: { xs: 200, md: 120 },
-                          position: 'relative'
-                        }}>
-                          <CardMedia
-                            component="img"
-                            image={offer.images?.[0] ? `http://localhost:5001/${offer.images[0]}` : '/placeholder.jpg'}
-                            alt={offer.title || 'Car image'}
-                            sx={{
-                              objectFit: 'cover',
-                              borderRadius: 1,
-                              width: '100%',
-                              height: '100%',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                            }}
-                          />
-                        </Box>
-                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              {isOwnOffer && (
-                                <Chip
-                                  label="Your Car"
-                                  color="error"
-                                  size="small"
-                                  sx={{
-                                    bgcolor: '#ef4444',
-                                    color: 'white',
-                                    fontWeight: 600,
-                                    '& .MuiChip-label': { px: 1 }
-                                  }}
-                                />
-                              )}
-                              <Typography variant="h6" sx={{
-                                fontWeight: 700,
-                                color: '#1e293b',
-                                fontSize: '1.25rem'
-                              }}>
-                                {offer.title || offer.carName || 'Car Listing'}
-                              </Typography>
-                            </Box>
-                            <Box sx={{
-                              bgcolor: '#e6f0fa',
-                              color: '#64748b',
-                              fontWeight: 700,
-                              borderRadius: 1,
-                              px: 1.5,
-                              py: 0.5,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 0.5
-                            }}>
-                              <AttachMoneyIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                              <span>€{offer.price}</span>
-                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}> /day</span>
-                            </Box>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-                              <LocationOnIcon sx={{ color: '#64748b', mr: 0.5 }} />
-                              <Typography variant="body2" sx={{
-                                color: '#64748b',
-                                fontWeight: 600
-                              }}>
-                                {offer.wilaya || 'Unknown Location'}
-                              </Typography>
-                            </Box>
-                            
-                            <Box 
-                              component="button"
-                              onClick={() => {
-                                // Navigate to the map page with the car's ID and wilaya
-                                const wilaya = offer.wilaya || 'Alger';
-                                // Store the selected car's location in localStorage for the map page to highlight
-                                if (offer.location) {
-                                  localStorage.setItem('highlightedCarLocation', JSON.stringify({
-                                    carId: offer._id,
-                                    location: offer.location,
-                                    carName: offer.title || offer.carName,
-                                    wilaya: wilaya
-                                  }));
-                                }
-                                // Navigate to the map page
-                                window.location.href = `/map/${wilaya}`;
-                              }}
-                              sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '4px 8px',
-                                borderRadius: 1,
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                  bgcolor: '#e2e8f0'
-                                }
-                              }}
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L16 5m0 12V5m0 0L9 7" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                              <Typography variant="body2" sx={{
-                                color: '#64748b',
-                                fontWeight: 600,
-                                ml: 0.5,
-                                fontSize: '0.8rem',
-                                textDecoration: 'underline',
-                                textUnderlineOffset: '2px'
-                              }}>
-                                View on map
-                              </Typography>
-                            </Box>
-                          </Box>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                            <Chip
-                              icon={<AirlineSeatReclineNormalIcon sx={{ color: '#64748b' }} />}
-                              label={`${offer.seats} Seats`}
-                              size="small"
-                              sx={{
-                                bgcolor: '#f8fafc',
-                                color: '#475569',
-                                fontWeight: 500,
-                                borderRadius: 1
-                              }}
-                            />
-                            <Chip
-                              icon={<MeetingRoomIcon sx={{ color: '#64748b' }} />}
-                              label={`${offer.doors} Doors`}
-                              size="small"
-                              sx={{
-                                bgcolor: '#f8fafc',
-                                color: '#475569',
-                                fontWeight: 500,
-                                borderRadius: 1
-                              }}
-                            />
-                            {offer.location && (
-                              <Chip
-                                icon={<LocationOnIcon sx={{ color: '#64748b' }} />}
-                                label={offer.location.name || offer.location.address || 'Pickup Location'}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#f1f5f9',
-                                  color: '#475569',
-                                  fontWeight: 500,
-                                  borderRadius: 1,
-                                  maxWidth: 200,
-                                  '& .MuiChip-label': {
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                  }
-                                }}
-                                title={offer.location.name || offer.location.address}
-                              />
-                            )}
-                            <Chip
-                              icon={<LocalGasStationIcon sx={{ color: '#64748b' }} />}
-                              label={offer.energy || 'N/A'}
-                              size="small"
-                              sx={{
-                                bgcolor: '#f8fafc',
-                                color: '#475569',
-                                fontWeight: 500,
-                                borderRadius: 1
-                              }}
-                            />
-                            <Chip
-                              icon={<SettingsIcon sx={{ color: '#64748b' }} />}
-                              label={offer.transmission || 'N/A'}
-                              size="small"
-                              sx={{
-                                bgcolor: '#f8fafc',
-                                color: '#475569',
-                                fontWeight: 500,
-                                borderRadius: 1
-                              }}
-                            />
-                          </Box>
-                          
+                        {isOwnOffer && (
                           <Box sx={{ 
+                            position: 'absolute', 
+                            top: 8, 
+                            right: 8, 
+                            zIndex: 1,
                             display: 'flex',
-                            flexDirection: { xs: 'column', sm: 'row' },
-                            gap: 1,
-                            mb: 2,
-                            flexWrap: 'wrap'
+                            alignItems: 'center',
+                            gap: 1
                           }}>
                             <Chip
-                              icon={<CalendarMonthIcon sx={{ color: '#64748b' }} />}
-                              label={`From: ${formatDateDMY(offer.availabilityStart)}`}
-                              size="small"
+                              icon={<CheckCircleIcon sx={{ color: 'white !important' }} />}
+                              label="Your Car"
                               sx={{
-                                bgcolor: '#e6f0fa',
-                                color: '#64748b',
+                                bgcolor: '#ef4444',
+                                color: 'white',
                                 fontWeight: 600,
-                                borderRadius: 1,
-                                borderColor: '#94a3b8'
-                              }}
-                            />
-                            <Chip
-                              icon={<CalendarMonthIcon sx={{ color: '#64748b' }} />}
-                              label={`To: ${formatDateDMY(offer.availabilityEnd)}`}
-                              size="small"
-                              sx={{
-                                bgcolor: '#e6f0fa',
-                                color: '#64748b',
-                                fontWeight: 600,
-                                borderRadius: 1,
-                                borderColor: '#94a3b8'
+                                '& .MuiChip-label': { px: 1 }
                               }}
                             />
                           </Box>
-                          
-                          {/* Car Features */}
-                          {offer.features && Object.keys(offer.features).length > 0 && (
-                            <Box sx={{ mb: 2 }}>
-                              <Typography variant="body2" sx={{ 
-                                color: '#475569', 
-                                fontWeight: 600, 
-                                mb: 1,
+                        )}
+                        <Box sx={{
+                          display: 'flex',
+                          flexDirection: { xs: 'column', md: 'row' },
+                          gap: 2,
+                          p: 2
+                        }}>
+                          <Box sx={{
+                            flexShrink: 0,
+                            width: { xs: '100%', md: 120 },
+                            height: { xs: 200, md: 120 },
+                            position: 'relative'
+                          }}>
+                            <CardMedia
+                              component="img"
+                              image={offer.images?.[0] ? `http://localhost:5001/${offer.images[0]}` : '/placeholder.jpg'}
+                              alt={offer.title || 'Car image'}
+                              sx={{
+                                objectFit: 'cover',
+                                borderRadius: 1,
+                                width: '100%',
+                                height: '100%',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {isOwnOffer && (
+                                  <Chip
+                                    label="Your Car"
+                                    color="error"
+                                    size="small"
+                                    sx={{
+                                      bgcolor: '#ef4444',
+                                      color: 'white',
+                                      fontWeight: 600,
+                                      '& .MuiChip-label': { px: 1 }
+                                    }}
+                                  />
+                                )}
+                                <Typography variant="h6" sx={{
+                                  fontWeight: 700,
+                                  color: '#1e293b',
+                                  fontSize: '1.25rem'
+                                }}>
+                                  {offer.title || offer.carName || 'Car Listing'}
+                                </Typography>
+                              </Box>
+                              <Box sx={{
+                                bgcolor: '#e6f0fa',
+                                color: '#64748b',
+                                fontWeight: 700,
+                                borderRadius: 1,
+                                px: 1.5,
+                                py: 0.5,
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 0.5
                               }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M6 10h12M6 6h12M6 14h12M6 18h12" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
-                                </svg>
-                                Features
-                              </Typography>
-                              <Box sx={{ 
-                                display: 'flex', 
-                                flexWrap: 'wrap', 
-                                gap: 0.75,
-                                maxWidth: '100%'
-                              }}>
-                                {Object.entries(offer.features)
-                                  .filter(([key, value]) => value === true)
-                                  .map(([featureId]) => {
-                                    // Find the feature in carFeatures array
-                                    const feature = carFeatures.find(f => f.id === featureId);
-                                    if (!feature) return null;
-                                    
-                                    return (
-                                      <Chip
-                                        key={featureId}
-                                        size="small"
-                                        sx={{
-                                          height: 24,
-                                          bgcolor: '#e2e8f0',
-                                          color: '#334155',
-                                          fontWeight: 500,
-                                          fontSize: '0.75rem',
-                                          borderRadius: 1,
-                                          '& .MuiChip-label': { px: 1 }
-                                        }}
-                                        label={feature.label}
-                                      />
-                                    );
-                                  })}
+                                <AttachMoneyIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                <span>DZD {offer.price}</span>
+                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}> /day</span>
                               </Box>
                             </Box>
-                          )}
-                          
-                          <Button
-                            component={isOwnOffer ? undefined : Link}
-                            to={isOwnOffer ? undefined : `/car-details/${offer._id}`}
-                            variant="contained"
-                            disabled={isOwnOffer}
-                            sx={{
-                              alignSelf: 'flex-start',
-                              bgcolor: isOwnOffer ? '#e0e0e0' : '#64748b',
-                              color: isOwnOffer ? '#a0a0a0' : 'white',
-                              borderRadius: 1,
-                              px: 3,
-                              py: 1,
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              '&:hover': {
-                                bgcolor: isOwnOffer ? '#e0e0e0' : '#475569',
-                              },
-                              cursor: isOwnOffer ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            <DirectionsCarIcon sx={{ mr: 1 }} /> 
-                            {isOwnOffer ? "Your Listing" : "View Details"}
-                          </Button>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+                                <LocationOnIcon sx={{ color: '#64748b', mr: 0.5 }} />
+                                <Typography variant="body2" sx={{
+                                  color: '#64748b',
+                                  fontWeight: 600
+                                }}>
+                                  {offer.wilaya || 'Unknown Location'}
+                                </Typography>
+                              </Box>
+
+                              <Box 
+                                component="button"
+                                onClick={() => {
+                                  // Navigate to the map page with the car's ID and wilaya
+                                  const wilaya = offer.wilaya || 'Alger';
+                                  // Store the selected car's location in localStorage for the map page to highlight
+                                  if (offer.location) {
+                                    localStorage.setItem('highlightedCarLocation', JSON.stringify({
+                                      carId: offer._id,
+                                      location: offer.location,
+                                      carName: offer.title || offer.carName,
+                                      wilaya: wilaya
+                                    }));
+                                  }
+                                  // Navigate to the map page
+                                  window.location.href = `/map/${wilaya}`;
+                                }}
+                                sx={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  padding: '4px 8px',
+                                  borderRadius: 1,
+                                  transition: 'all 0.2s',
+                                  '&:hover': {
+                                    bgcolor: '#e2e8f0'
+                                  }
+                                }}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L16 5m0 12V5m0 0L9 7" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <Typography variant="body2" sx={{
+                                  color: '#64748b',
+                                  fontWeight: 600,
+                                  ml: 0.5,
+                                  fontSize: '0.8rem',
+                                  textDecoration: 'underline',
+                                  textUnderlineOffset: '2px'
+                                }}>
+                                  View on map
+                                </Typography>
+                              </Box>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                              <Chip
+                                icon={<AirlineSeatReclineNormalIcon sx={{ color: '#64748b' }} />}
+                                label={`${offer.seats} Seats`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#f8fafc',
+                                  color: '#475569',
+                                  fontWeight: 500,
+                                  borderRadius: 1
+                                }}
+                              />
+                              <Chip
+                                icon={<MeetingRoomIcon sx={{ color: '#64748b' }} />}
+                                label={`${offer.doors} Doors`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#f8fafc',
+                                  color: '#475569',
+                                  fontWeight: 500,
+                                  borderRadius: 1
+                                }}
+                              />
+                              {offer.location && (
+                                <Chip
+                                  icon={<LocationOnIcon sx={{ color: '#64748b' }} />}
+                                  label={offer.location.name || offer.location.address || 'Pickup Location'}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#f1f5f9',
+                                    color: '#475569',
+                                    fontWeight: 500,
+                                    borderRadius: 1,
+                                    maxWidth: 200,
+                                    '& .MuiChip-label': {
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }
+                                  }}
+                                  title={offer.location.name || offer.location.address}
+                                />
+                              )}
+                              <Chip
+                                icon={<LocalGasStationIcon sx={{ color: '#64748b' }} />}
+                                label={offer.energy || 'N/A'}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#f8fafc',
+                                  color: '#475569',
+                                  fontWeight: 500,
+                                  borderRadius: 1
+                                }}
+                              />
+                              <Chip
+                                icon={<SettingsIcon sx={{ color: '#64748b' }} />}
+                                label={offer.transmission || 'N/A'}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#f8fafc',
+                                  color: '#475569',
+                                  fontWeight: 500,
+                                  borderRadius: 1
+                                }}
+                              />
+                            </Box>
+
+                            <Box sx={{ 
+                              display: 'flex',
+                              flexDirection: { xs: 'column', sm: 'row' },
+                              gap: 1,
+                              mb: 2,
+                              flexWrap: 'wrap'
+                            }}>
+                              <Chip
+                                icon={<CalendarMonthIcon sx={{ color: '#64748b' }} />}
+                                label={`From: ${formatDateDMY(offer.availabilityStart)}`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#e6f0fa',
+                                  color: '#64748b',
+                                  fontWeight: 600,
+                                  borderRadius: 1,
+                                  borderColor: '#94a3b8'
+                                }}
+                              />
+                              <Chip
+                                icon={<CalendarMonthIcon sx={{ color: '#64748b' }} />}
+                                label={`To: ${formatDateDMY(offer.availabilityEnd)}`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#e6f0fa',
+                                  color: '#64748b',
+                                  fontWeight: 600,
+                                  borderRadius: 1,
+                                  borderColor: '#94a3b8'
+                                }}
+                              />
+                            </Box>
+
+                            {/* Car Features */}
+                            {offer.features && Object.keys(offer.features).length > 0 && (
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2" sx={{ 
+                                  color: '#475569', 
+                                  fontWeight: 600, 
+                                  mb: 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 0.5
+                                }}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M6 10h12M6 6h12M6 14h12M6 18h12" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+                                  </svg>
+                                  Features
+                                </Typography>
+                                <Box sx={{ 
+                                  display: 'flex', 
+                                  flexWrap: 'wrap', 
+                                  gap: 0.75,
+                                  maxWidth: '100%'
+                                }}>
+                                  {Object.entries(offer.features)
+                                    .filter(([key, value]) => value === true)
+                                    .map(([featureId]) => {
+                                      // Find the feature in carFeatures array
+                                      const feature = carFeatures.find(f => f.id === featureId);
+                                      if (!feature) return null;
+
+                                      return (
+                                        <Chip
+                                          key={featureId}
+                                          size="small"
+                                          sx={{
+                                            height: 24,
+                                            bgcolor: '#e2e8f0',
+                                            color: '#334155',
+                                            fontWeight: 500,
+                                            fontSize: '0.75rem',
+                                            borderRadius: 1,
+                                            '& .MuiChip-label': { px: 1 }
+                                          }}
+                                          label={feature.label}
+                                        />
+                                      );
+                                    })}
+                                </Box>
+                              </Box>
+                            )}
+
+                            <Button
+                              component={isOwnOffer ? undefined : Link}
+                              to={isOwnOffer ? undefined : `/car-details/${offer._id}`}
+                              variant="contained"
+                              disabled={isOwnOffer}
+                              sx={{
+                                alignSelf: 'flex-start',
+                                bgcolor: isOwnOffer ? '#e0e0e0' : '#64748b',
+                                color: isOwnOffer ? '#a0a0a0' : 'white',
+                                borderRadius: 1,
+                                px: 3,
+                                py: 1,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                '&:hover': {
+                                  bgcolor: isOwnOffer ? '#e0e0e0' : '#475569',
+                                },
+                                cursor: isOwnOffer ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              <DirectionsCarIcon sx={{ mr: 1 }} /> 
+                              {isOwnOffer ? "Your Listing" : "View Details"}
+                            </Button>
+                          </Box>
                         </Box>
-                      </Box>
-                    </Card>
-                  </Grid>
-                );
-              }))}
+                      </Card>
+                    </Grid>
+                  );
+                }))}
             </Grid>
           </Box>
         </Box>

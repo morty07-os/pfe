@@ -1,6 +1,7 @@
 import React from 'react';
 import Slider from 'react-slick';
 import { Box, Card, CardContent, Typography, useTheme, useMediaQuery, IconButton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import 'slick-carousel/slick/slick.css';
@@ -170,31 +171,31 @@ const carTypes = [
   {
     type: "Citadine",
     advantage: "Perfect for city driving",
-    price: "€35-45/day",
+    price: "DZD 3,500-4,500/day",
     specs: "3-5 seats • 2 small bags",
   },
   {
     type: "Sedan",
     advantage: "Comfortable for long trips",
-    price: "€45-55/day",
-    specs: "5 seats • 3 large bags",
+    price: "DZD 5,000-6,500/day",
+    specs: "5 seats • 2 large bags",
   },
   {
     type: "SUV",
-    advantage: "Perfect for outdoor adventures",
-    price: "€60-75/day",
-    specs: "5-7 seats • 4 large bags",
+    advantage: "Versatile for families and adventure",
+    price: "DZD 7,000-9,000/day",
+    specs: "5-7 seats • 3 large bags",
   },
   {
     type: "Van",
-    advantage: "Ideal for moving or large groups",
-    price: "€70-85/day",
+    advantage: "Ideal for large groups and cargo",
+    price: "DZD 8,000-10,000/day",
     specs: "8-12 seats • 6 large bags",
   },
   {
     type: "StationWagon",
     advantage: "Great balance of space and comfort",
-    price: "€50-65/day",
+    price: "DZD 6,000-7,500/day",
     specs: "5 seats • 4 large bags",
   },
 ];
@@ -241,6 +242,7 @@ const PrevArrow = ({ onClick }) => (
 function CarTypesCarousel() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
 
   const settings = {
     dots: true,
@@ -283,6 +285,7 @@ function CarTypesCarousel() {
             <Box key={car.type} sx={{ p: 2 }}>
               <Card
                 elevation={2}
+                onClick={() => navigate(`/offers?category=${car.type}`)}
                 sx={{
                   height: '100%',
                   minHeight: '400px',
@@ -290,6 +293,7 @@ function CarTypesCarousel() {
                   flexDirection: 'column',
                   position: 'relative',
                   transition: 'all 0.3s ease',
+                  cursor: 'pointer',
                   '&:hover': {
                     transform: 'translateY(-8px)',
                     boxShadow: (theme) => theme.shadows[8],

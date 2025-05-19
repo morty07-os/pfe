@@ -41,6 +41,7 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Sign-in form data:", formData);
+    setMessage(''); // Clear previous messages
 
     try {
       const response = await fetch('http://localhost:5001/api/auth/login', {
@@ -60,16 +61,14 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
         // Close the dialog
         onClose();
         
+        const userName = result.user?.firstName || 'User';
         // Call onSuccess callback if provided
         if (onSuccess) {
-          onSuccess();
+          onSuccess(userName); // Pass userName to the success handler
         }
         
         // Dispatch custom event to notify other components about login state change
         window.dispatchEvent(new Event('loginStateChanged'));
-        
-        // Navigate to profile page
-        navigate('/profile');
       } else {
         setMessage(result.error || 'Sign in failed');
         console.error("Sign in failed:", result);
@@ -276,5 +275,3 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
 };
 
 export default SignIn;
-
-

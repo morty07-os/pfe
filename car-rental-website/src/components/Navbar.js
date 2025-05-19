@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -9,6 +9,13 @@ import {
   Tooltip,
   Snackbar,
   Alert,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Typography,
 } from '@mui/material';
 import KeyIcon from '@mui/icons-material/Key';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -16,11 +23,19 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import MailIcon from '@mui/icons-material/Mail'; // Import the messages icon
+import HomeIcon from '@mui/icons-material/Home';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import MapIcon from '@mui/icons-material/Map';
+import InfoIcon from '@mui/icons-material/Info';
+import HelpIcon from '@mui/icons-material/Help';
+import ContactSupportIcon from '@mui/icons-material/ContactSupport';
+import CategoryIcon from '@mui/icons-material/Category';
+import StarIcon from '@mui/icons-material/Star';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import SignIn from './SignIn';
 import SignUp from './SignUp';
 import { PostCarDialog } from './PostCarDialog';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
 
 const buttonStyles = (iconColor) => ({
@@ -34,10 +49,12 @@ const buttonStyles = (iconColor) => ({
 
 const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [anchorEl, setAnchorEl] = useState(null);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
   const [showPostCar, setShowPostCar] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -116,23 +133,45 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
     return () => window.removeEventListener('loginStateChanged', handleLoginStateChange);
   }, []);
 
-  const handleSignInSuccess = () => {
+  const handleSignInSuccess = (userName) => {
     setShowSignIn(false);
     setIsLoggedIn(true); // Update login state immediately
     
     // Dispatch custom event to notify other components
     window.dispatchEvent(new Event('loginStateChanged'));
     
+    navigate('/', { state: { showWelcome: true, userName } });
+
     // Open post car dialog if that's what the user was trying to do
-    const token = localStorage.getItem('token');
-    if (token && token !== 'null' && typeof token === 'string' && token.trim() !== '') {
+    if (localStorage.getItem('postCarAttempt') === 'true') {
       setShowPostCar(true);
+      localStorage.removeItem('postCarAttempt');
     }
+  };
+
+  const handleSignUpSuccess = (userName) => {
+    setShowSignUp(false);
+    setIsLoggedIn(true);
+    window.dispatchEvent(new Event('loginStateChanged'));
+    navigate('/', { state: { showWelcome: true, userName } });
   };
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
+
+  // Effect to show welcome message from location state
+  useEffect(() => {
+    if (location.state?.showWelcome && location.state?.userName) {
+      setSnackbar({
+        open: true,
+        message: `Welcome, ${location.state.userName}!`, // Personalized welcome message
+        severity: 'success'
+      });
+      // Clear the state to prevent message on refresh/re-navigate
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -153,11 +192,22 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             color="inherit"
             aria-label="menu"
             sx={{ color: '#fff' }}
+            onClick={() => setDrawerOpen(true)}
           >
             <MenuIcon sx={{ color: '#fff' }} />
           </IconButton>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
+            {/* Navigate to homepage */}
+            <Tooltip title="Home" arrow placement="bottom">
+              <IconButton 
+                color="inherit" 
+                sx={{ color: '#fff' }}
+                onClick={() => navigate('/')}
+              >
+                <HomeIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
+              </IconButton>
+            </Tooltip>
             {/* Navigate to all offers page */}
             <IconButton 
               color="inherit" 
@@ -166,17 +216,6 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             >
               <KeyIcon sx={{ color: '#fff' }} />
             </IconButton>
-            {isLoggedIn && ( // Show messages icon only if user is logged in
-              <Tooltip title="Messages" arrow placement="bottom">
-                <IconButton 
-                  color="inherit" 
-                  sx={{ color: '#fff' }}
-                  onClick={() => navigate('/messages')}
-                >
-                  <MailIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
-                </IconButton>
-              </Tooltip>
-            )}
             <Tooltip 
               title={isLoggedIn ? "Post a car" : "Sign in to post a car"} 
               arrow
@@ -292,6 +331,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             open={showSignUp}
             onClose={() => setShowSignUp(false)}
             onSwitchToSignIn={handleSwitchToSignIn}
+            onSuccess={handleSignUpSuccess}
           />
         </>
       )}
@@ -311,9 +351,89 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Sidebar Menu */}
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      >
+        <Box
+          sx={{ width: 280 }}
+          role="presentation"
+          onClick={() => setDrawerOpen(false)}
+          onKeyDown={() => setDrawerOpen(false)}
+        >
+          <Box sx={{ 
+            bgcolor: '#334155', 
+            color: '#fff', 
+            p: 2, 
+            display: 'flex', 
+            alignItems: 'center',
+            gap: 1
+          }}>
+            <DirectionsCarIcon />
+            <Typography variant="h6" component="div">
+              Car Rental
+            </Typography>
+          </Box>
+          <List>
+            <ListItem button onClick={() => navigate('/')}>
+              <ListItemIcon>
+                <HomeIcon sx={{ color: '#475569' }} />
+              </ListItemIcon>
+              <ListItemText primary="Home" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/offers')}>
+              <ListItemIcon>
+                <DirectionsCarIcon sx={{ color: '#475569' }} />
+              </ListItemIcon>
+              <ListItemText primary="Browse Cars" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/map')}>
+              <ListItemIcon>
+                <MapIcon sx={{ color: '#475569' }} />
+              </ListItemIcon>
+              <ListItemText primary="Find Cars on Map" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/deals')}>
+              <ListItemIcon>
+                <LocalOfferIcon sx={{ color: '#475569' }} />
+              </ListItemIcon>
+              <ListItemText primary="Special Offers" />
+            </ListItem>
+          </List>
+          <Divider />
+          <List>
+            <ListItem button onClick={() => navigate('/about')}>
+              <ListItemIcon>
+                <InfoIcon sx={{ color: '#475569' }} />
+              </ListItemIcon>
+              <ListItemText primary="About Us" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/faq')}>
+              <ListItemIcon>
+                <HelpIcon sx={{ color: '#475569' }} />
+              </ListItemIcon>
+              <ListItemText primary="FAQ" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/contact')}>
+              <ListItemIcon>
+                <ContactSupportIcon sx={{ color: '#475569' }} />
+              </ListItemIcon>
+              <ListItemText primary="Contact Us" />
+            </ListItem>
+            <ListItem button onClick={() => navigate('/reviews')}>
+              <ListItemIcon>
+                <StarIcon sx={{ color: '#475569' }} />
+              </ListItemIcon>
+              <ListItemText primary="Reviews" />
+            </ListItem>
+          </List>
+        </Box>
+      </Drawer>
     </>
   );
 };
 
 export default Navbar;
-
