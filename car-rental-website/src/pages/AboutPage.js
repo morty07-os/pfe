@@ -40,20 +40,20 @@ const AboutPage = () => {
                   fontSize: { xs: '2.2rem', sm: '2.8rem', md: '3.2rem' }
                 }}
               >
-                About Our Company
+                About ConnectDZ
               </Typography>
               <Typography variant="h6" sx={{ color: '#64748b', maxWidth: '700px', margin: '0 auto' }}>
-                Your Premier Choice for Car Rentals in Algeria.
+                Peer-to-Peer Car Sharing in Algeria
               </Typography>
             </Box>
             
             <Divider sx={{ my: 4, borderColor: '#cbd5e1' }} />
 
             <Typography variant="body1" paragraph sx={{ color: '#475569', lineHeight: 1.8, fontSize: '1.1rem', textAlign: 'justify', mb: 3 }}>
-              Welcome to <strong>[Your Company Name]</strong>, where we are passionately dedicated to transforming your travel experiences in Algeria. We strive to provide not just a car, but a promise of a seamless, enjoyable, and memorable journey. Whether your travels are for business engagements or leisurely explorations of Algeria's vibrant cities and breathtaking landscapes, our extensive fleet is curated to cater to every conceivable need and preference.
+              Welcome to <strong>ConnectDZ</strong>, an ambitious new startup on a mission to transform transportation in Algeria through innovative peer-to-peer car sharing. As a fresh face in the market, we're building a platform that connects car owners with trusted renters in a way that's simple, secure, and mutually beneficial. Our vision is to create a community where every journey is an opportunity to connect and make better use of resources.
             </Typography>
             <Typography variant="body1" paragraph sx={{ color: '#475569', lineHeight: 1.8, fontSize: '1.1rem', textAlign: 'justify', mb: 4 }}>
-              Our core mission revolves around offering a superior selection of high-quality vehicles at transparent and competitive prices, all underpinned by an unwavering commitment to exceptional customer service. We champion values of transparency, steadfast reliability, and a customer-first approach in all our operations. From agile compact cars perfect for navigating bustling city streets to robust SUVs designed for family adventures into the scenic countryside, our diverse and modern fleet is meticulously maintained and regularly updated. This ensures your utmost safety, comfort, and peace of mind throughout your rental period.
+              As a new player in Algeria's sharing economy, we're excited to bring fresh ideas and innovative solutions to the car rental market. Our platform is designed with both car owners and renters in mind - helping owners generate income from their idle vehicles while giving renters access to a diverse range of cars at affordable rates. We're building our service on modern technology and a commitment to exceptional user experience, with features like secure payments, verified profiles, and 24/7 support to ensure peace of mind for all our users.
             </Typography>
 
             <Box sx={{ backgroundColor: '#f8fafc', p: {xs: 2, md:4}, borderRadius: '12px', my: {xs:3, md:5}, border: '1px solid #e2e8f0' }}>
@@ -74,16 +74,16 @@ const AboutPage = () => {
               <Grid container spacing={{xs: 3, md: 4}} justifyContent="center">
                 {[{
                   icon: <CarRentalIcon sx={{ fontSize: {xs:40, md:50}, color: '#334155' }} />,
-                  title: 'Diverse Fleet',
-                  text: 'A wide selection of modern, well-maintained vehicles to suit all your travel requirements.'
+                  title: 'Innovative Platform',
+                  text: 'Our modern, user-friendly platform makes car sharing simple and accessible for everyone in Algeria.'
                 }, {
                   icon: <PeopleIcon sx={{ fontSize: {xs:40, md:50}, color: '#334155' }} />,
-                  title: 'Customer-Centric',
-                  text: 'Dedicated to providing an unparalleled rental experience with personalized service.'
+                  title: 'Growing Community',
+                  text: 'Be part of a new wave of car sharing enthusiasts building a more connected Algeria.'
                 }, {
                   icon: <SupportAgentIcon sx={{ fontSize: {xs:40, md:50}, color: '#334155' }} />,
-                  title: 'Reliable Support',
-                  text: 'Our team is always available to assist you, ensuring a smooth journey from start to finish.'
+                  title: 'Dedicated Team',
+                  text: 'Our passionate team is committed to making ConnectDZ the go-to car sharing platform in Algeria.'
                 }].map((item, index) => (
                   <Grid item xs={12} sm={6} md={4} key={index} sx={{ textAlign: 'center' }}>
                     <Paper elevation={2} sx={{p:3, borderRadius:'12px', height: '100%', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', '&:hover': {borderColor: '#64748b', boxShadow: '0 6px 12px rgba(71, 85, 105, 0.1)'}}}>
@@ -97,7 +97,7 @@ const AboutPage = () => {
             </Box>
 
             <Typography variant="body1" paragraph sx={{ color: '#475569', lineHeight: 1.8, fontSize: '1.1rem', textAlign: 'justify', mt: 4 }}>
-              Established in <strong>[Year]</strong>, [Your Company Name] has rapidly ascended to become a distinguished leader in the car rental industry within the region. Our enduring commitment to delivering unparalleled quality and achieving absolute customer satisfaction is the cornerstone of our philosophy and daily operations. We eagerly anticipate the opportunity to serve you, contributing to an unforgettable and enriching journey across Algeria.
+              Founded in <strong>2025</strong>, ConnectDZ is a bold new venture in Algeria's evolving transportation landscape. While we may be new, we're driven by a clear vision: to create a more connected, sustainable future for mobility in Algeria. We're starting small but dreaming big, with plans to expand our community and services across the country. As we grow, we're committed to listening to our users and continuously improving our platform. Join us on this exciting journey as we build something truly special together - one shared ride at a time.
             </Typography>
           </Paper>
         </Container>
