@@ -27,7 +27,8 @@ import {
   MoreVert as MoreVertIcon,
   Check as CheckIcon,
   DoneAll as DoneAllIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
+  DirectionsCar as DirectionsCarIcon
 } from '@mui/icons-material';
 
 const StyledListItem = styled(ListItem)(({ theme, unread }) => ({
@@ -299,28 +300,45 @@ const ConversationListPage = () => {
                           </Box>
                         }
                         secondary={
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <MessagePreview 
-                              sx={{ 
-                                flex: 1,
-                                fontWeight: !conv.messages[conv.messages.length - 1]?.read ? 500 : 'normal',
-                                color: !conv.messages[conv.messages.length - 1]?.read ? 'text.primary' : 'text.secondary'
-                              }}
-                            >
-                              {conv.messages[conv.messages.length - 1]?.text || 'No messages yet'}
-                            </MessagePreview>
-                            {!conv.messages[conv.messages.length - 1]?.read && (
-                              <Box 
-                                sx={{
-                                  bgcolor: 'primary.main',
-                                  borderRadius: '50%',
-                                  width: 8,
-                                  height: 8,
-                                  ml: 1,
-                                  flexShrink: 0
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            {conv.car && conv.car.carName && (
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  color: '#3498db',
+                                  fontWeight: 500,
+                                  fontSize: '0.75rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 0.5
                                 }}
-                              />
+                              >
+                                <DirectionsCarIcon sx={{ fontSize: '0.9rem', opacity: 0.8 }} /> {conv.car.carName}
+                              </Typography>
                             )}
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <MessagePreview 
+                                sx={{ 
+                                  flex: 1,
+                                  fontWeight: !conv.messages[conv.messages.length - 1]?.read ? 500 : 'normal',
+                                  color: !conv.messages[conv.messages.length - 1]?.read ? 'text.primary' : 'text.secondary'
+                                }}
+                              >
+                                {conv.messages[conv.messages.length - 1]?.text || 'No messages yet'}
+                              </MessagePreview>
+                              {!conv.messages[conv.messages.length - 1]?.read && (
+                                <Box 
+                                  sx={{
+                                    bgcolor: 'primary.main',
+                                    borderRadius: '50%',
+                                    width: 8,
+                                    height: 8,
+                                    ml: 1,
+                                    flexShrink: 0
+                                  }}
+                                />
+                              )}
+                            </Box>
                           </Box>
                         }
                         primaryTypographyProps={{
@@ -331,7 +349,7 @@ const ConversationListPage = () => {
                           component: 'div',
                           sx: {
                             display: 'flex',
-                            alignItems: 'center',
+                            flexDirection: 'column',
                             mt: 0.5
                           }
                         }}

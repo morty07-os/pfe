@@ -17,6 +17,7 @@ import axios from 'axios';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 
 const ConversationDialog = ({ open, onClose, userId, carId }) => {
   const [messages, setMessages] = useState([]);
@@ -24,6 +25,7 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [carName, setCarName] = useState('');
   const chatEndRef = useRef(null);
 
   // currentUserId is now set in the fetchMessages function
@@ -72,6 +74,46 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
           if (otherUserData && otherUserData.firstName && otherUserData.lastName) {
             setUserName(`${otherUserData.firstName} ${otherUserData.lastName}`);
           }
+          
+          // If there's a carId in the message, fetch car details
+          if (firstMessage.carId && typeof firstMessage.carId === 'string') {
+            try {
+              const carResponse = await axios.get(
+                `http://localhost:5001/api/cars/${firstMessage.carId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+              if (carResponse.data && carResponse.data.carName) {
+                setCarName(carResponse.data.carName);
+              }
+            } catch (carError) {
+              console.error('Error fetching car details:', carError);
+            }
+          }
+        }
+        
+        // If carId is provided directly as a prop, fetch car details
+        if (carId && !carName) {
+          try {
+            const carResponse = await axios.get(
+              `http://localhost:5001/api/cars/${carId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+            if (carResponse.data && carResponse.data.carName) {
+              setCarName(carResponse.data.carName);
+            }
+          } catch (carError) {
+            console.error('Error fetching car details:', carError);
+          }
         }
       } catch (error) {
         console.error('Error fetching messages:', error);
@@ -83,7 +125,7 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
     if (open && userId) {
       fetchMessages();
     }
-  }, [open, userId]);
+  }, [open, userId, carId, carName]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -161,9 +203,10 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
       maxWidth="md"
       PaperProps={{
         sx: {
-          borderRadius: 3,
+          borderRadius: 2,
           overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(59, 130, 246, 0.15)',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+          border: '1px solid #e2e8f0',
         }
       }}
     >
@@ -173,17 +216,37 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
         gap: 1,
         px: 2,
         py: 1.5,
-        bgcolor: '#3b82f6',
+        bgcolor: '#000',
         color: 'white',
-        borderBottom: '1px solid #e2e8f0',
+        borderBottom: '1px solid #333',
       }}>
         <ChatBubbleOutlineIcon sx={{ fontSize: 22, mr: 1 }} />
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
-          {userName ? `Conversation with ${userName}` : `Conversation with User ${userId}`}
-        </Typography>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            {userName ? `Conversation with ${userName}` : `Conversation with User ${userId}`}
+          </Typography>
+          {carName && (
+            <Typography variant="caption" sx={{ 
+              display: 'block', 
+              color: 'rgba(255,255,255,0.7)',
+              mt: 0.5,
+              fontSize: '0.75rem'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <DirectionsCarIcon sx={{ fontSize: '0.9rem' }} /> {carName}
+              </Box>
+            </Typography>
+          )}
+        </Box>
         <IconButton 
           onClick={onClose} 
-          sx={{ color: 'white' }}
+          sx={{ 
+            color: 'white',
+            '&:hover': {
+              color: '#3498db',
+            },
+            transition: 'color 0.3s ease',
+          }}
           aria-label="close"
         >
           <CloseIcon />
@@ -194,7 +257,8 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
         p: 0, 
         display: 'flex', 
         flexDirection: 'column',
-        height: '500px'
+        height: '550px',
+        bgcolor: '#f8fafc'
       }}>
         {loading ? (
           <Box sx={{ 
@@ -202,22 +266,37 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
             justifyContent: 'center', 
             alignItems: 'center', 
             height: '100%',
-            bgcolor: '#f8fafc'
+            bgcolor: '#f8fafc',
+            flexDirection: 'column',
+            gap: 2
           }}>
-            <CircularProgress sx={{ color: '#3b82f6' }} />
+            <CircularProgress sx={{ color: '#000' }} />
+            <Typography variant="body2" color="text.secondary">
+              Loading conversation...
+            </Typography>
           </Box>
         ) : (
           <Box
             sx={{
               flex: 1,
               overflowY: 'auto',
-              px: 2,
+              px: 3,
               py: 2,
               display: 'flex',
               flexDirection: 'column',
               gap: 1.5,
               bgcolor: '#f8fafc',
               minHeight: 120,
+              '&::-webkit-scrollbar': {
+                width: '6px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                borderRadius: '3px',
+              },
             }}
           >
             {messages.length === 0 ? (
@@ -229,9 +308,17 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
                 height: '100%',
                 gap: 2
               }}>
-                <ChatBubbleOutlineIcon sx={{ fontSize: 48, color: '#cbd5e1' }} />
-                <Typography variant="body1" sx={{ color: '#64748b' }}>
+                <ChatBubbleOutlineIcon sx={{ fontSize: 48, color: '#333' }} />
+                <Typography variant="body1" sx={{ 
+                  color: '#333',
+                  textAlign: 'center',
+                  maxWidth: '80%',
+                  fontWeight: 500
+                }}>
                   No messages yet. Start the conversation!
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b', mt: -1 }}>
+                  Send a message to begin chatting
                 </Typography>
               </Box>
             ) : (
@@ -242,22 +329,30 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
                     key={index}
                     sx={{
                       alignSelf: isUser ? 'flex-end' : 'flex-start',
-                      bgcolor: isUser ? '#3b82f6' : '#fff',
+                      bgcolor: isUser ? '#000' : '#fff',
                       color: isUser ? 'white' : '#1e293b',
                       px: 2,
                       py: 1,
                       borderRadius: 2,
                       mb: 0.5,
                       maxWidth: '80%',
-                      boxShadow: isUser ? '0 1px 4px rgba(59,130,246,0.10)' : '0 1px 4px rgba(71,85,105,0.06)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                       borderTopLeftRadius: isUser ? 12 : 4,
                       borderTopRightRadius: isUser ? 4 : 12,
                       fontSize: '1rem',
-                      transition: 'background 0.2s',
-                      border: isUser ? '1px solid #3b82f6' : '1px solid #e2e8f0',
+                      transition: 'all 0.2s ease',
+                      border: isUser ? '1px solid #000' : '1px solid #e2e8f0',
+                      '&:hover': {
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                        transform: 'translateY(-1px)',
+                      },
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 400 }}>
+                    <Typography variant="body2" sx={{ 
+                      fontWeight: isUser ? 400 : 500,
+                      lineHeight: 1.5,
+                      letterSpacing: '0.01em'
+                    }}>
                       {message.text}
                     </Typography>
                     <Box sx={{ 
@@ -270,8 +365,10 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
                       <Typography 
                         variant="caption" 
                         sx={{ 
-                          opacity: 0.7, 
-                          fontSize: '0.7rem'
+                          opacity: isUser ? 0.8 : 0.7, 
+                          fontSize: '0.7rem',
+                          fontWeight: 500,
+                          color: isUser ? 'rgba(255,255,255,0.9)' : '#3498db'
                         }}
                       >
                         {isUser ? 'You' : (userName || `User ${userId}`)}
@@ -279,8 +376,9 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
                       <Typography 
                         variant="caption" 
                         sx={{ 
-                          opacity: 0.7, 
-                          fontSize: '0.7rem'
+                          opacity: isUser ? 0.6 : 0.5, 
+                          fontSize: '0.7rem',
+                          fontStyle: 'italic'
                         }}
                       >
                         {message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
@@ -300,7 +398,7 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
             gap: 1,
             px: 2,
             py: 1.5,
-            bgcolor: '#fff',
+            bgcolor: '#f8fafc',
             borderTop: '1px solid #e2e8f0',
             position: 'sticky',
             bottom: 0,
@@ -315,15 +413,15 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             sx={{ 
-              bgcolor: '#f8fafc', 
+              bgcolor: '#fff', 
               borderRadius: 2,
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
                 '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#94a3b8',
+                  borderColor: '#3498db',
                 },
                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6',
+                  borderColor: '#000',
                 },
               }
             }}
@@ -331,20 +429,20 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
           />
           <Button
             variant="contained"
-            color="primary"
             onClick={handleSendMessage}
             disabled={!newMessage.trim()}
             sx={{
               borderRadius: 2,
               minWidth: 'unset',
-              bgcolor: '#3b82f6',
+              bgcolor: '#000',
               '&:hover': {
-                bgcolor: '#2563eb',
+                bgcolor: '#333',
               },
               '&.Mui-disabled': {
                 bgcolor: '#cbd5e1',
                 color: '#94a3b8',
               },
+              transition: 'background-color 0.3s ease',
             }}
           >
             <SendIcon />
