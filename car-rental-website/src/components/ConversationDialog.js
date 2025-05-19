@@ -26,24 +26,26 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const chatEndRef = useRef(null);
 
-  // Get current user ID from token
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setCurrentUserId(payload.userId);
-      } catch (error) {
-        console.error('Error parsing token:', error);
-      }
-    }
-  }, []);
+  // currentUserId is now set in the fetchMessages function
 
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
+        
+        // Get current user ID from token
+        let currentId = null;
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            currentId = payload.userId;
+            setCurrentUserId(payload.userId);
+          } catch (error) {
+            console.error('Error parsing token:', error);
+          }
+        }
+        
         const response = await axios.get(
           `http://localhost:5001/api/messages/user/${userId}`,
           {
@@ -56,10 +58,19 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
         setMessages(response.data);
         
         // Fetch user name if available
-        if (response.data.length > 0 && response.data[0].receiver) {
-          const receiverData = response.data[0].receiver;
-          if (receiverData.firstName && receiverData.lastName) {
-            setUserName(`${receiverData.firstName} ${receiverData.lastName}`);
+        if (response.data.length > 0 && currentId) {
+          // Determine if the first message's sender or receiver is the other user
+          const firstMessage = response.data[0];
+          let otherUserData;
+          
+          if (firstMessage.sender && firstMessage.sender._id !== currentId) {
+            otherUserData = firstMessage.sender;
+          } else if (firstMessage.receiver && firstMessage.receiver._id !== currentId) {
+            otherUserData = firstMessage.receiver;
+          }
+          
+          if (otherUserData && otherUserData.firstName && otherUserData.lastName) {
+            setUserName(`${otherUserData.firstName} ${otherUserData.lastName}`);
           }
         }
       } catch (error) {
@@ -134,6 +145,10 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
     // Check if the message has a sender string (locally added)
     if (message.sender === 'me') {
       return true;
+    }
+    // For messages added locally with the current user's ID
+    if (message.sender && typeof message.sender === 'string') {
+      return message.sender === currentUserId;
     }
     return false;
   };
@@ -259,7 +274,7 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
                           fontSize: '0.7rem'
                         }}
                       >
-                        {isUser ? 'You' : (userName || 'Other User')}
+                        {isUser ? 'You' : (userName || `User ${userId}`)}
                       </Typography>
                       <Typography 
                         variant="caption" 
