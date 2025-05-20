@@ -77,9 +77,11 @@ const MapSection = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
   
+  // Map functionality has been removed based on user preference for a minimalist UI
   const handleShowMap = () => {
+    // Navigate to offers page with the selected city as a filter
     if (selectedCity) {
-      navigate(`/map/${selectedCity}`);
+      navigate(`/offers?wilaya=${selectedCity}`);
     }
   };
 

@@ -214,7 +214,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
               sx={{ color: '#fff' }}
               onClick={() => navigate('/offers')}
             >
-              <KeyIcon sx={{ color: '#fff' }} />
+              <DirectionsCarIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
             </IconButton>
             <Tooltip 
               title={isLoggedIn ? "Post a car" : "Sign in to post a car"} 
@@ -352,57 +352,697 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
         </Alert>
       </Snackbar>
 
-      {/* Sidebar Menu */}
+      {/* Animated Dark Blue-Grey Sidebar */}
       <Drawer
         anchor="left"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            width: 340,
+            background: '#0f172a',
+            border: 'none',
+            boxShadow: '16px 0 50px rgba(2, 6, 23, 0.3)',
+            '& .MuiListItemButton-root': {
+              borderRadius: '0 32px 32px 0',
+              mx: 1.5,
+              px: 3,
+              py: 1.75,
+              my: 0.5,
+              transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transformStyle: 'preserve-3d',
+              '&:hover': {
+                backgroundColor: 'rgba(51, 65, 85, 0.25)',
+                transform: 'translateX(12px) rotateY(10deg)',
+                boxShadow: '8px 0 20px rgba(2, 6, 23, 0.4)',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'linear-gradient(90deg, rgba(100, 116, 139, 0.15), transparent)',
+                  borderRadius: '0 32px 32px 0',
+                  animation: 'pulseGradient 1.5s infinite alternate',
+                },
+                '& .MuiListItemIcon-root': {
+                  color: '#e2e8f0',
+                  transform: 'scale(1.25) translateZ(20px)',
+                  filter: 'drop-shadow(0 3px 8px rgba(226, 232, 240, 0.3))',
+                  '& .icon-gradient': {
+                    opacity: 1,
+                    transform: 'scale(1.1)',
+                    animation: 'gradientPulse 2s infinite',
+                  }
+                },
+                '& .MuiListItemText-primary': {
+                  color: '#f8fafc',
+                  fontWeight: 500,
+                  letterSpacing: '0.8px',
+                  transform: 'translateZ(10px)',
+                  '&::after': {
+                    transform: 'scaleX(1)',
+                    opacity: 1,
+                    background: 'linear-gradient(to right, #94a3b8, #e2e8f0)',
+                  }
+                },
+              },
+              '&.Mui-selected': {
+                backgroundColor: 'rgba(51, 65, 85, 0.35)',
+                '& .MuiListItemIcon-root': {
+                  color: '#f8fafc',
+                  filter: 'drop-shadow(0 3px 10px rgba(226, 232, 240, 0.4))',
+                  '& .icon-gradient': {
+                    opacity: 1,
+                    transform: 'scale(1.15)',
+                  }
+                },
+                '& .MuiListItemText-primary': {
+                  color: '#f8fafc',
+                  fontWeight: 500,
+                  '&::after': {
+                    transform: 'scaleX(1)',
+                    opacity: 1,
+                    background: 'linear-gradient(to right, #94a3b8, #e2e8f0)',
+                  }
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  left: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 5,
+                  height: '70%',
+                  background: 'linear-gradient(to bottom, #94a3b8, #e2e8f0)',
+                  borderRadius: '0 6px 6px 0',
+                  boxShadow: '2px 0 12px rgba(148, 163, 184, 0.4)',
+                  animation: 'gradientFlow 3s infinite alternate',
+                }
+              },
+            },
+            '& .MuiListItemIcon-root': {
+              minWidth: 44,
+              transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              color: '#94a3b8',
+              position: 'relative',
+              transformStyle: 'preserve-3d',
+              '& .icon-gradient': {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.15) 0%, transparent 100%)',
+                opacity: 0,
+                transform: 'scale(0.8)',
+                transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                mask: 'url(#icon-mask)',
+                maskSize: 'cover',
+                WebkitMask: 'url(#icon-mask)',
+                WebkitMaskSize: 'cover',
+              }
+            },
+            '& .MuiListItemText-primary': {
+              position: 'relative',
+              color: '#e2e8f0',
+              transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transformStyle: 'preserve-3d',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: -4,
+                left: 0,
+                width: '100%',
+                height: 2,
+                background: 'linear-gradient(to right, #94a3b8, #e2e8f0)',
+                transform: 'scaleX(0)',
+                transformOrigin: 'left center',
+                opacity: 0,
+                transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease'
+              }
+            },
+          },
+        }}
       >
+        <style>{
+          `
+          @keyframes pulseGradient {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.7; }
+          }
+          @keyframes gradientPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+          }
+          @keyframes gradientFlow {
+            0% { background: linear-gradient(to bottom, #94a3b8, #e2e8f0); }
+            100% { background: linear-gradient(to bottom, #e2e8f0, #94a3b8); }
+          }
+          `
+        }</style>
         <Box
-          sx={{ width: 280 }}
+          sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            background: '#0f172a',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: 'radial-gradient(#1e293b 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+              opacity: 0.4,
+              pointerEvents: 'none',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '40%',
+              background: 'linear-gradient(to bottom, rgba(15, 23, 42, 0.8), transparent)',
+              zIndex: 1,
+            }
+          }}
           role="presentation"
           onClick={() => setDrawerOpen(false)}
           onKeyDown={() => setDrawerOpen(false)}
         >
+          {/* Dark Blue-Grey Header */}
           <Box sx={{ 
-            bgcolor: '#334155', 
-            color: '#fff', 
-            p: 2, 
+            background: 'linear-gradient(135deg, #020617 0%, #0f172a 100%)',
+            color: '#e2e8f0', 
+            p: 4.5,
+            pb: 3.5,
             display: 'flex', 
-            alignItems: 'center',
-            gap: 1
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: '-50%',
+              right: '-50%',
+              width: '100%',
+              height: '200%',
+              background: 'radial-gradient(circle, rgba(71, 85, 105, 0.2) 0%, rgba(15, 23, 42, 0) 70%)',
+              transform: 'rotate(30deg)',
+              animation: 'rotateGradient 25s linear infinite',
+            },
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              bottom: -20,
+              left: 0,
+              right: 0,
+              height: 20,
+              background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.3))',
+              zIndex: 1,
+            }
           }}>
-            <DirectionsCarIcon />
-            <Typography variant="h6" component="div">
-              Car Rental
+            <Box sx={{
+              width: 80,
+              height: 80,
+              borderRadius: '22px',
+              bgcolor: 'rgba(30, 41, 59, 0.3)',
+              backdropFilter: 'blur(14px)',
+              border: '1px solid rgba(71, 85, 105, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 3.5,
+              boxShadow: '0 16px 50px rgba(2, 6, 23, 0.4)',
+              position: 'relative',
+              overflow: 'hidden',
+              transform: 'translateZ(0)',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: '-50%',
+                left: '-50%',
+                right: '-50%',
+                bottom: '-50%',
+                background: 'linear-gradient(45deg, transparent, rgba(100, 116, 139, 0.3), transparent)',
+                transform: 'rotate(45deg)',
+                animation: 'shimmer 3s infinite',
+              }
+            }}>
+              <Box sx={{
+                width: 70,
+                height: 70,
+                borderRadius: '18px',
+                bgcolor: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                zIndex: 1,
+                boxShadow: '0 8px 30px rgba(2, 6, 23, 0.7)',
+                transform: 'translateZ(0)',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  borderRadius: '18px',
+                  background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.15) 0%, transparent 100%)',
+                }
+              }}>
+                <DirectionsCarIcon sx={{ 
+                  fontSize: 36, 
+                  color: '#e2e8f0',
+                  filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))'
+                }} />
+              </Box>
+            </Box>
+            <Typography 
+              variant="h6" 
+              component="div" 
+              sx={{ 
+                fontWeight: 700, 
+                mb: 1.25, 
+                fontSize: '1.7rem',
+                letterSpacing: '-0.8px',
+                position: 'relative',
+                zIndex: 1,
+                textShadow: '0 3px 8px rgba(0,0,0,0.5)',
+                color: '#e2e8f0',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: -4,
+                  left: 0,
+                  width: '40%',
+                  height: 2,
+                  background: 'linear-gradient(to right, #94a3b8, transparent)',
+                  transition: 'width 0.6s ease'
+                },
+                '&:hover::after': {
+                  width: '100%'
+                }
+              }}
+            >
+              ConnectDZ
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                opacity: 0.8, 
+                letterSpacing: '0.5px',
+                position: 'relative',
+                zIndex: 1,
+                display: 'inline-flex',
+                alignItems: 'center',
+                color: '#94a3b8',
+                fontStyle: 'italic',
+                '&::before': {
+                  content: '""',
+                  display: 'inline-block',
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  bgcolor: '#64748b',
+                  mr: 1.25,
+                  animation: 'pulse 2.5s infinite',
+                }
+              }}
+            >
+              Premium car rental in Algeria
             </Typography>
           </Box>
-          <List>
-            <ListItem button onClick={() => navigate('/')}>
-              <ListItemIcon>
-                <HomeIcon sx={{ color: '#475569' }} />
-              </ListItemIcon>
-              <ListItemText primary="Home" />
-            </ListItem>
-            <ListItem button onClick={() => navigate('/offers')}>
-              <ListItemIcon>
-                <DirectionsCarIcon sx={{ color: '#475569' }} />
-              </ListItemIcon>
-              <ListItemText primary="Browse Cars" />
-            </ListItem>
-            <ListItem button onClick={() => navigate('/map')}>
-              <ListItemIcon>
-                <MapIcon sx={{ color: '#475569' }} />
-              </ListItemIcon>
-              <ListItemText primary="Find Cars on Map" />
-            </ListItem>
-            <ListItem button onClick={() => navigate('/deals')}>
-              <ListItemIcon>
-                <LocalOfferIcon sx={{ color: '#475569' }} />
-              </ListItemIcon>
-              <ListItemText primary="Special Offers" />
-            </ListItem>
-          </List>
+          
+          {/* Menu Items */}
+          <Box sx={{ pt: 2, pb: 1, position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <List sx={{ flex: 1, px: 1 }}>
+              <ListItem 
+                button 
+                onClick={() => navigate('/')}
+                selected={location.pathname === '/'}
+                sx={{
+                  borderRadius: '12px',
+                  mb: 0.5,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.2)',
+                    transform: 'translateX(6px)',
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.3)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 4,
+                      height: '60%',
+                      backgroundColor: '#94a3b8',
+                      borderRadius: '0 4px 4px 0',
+                    }
+                  }
+                }}
+              >
+                <ListItemIcon>
+                  <HomeIcon sx={{ 
+                    color: '#94a3b8',
+                    transition: 'all 0.3s ease',
+                    '.Mui-selected &': { color: '#e2e8f0' },
+                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                  }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Home" 
+                  primaryTypographyProps={{
+                    variant: 'body1',
+                    color: '#e2e8f0',
+                    fontWeight: 500,
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.2px'
+                  }}
+                />
+              </ListItem>
+              
+              <ListItem 
+                button 
+                onClick={() => navigate('/offers')}
+                selected={location.pathname.startsWith('/offers')}
+                sx={{
+                  borderRadius: '12px',
+                  mb: 0.5,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.2)',
+                    transform: 'translateX(6px)',
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.3)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 4,
+                      height: '60%',
+                      backgroundColor: '#94a3b8',
+                      borderRadius: '0 4px 4px 0',
+                    }
+                  }
+                }}
+              >
+                <ListItemIcon>
+                  <DirectionsCarIcon sx={{ 
+                    color: '#94a3b8',
+                    transition: 'all 0.3s ease',
+                    '.Mui-selected &': { color: '#e2e8f0' },
+                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                  }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Browse Cars" 
+                  primaryTypographyProps={{
+                    variant: 'body1',
+                    color: '#e2e8f0',
+                    fontWeight: 500,
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.2px'
+                  }}
+                />
+              </ListItem>
+              
+              <ListItem 
+                button 
+                onClick={() => navigate('/map')}
+                selected={location.pathname.startsWith('/map')}
+                sx={{
+                  borderRadius: '12px',
+                  mb: 0.5,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.2)',
+                    transform: 'translateX(6px)',
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.3)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 4,
+                      height: '60%',
+                      backgroundColor: '#94a3b8',
+                      borderRadius: '0 4px 4px 0',
+                    }
+                  }
+                }}
+              >
+                <ListItemIcon>
+                  <MapIcon sx={{ 
+                    color: '#94a3b8',
+                    transition: 'all 0.3s ease',
+                    '.Mui-selected &': { color: '#e2e8f0' },
+                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                  }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="View on Map" 
+                  primaryTypographyProps={{
+                    variant: 'body1',
+                    color: '#e2e8f0',
+                    fontWeight: 500,
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.2px'
+                  }}
+                />
+              </ListItem>
+              
+              <ListItem 
+                button 
+                onClick={() => navigate('/deals')}
+                selected={location.pathname.startsWith('/deals')}
+                sx={{
+                  borderRadius: '12px',
+                  mb: 0.5,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.2)',
+                    transform: 'translateX(6px)',
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.3)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 4,
+                      height: '60%',
+                      backgroundColor: '#94a3b8',
+                      borderRadius: '0 4px 4px 0',
+                    }
+                  }
+                }}
+              >
+                <ListItemIcon>
+                  <LocalOfferIcon sx={{ 
+                    color: '#94a3b8',
+                    transition: 'all 0.3s ease',
+                    '.Mui-selected &': { color: '#e2e8f0' },
+                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                  }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Special Offers" 
+                  primaryTypographyProps={{
+                    variant: 'body1',
+                    color: '#e2e8f0',
+                    fontWeight: 500,
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.2px'
+                  }}
+                />
+              </ListItem>
+
+              {isLoggedIn && (
+                <ListItem 
+                  button 
+                  onClick={handlePostCarClick}
+                  sx={{
+                    borderRadius: '12px',
+                    mb: 0.5,
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(51, 65, 85, 0.2)',
+                      transform: 'translateX(6px)',
+                    }
+                  }}
+                >
+                  <ListItemIcon>
+                    <AddCircleIcon sx={{ 
+                      color: '#94a3b8',
+                      transition: 'all 0.3s ease',
+                      'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                    }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Post Your Car" 
+                    primaryTypographyProps={{
+                      variant: 'body1',
+                      color: '#e2e8f0',
+                      fontWeight: 500,
+                      fontSize: '0.95rem',
+                      letterSpacing: '0.2px'
+                    }}
+                  />
+                </ListItem>
+              )}
+            </List>
+
+            <Divider sx={{ my: 2, backgroundColor: 'rgba(148, 163, 184, 0.15)' }} />
+            
+            <List sx={{ px: 1 }}>
+              <ListItem 
+                button 
+                onClick={() => navigate('/about')}
+                selected={location.pathname === '/about'}
+                sx={{
+                  borderRadius: '12px',
+                  mb: 0.5,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.2)',
+                    transform: 'translateX(6px)',
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.3)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 4,
+                      height: '60%',
+                      backgroundColor: '#94a3b8',
+                      borderRadius: '0 4px 4px 0',
+                    }
+                  }
+                }}
+              >
+                <ListItemIcon>
+                  <InfoIcon sx={{ 
+                    color: '#94a3b8',
+                    transition: 'all 0.3s ease',
+                    '.Mui-selected &': { color: '#e2e8f0' },
+                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                  }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="About Us" 
+                  primaryTypographyProps={{
+                    variant: 'body1',
+                    color: '#e2e8f0',
+                    fontWeight: 500,
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.2px'
+                  }}
+                />
+              </ListItem>
+              
+              <ListItem 
+                button 
+                onClick={() => navigate('/contact')}
+                selected={location.pathname === '/contact'}
+                sx={{
+                  borderRadius: '12px',
+                  mb: 0.5,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.2)',
+                    transform: 'translateX(6px)',
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(51, 65, 85, 0.3)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 4,
+                      height: '60%',
+                      backgroundColor: '#94a3b8',
+                      borderRadius: '0 4px 4px 0',
+                    }
+                  }
+                }}
+              >
+                <ListItemIcon>
+                  <ContactSupportIcon sx={{ 
+                    color: '#94a3b8',
+                    transition: 'all 0.3s ease',
+                    '.Mui-selected &': { color: '#e2e8f0' },
+                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                  }} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Contact Us" 
+                  primaryTypographyProps={{
+                    variant: 'body1',
+                    color: '#e2e8f0',
+                    fontWeight: 500,
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.2px'
+                  }}
+                />
+              </ListItem>
+            </List>
+            
+            {/* Footer */}
+            <Box sx={{ 
+              mt: 'auto', 
+              pt: 2, 
+              pb: 2,
+              borderTop: '1px solid rgba(148, 163, 184, 0.15)',
+              textAlign: 'center',
+              opacity: 0.7,
+              '&:hover': {
+                opacity: 1
+              },
+              transition: 'opacity 0.3s ease'
+            }}>
+              <Typography variant="caption" sx={{ 
+                fontSize: '0.7rem',
+                color: '#94a3b8',
+                display: 'block',
+                mb: 0.5
+              }}>
+                ConnectDZ v1.0.0
+              </Typography>
+              <Typography variant="caption" sx={{ 
+                fontSize: '0.65rem',
+                color: '#64748b',
+                display: 'block'
+              }}>
+                &copy; {new Date().getFullYear()} All rights reserved
+              </Typography>
+            </Box>
+          </Box>
           <Divider />
           <List>
             <ListItem button onClick={() => navigate('/about')}>

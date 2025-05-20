@@ -739,19 +739,25 @@ export default function AllOffersPage() {
                               <Box 
                                 component="button"
                                 onClick={() => {
-                                  // Navigate to the map page with the car's ID and wilaya
+                                  // Open Google Maps with the car's location
                                   const wilaya = offer.wilaya || 'Alger';
-                                  // Store the selected car's location in localStorage for the map page to highlight
-                                  if (offer.location) {
-                                    localStorage.setItem('highlightedCarLocation', JSON.stringify({
-                                      carId: offer._id,
-                                      location: offer.location,
-                                      carName: offer.title || offer.carName,
-                                      wilaya: wilaya
-                                    }));
+                                  let lat, lng;
+                                  
+                                  // Get coordinates from the car's location or from the wilaya coordinates
+                                  if (offer.location && offer.location.coordinates) {
+                                    lat = offer.location.coordinates.lat;
+                                    lng = offer.location.coordinates.lng;
+                                  } else if (algeriaWilayaCoordinates[wilaya]) {
+                                    lat = algeriaWilayaCoordinates[wilaya].lat;
+                                    lng = algeriaWilayaCoordinates[wilaya].lng;
+                                  } else {
+                                    // Default to Algeria center if no coordinates are found
+                                    lat = 36.7372;
+                                    lng = 3.0865;
                                   }
-                                  // Navigate to the map page
-                                  window.location.href = `/map/${wilaya}`;
+                                  
+                                  // Open Google Maps in a new tab
+                                  window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
                                 }}
                                 sx={{ 
                                   display: 'flex', 
