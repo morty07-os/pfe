@@ -23,6 +23,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HomeIcon from '@mui/icons-material/Home';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import MapIcon from '@mui/icons-material/Map';
@@ -141,7 +142,29 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
     // Dispatch custom event to notify other components
     window.dispatchEvent(new Event('loginStateChanged'));
     
-    navigate('/', { state: { showWelcome: true, userName } });
+    // Show welcome message without navigating away
+    setSnackbar({
+      open: true,
+      message: `Welcome back, ${userName}!`,
+      severity: 'success',
+      autoHideDuration: 5000,
+      anchorOrigin: {
+        vertical: 'top',
+        horizontal: 'center',
+      },
+      sx: {
+        '& .MuiAlert-message': {
+          fontSize: '1.1rem',
+          fontWeight: 500,
+        },
+        '& .MuiAlert-icon': {
+          fontSize: '1.5rem',
+        },
+        minWidth: '300px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+        borderRadius: '12px',
+      }
+    });
 
     // Open post car dialog if that's what the user was trying to do
     if (localStorage.getItem('postCarAttempt') === 'true') {
@@ -154,7 +177,30 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
     setShowSignUp(false);
     setIsLoggedIn(true);
     window.dispatchEvent(new Event('loginStateChanged'));
-    navigate('/', { state: { showWelcome: true, userName } });
+    
+    // Show welcome message without navigating away
+    setSnackbar({
+      open: true,
+      message: `Welcome, ${userName}! Your account has been created successfully.`,
+      severity: 'success',
+      autoHideDuration: 5000,
+      anchorOrigin: {
+        vertical: 'top',
+        horizontal: 'center',
+      },
+      sx: {
+        '& .MuiAlert-message': {
+          fontSize: '1.1rem',
+          fontWeight: 500,
+        },
+        '& .MuiAlert-icon': {
+          fontSize: '1.5rem',
+        },
+        minWidth: '350px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+        borderRadius: '12px',
+      }
+    });
   };
 
   const handleCloseSnackbar = () => {
@@ -166,8 +212,25 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
     if (location.state?.showWelcome && location.state?.userName) {
       setSnackbar({
         open: true,
-        message: `Welcome, ${location.state.userName}!`, // Personalized welcome message
-        severity: 'success'
+        message: `Welcome, ${location.state.userName}!`,
+        severity: 'success',
+        autoHideDuration: 5000,
+        anchorOrigin: {
+          vertical: 'top',
+          horizontal: 'center',
+        },
+        sx: {
+          '& .MuiAlert-message': {
+            fontSize: '1.1rem',
+            fontWeight: 500,
+          },
+          '& .MuiAlert-icon': {
+            fontSize: '1.5rem',
+          },
+          minWidth: '300px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+          borderRadius: '12px',
+        }
       });
       // Clear the state to prevent message on refresh/re-navigate
       navigate(location.pathname, { replace: true, state: {} });
@@ -179,8 +242,30 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
     setIsLoggedIn(false);
     handleClose();
     window.dispatchEvent(new Event('loginStateChanged'));
-    // Redirect to home page or offers page after logout
-    navigate('/offers');
+    
+    // Show logout confirmation message
+    setSnackbar({
+      open: true,
+      message: 'You have been successfully signed out.',
+      severity: 'info',
+      autoHideDuration: 4000,
+      anchorOrigin: {
+        vertical: 'top',
+        horizontal: 'center',
+      },
+      sx: {
+        '& .MuiAlert-message': {
+          fontSize: '1.1rem',
+          fontWeight: 500,
+        },
+        '& .MuiAlert-icon': {
+          fontSize: '1.5rem',
+        },
+        minWidth: '300px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+        borderRadius: '12px',
+      }
+    });
   };
 
   return (
@@ -930,8 +1015,8 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             <List sx={{ px: 1 }}>
               <ListItem 
                 button 
-                onClick={() => navigate('/about')}
-                selected={location.pathname === '/about'}
+                onClick={() => navigate('/faq')}
+                selected={location.pathname === '/faq'}
                 sx={{
                   borderRadius: '12px',
                   mb: 0.5,
@@ -957,7 +1042,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                 }}
               >
                 <ListItemIcon>
-                  <InfoIcon sx={{ 
+                  <HelpIcon sx={{ 
                     color: '#94a3b8',
                     transition: 'all 0.3s ease',
                     '.Mui-selected &': { color: '#e2e8f0' },
@@ -965,7 +1050,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   }} />
                 </ListItemIcon>
                 <ListItemText 
-                  primary="About Us" 
+                  primary="FAQ" 
                   primaryTypographyProps={{
                     variant: 'body1',
                     color: '#e2e8f0',
@@ -1055,35 +1140,52 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
               </Typography>
             </Box>
           </Box>
-          <Divider />
-          <List>
-            <ListItem button onClick={() => navigate('/about')}>
-              <ListItemIcon>
-                <InfoIcon sx={{ color: '#475569' }} />
-              </ListItemIcon>
-              <ListItemText primary="About Us" />
-            </ListItem>
-            <ListItem button onClick={() => navigate('/faq')}>
-              <ListItemIcon>
-                <HelpIcon sx={{ color: '#475569' }} />
-              </ListItemIcon>
-              <ListItemText primary="FAQ" />
-            </ListItem>
-            <ListItem button onClick={() => navigate('/contact')}>
-              <ListItemIcon>
-                <ContactSupportIcon sx={{ color: '#475569' }} />
-              </ListItemIcon>
-              <ListItemText primary="Contact Us" />
-            </ListItem>
-            <ListItem button onClick={() => navigate('/reviews')}>
-              <ListItemIcon>
-                <StarIcon sx={{ color: '#475569' }} />
-              </ListItemIcon>
-              <ListItemText primary="Reviews" />
-            </ListItem>
-          </List>
         </Box>
       </Drawer>
+
+      {/* Custom Snackbar for welcome message */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={snackbar.autoHideDuration || 5000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={snackbar.anchorOrigin || { vertical: 'bottom', horizontal: 'left' }}
+        sx={{
+          '& .MuiSnackbarContent-root': {
+            minWidth: '300px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+            borderRadius: '12px',
+            padding: '10px 20px',
+            backgroundColor: snackbar.severity === 'success' ? '#4caf50' : 
+                          snackbar.severity === 'error' ? '#f44336' :
+                          snackbar.severity === 'warning' ? '#ff9800' : '#2196f3',
+          },
+        }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity || 'info'}
+          variant="filled"
+          sx={{
+            width: '100%',
+            '& .MuiAlert-message': {
+              fontSize: '1.1rem',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            },
+            '& .MuiAlert-icon': {
+              fontSize: '1.8rem',
+              color: '#fff',
+            },
+          }}
+          iconMapping={{
+            success: <CheckCircleIcon fontSize="inherit" />,
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

@@ -84,31 +84,20 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
           borderRadius: 3,
           boxShadow: '0 12px 50px -12px rgba(0,0,0,0.15)',
           overflow: 'hidden',
-          border: '1px solid #e2e8f0',
-          background: '#f8fafc'
+          border: '1px solid #e2e8f0'
         }
       }}
     >
       <Box sx={{
         position: 'relative',
-        background: 'linear-gradient(135deg, #334155 0%, #1e293b 100%)',
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
         p: 3,
-        color: '#f8fafc',
-        borderBottom: '1px solid #e2e8f0'
+        color: 'white',
       }}>
-        <Typography variant="h5" sx={{ 
-          fontWeight: 700, 
-          mb: 1, 
-          letterSpacing: '-0.5px',
-          color: 'white'
-        }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, letterSpacing: '-0.5px' }}>
           Welcome Back
         </Typography>
-        <Typography variant="body2" sx={{ 
-          opacity: 0.9, 
-          fontSize: '0.95rem',
-          color: '#e2e8f0'
-        }}>
+        <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.95rem' }}>
           Sign in to continue your journey
         </Typography>
         <IconButton
@@ -118,10 +107,10 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
             position: 'absolute',
             right: 12,
             top: 12,
-            color: '#e2e8f0',
-            backgroundColor: 'rgba(241, 245, 249, 0.1)',
+            color: 'rgba(255,255,255,0.9)',
+            backgroundColor: 'rgba(255,255,255,0.1)',
             '&:hover': { 
-              backgroundColor: 'rgba(241, 245, 249, 0.2)',
+              backgroundColor: 'rgba(255,255,255,0.2)',
               color: 'white'
             },
             transition: 'all 0.2s ease'
@@ -132,15 +121,8 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       </Box>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent sx={{ 
-          p: 4,
-          backgroundColor: '#f8fafc'
-        }}>
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 3,
-          }}>
+        <DialogContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <TextField
               required
               fullWidth
@@ -152,34 +134,28 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
               variant="outlined"
               onFocus={() => setFocused('email')}
               onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon 
+                      sx={{ 
+                        color: focused === 'email' ? '#2563eb' : '#64748b',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+              }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   '&:hover fieldset': {
                     borderColor: '#94a3b8',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#1e40af',
+                    borderColor: '#2563eb',
                     borderWidth: '1px',
                   },
                 },
-                '& .MuiInputLabel-root': {
-                  color: '#64748b',
-                  '&.Mui-focused': {
-                    color: '#1e40af'
-                  }
-                }
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailIcon 
-                      sx={{ 
-                        color: focused === 'email' ? '#1e40af' : '#64748b',
-                        transition: 'color 0.3s ease'
-                      }} 
-                    />
-                  </InputAdornment>
-                ),
               }}
             />
             <TextField
@@ -193,29 +169,12 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
               variant="outlined"
               onFocus={() => setFocused('password')}
               onBlur={() => setFocused('')}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&:hover fieldset': {
-                    borderColor: '#94a3b8',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#1e40af',
-                    borderWidth: '1px',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#64748b',
-                  '&.Mui-focused': {
-                    color: '#1e40af'
-                  }
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
                     <LockIcon 
                       sx={{ 
-                        color: focused === 'password' ? '#1e40af' : '#64748b',
+                        color: focused === 'password' ? '#2563eb' : '#64748b',
                         transition: 'color 0.3s ease'
                       }} 
                     />
@@ -227,9 +186,9 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
                       sx={{ 
-                        color: showPassword ? '#1e40af' : '#64748b',
+                        color: showPassword ? '#2563eb' : '#64748b',
                         '&:hover': {
-                          backgroundColor: 'rgba(30, 64, 175, 0.05)'
+                          backgroundColor: 'rgba(37, 99, 235, 0.05)'
                         }
                       }}
                     >
@@ -237,6 +196,17 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
                     </IconButton>
                   </InputAdornment>
                 ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#2563eb',
+                    borderWidth: '1px',
+                  },
+                },
               }}
             />
             <Button
@@ -251,7 +221,7 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
                 borderRadius: '4px',
                 '&:hover': {
                   backgroundColor: 'rgba(100, 116, 139, 0.08)',
-                  color: '#1e40af',
+                  color: '#2563eb',
                   textDecoration: 'none',
                 },
                 transition: 'all 0.2s ease',
@@ -284,24 +254,26 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
         }}>
           <Button
             onClick={onSwitchToSignUp}
+            color="primary"
             sx={{ 
               textTransform: 'none', 
               fontWeight: 500,
               color: '#475569',
               '&:hover': {
-                backgroundColor: 'rgba(30, 64, 175, 0.04)',
-                color: '#1e40af'
+                backgroundColor: 'rgba(37, 99, 235, 0.04)',
+                color: '#2563eb'
               },
               transition: 'all 0.2s ease',
               padding: '6px 8px',
               fontSize: '0.9375rem'
             }}
           >
-            Don't have an account? <Box component="span" sx={{ color: '#1e40af', fontWeight: 600, ml: 0.5 }}>Sign Up</Box>
+            Don't have an account? <Box component="span" sx={{ color: '#2563eb', fontWeight: 600, ml: 0.5 }}>Sign Up</Box>
           </Button>
           <Button
             type="submit"
             variant="contained"
+            color="primary"
             disabled={!formData.email || !formData.password}
             sx={{
               textTransform: 'none',
@@ -309,12 +281,11 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
               borderRadius: 2,
               px: 3,
               py: 1.5,
-              backgroundColor: '#334155',
-              background: 'linear-gradient(135deg, #334155 0%, #1e293b 100%)',
-              color: '#f8fafc',
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              boxShadow: '0 1px 2px 0 rgba(37, 99, 235, 0.05)',
               '&:hover': {
-                background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-                boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -1px rgba(15, 23, 42, 0.06)'
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
+                boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.1), 0 4px 6px -2px rgba(37, 99, 235, 0.05)'
               },
               '&.Mui-disabled': {
                 background: '#e2e8f0',
