@@ -37,6 +37,7 @@ import SignUp from './SignUp';
 import { PostCarDialog } from './PostCarDialog';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
+import MessageIcon from '@mui/icons-material/Message';
 
 const buttonStyles = (iconColor) => ({
   color: iconColor,
@@ -232,15 +233,26 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                 }} />
               </IconButton>
             </Tooltip>
-            <IconButton 
-              color="inherit" 
-              sx={{ 
+            {location.pathname === '/profile' && (
+              <Tooltip title="Messages" arrow placement="bottom">
+                <IconButton
+                  color="inherit"
+                  sx={{ color: '#fff' }}
+                  onClick={() => navigate('/messages')}
+                >
+                  <MessageIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            <IconButton
+              color="inherit"
+              sx={{
                 color: '#fff',
                 '&:hover': {
                   color: '#3498db',
                   cursor: 'pointer',
                 },
-                transition: 'color 0.3s ease'
+                transition: 'color 0.3s ease',
               }}
               onClick={handleAccountClick}
             >
@@ -261,23 +273,23 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             >
               {!isLoggedIn ? (
                 <>
-                  <MenuItem 
+                  <MenuItem
                     onClick={handleSignInClick}
-                    sx={{ 
+                    sx={{
                       color: '#333',
                       minWidth: '150px',
-                      gap: 1.5
+                      gap: 1.5,
                     }}
                   >
                     <LoginIcon fontSize="small" sx={{ color: '#333' }} />
                     Sign In
                   </MenuItem>
-                  <MenuItem 
+                  <MenuItem
                     onClick={handleSignUpClick}
-                    sx={{ 
+                    sx={{
                       color: '#333',
                       minWidth: '150px',
-                      gap: 1.5
+                      gap: 1.5,
                     }}
                   >
                     <PersonAddIcon fontSize="small" sx={{ color: '#333' }} />
@@ -286,26 +298,26 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                 </>
               ) : (
                 <>
-                  <MenuItem 
+                  <MenuItem
                     onClick={() => {
                       handleClose();
                       navigate('/profile');
                     }}
-                    sx={{ 
+                    sx={{
                       color: '#333',
                       minWidth: '150px',
-                      gap: 1.5
+                      gap: 1.5,
                     }}
                   >
                     <AccountCircleIcon fontSize="small" sx={{ color: '#333' }} />
                     Profile
                   </MenuItem>
-                  <MenuItem 
+                  <MenuItem
                     onClick={handleLogout}
-                    sx={{ 
+                    sx={{
                       color: '#e74c3c',
                       minWidth: '150px',
-                      gap: 1.5
+                      gap: 1.5,
                     }}
                   >
                     <LogoutIcon fontSize="small" sx={{ color: '#e74c3c' }} />
