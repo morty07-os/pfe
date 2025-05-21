@@ -104,17 +104,20 @@ const ConversationListPage = () => {
           }
         });
 
-        // Group messages by otherUser._id
+        // Group messages by conversationId to ensure each car has its own conversation
         const groupedConversations = response.data.reduce((acc, conv) => {
-          const userId = conv.otherUser._id;
-          if (!acc[userId]) {
-            acc[userId] = {
+          // Use conversationId as the key to ensure unique conversations per car
+          const conversationKey = conv.conversationId;
+          
+          if (!acc[conversationKey]) {
+            acc[conversationKey] = {
+              conversationId: conv.conversationId,
               otherUser: conv.otherUser,
               car: conv.car,
               messages: [],
             };
           }
-          acc[userId].messages.push(conv.latestMessage);
+          acc[conversationKey].messages.push(conv.latestMessage);
           return acc;
         }, {});
 
@@ -129,14 +132,22 @@ const ConversationListPage = () => {
     fetchConversations();
   }, []);
 
-  const handleConversationClick = (userId) => {
-    setSelectedUserId(userId);
+  const [selectedCarId, setSelectedCarId] = useState(null);
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
+
+  const handleConversationClick = (conversationKey) => {
+    const conversation = conversations[conversationKey];
+    setSelectedUserId(conversation.otherUser._id);
+    setSelectedCarId(conversation.car._id);
+    setSelectedConversationId(conversation.conversationId);
     setDialogOpen(true);
   };
 
   const handleDialogClose = () => {
     setDialogOpen(false);
     setSelectedUserId(null);
+    setSelectedCarId(null);
+    setSelectedConversationId(null);
   };
 
   const formatDate = (dateString) => {
@@ -236,14 +247,21 @@ const ConversationListPage = () => {
                 borderRadius: '3px',
               },
             }}>
-              {Object.keys(conversations).map((userId, index) => {
-                const conv = conversations[userId];
+              {Object.keys(conversations)
+                .sort((a, b) => {
+                  // Sort by the timestamp of the latest message in each conversation
+                  const aTimestamp = new Date(conversations[a].messages[conversations[a].messages.length - 1]?.createdAt || 0).getTime();
+                  const bTimestamp = new Date(conversations[b].messages[conversations[b].messages.length - 1]?.createdAt || 0).getTime();
+                  return bTimestamp - aTimestamp; // Descending order (newest first)
+                })
+                .map((conversationKey, index) => {
+                const conv = conversations[conversationKey];
                 return (
-                  <React.Fragment key={userId}>
+                  <React.Fragment key={conversationKey}>
                     <StyledListItem 
                       button
                       unread={!conv.messages[conv.messages.length - 1]?.read}
-                      onClick={() => handleConversationClick(conv.otherUser._id)}
+                      onClick={() => handleConversationClick(conversationKey)}
                     >
                       <ListItemAvatar>
                         <Badge
@@ -367,7 +385,8 @@ const ConversationListPage = () => {
             open={dialogOpen}
             onClose={handleDialogClose}
             userId={selectedUserId}
-            carId={conversations[selectedUserId]?.car?._id}
+            carId={selectedCarId}
+            conversationId={selectedConversationId}
           />
         </Paper>
       </Container>

@@ -337,7 +337,7 @@ const ConversationPage = () => {
                   ) : (
                     chatMessages.map((msg, idx) => {
                       const userId = localStorage.getItem('token') ? JSON.parse(atob(localStorage.getItem('token').split('.')[1])).userId : null;
-                      const isUser = msg.sender._id.toString() === userId;
+                      const isUser = msg.sender?._id?.toString() === userId;
                       return (
                         <Box
                           key={idx}

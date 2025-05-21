@@ -28,6 +28,10 @@ const messageSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  isSystemMessage: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now
