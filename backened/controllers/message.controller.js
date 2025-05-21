@@ -6,6 +6,12 @@ export const saveMessage = async (req, res) => {
   try {
     const { carId, receiver, text, conversationId } = req.body;
     const sender = req.user.userId;
+    
+    // Handle image if it exists in the request
+    let imagePath = null;
+    if (req.file) {
+      imagePath = `uploads/${req.file.filename}`;
+    }
 
     let convoId = conversationId;
     if (!convoId) {
@@ -19,6 +25,11 @@ export const saveMessage = async (req, res) => {
       conversationId: convoId,
       text
     });
+
+    // Add image to message if available
+    if (imagePath) {
+      newMessage.image = imagePath;
+    }
 
     if (carId && mongoose.Types.ObjectId.isValid(carId)) {
       newMessage.carId = new mongoose.Types.ObjectId(carId);

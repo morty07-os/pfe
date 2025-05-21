@@ -11,13 +11,18 @@ import {
   IconButton,
   Avatar,
   Divider,
-  Paper
+  Paper,
+  Badge,
+  Tooltip
 } from '@mui/material';
 import axios from 'axios';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import ImageIcon from '@mui/icons-material/Image';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const ConversationDialog = ({ open, onClose, userId, carId }) => {
   const [messages, setMessages] = useState([]);
@@ -26,7 +31,10 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
   const [userName, setUserName] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
   const [carName, setCarName] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const chatEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // currentUserId is now set in the fetchMessages function
 
@@ -135,21 +143,31 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && !selectedImage) return;
     
     try {
       const token = localStorage.getItem('token');
+      
+      // Create FormData to handle file upload
+      const formData = new FormData();
+      formData.append('receiver', userId);
+      formData.append('text', newMessage.trim() || 'Image sent');
+      if (carId) {
+        formData.append('carId', carId);
+      }
+      
+      // Append image if selected
+      if (selectedImage) {
+        formData.append('image', selectedImage);
+      }
+      
       const response = await axios.post(
         'http://localhost:5001/api/messages/save',
-        {
-          receiver: userId,
-          text: newMessage,
-          carId: carId
-        },
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'multipart/form-data',
           },
         }
       );
@@ -157,14 +175,24 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
       // Add message to the list with current timestamp and proper sender format
       // Store the message with the same format as the API returns
       const newMsg = {
-        text: newMessage,
+        text: newMessage.trim() || 'Image sent',
         createdAt: new Date().toISOString(),
         // Use the same sender format as the API would return
         sender: { _id: currentUserId }
       };
       
+      // If we have an image preview, add it to the local message
+      if (imagePreview) {
+        newMsg.image = imagePreview;
+      }
+      
       setMessages([...messages, newMsg]);
       setNewMessage('');
+      setSelectedImage(null);
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       alert(`Error sending message: ${error.message}`);
@@ -175,6 +203,26 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+  
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -355,6 +403,23 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
                     }}>
                       {message.text}
                     </Typography>
+                    {message.image && (
+                      <Box sx={{ mt: 1, maxWidth: '100%' }}>
+                        <img 
+                          src={message.image.startsWith('data:') 
+                            ? message.image 
+                            : `http://localhost:5001/${message.image}`
+                          } 
+                          alt="Message attachment" 
+                          style={{ 
+                            maxWidth: '100%', 
+                            maxHeight: '200px', 
+                            borderRadius: '8px',
+                            border: '1px solid rgba(0,0,0,0.1)'
+                          }} 
+                        />
+                      </Box>
+                    )}
                     <Box sx={{ 
                       display: 'flex', 
                       justifyContent: isUser ? 'flex-end' : 'flex-start',
@@ -395,6 +460,7 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
         <Box
           sx={{
             display: 'flex',
+            flexDirection: 'column',
             gap: 1,
             px: 2,
             py: 1.5,
@@ -405,48 +471,112 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
             zIndex: 1,
           }}
         >
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            sx={{ 
-              bgcolor: '#fff', 
-              borderRadius: 2,
-              '& .MuiOutlinedInput-root': {
+          {imagePreview && (
+            <Box sx={{ 
+              position: 'relative', 
+              display: 'inline-block', 
+              maxWidth: '150px',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              border: '1px solid #e2e8f0'
+            }}>
+              <img 
+                src={imagePreview} 
+                alt="Selected" 
+                style={{ 
+                  width: '100%', 
+                  maxHeight: '100px', 
+                  objectFit: 'cover',
+                  display: 'block'
+                }} 
+              />
+              <IconButton 
+                size="small" 
+                onClick={handleRemoveImage}
+                sx={{ 
+                  position: 'absolute', 
+                  top: 2, 
+                  right: 2, 
+                  bgcolor: 'rgba(0,0,0,0.5)',
+                  color: 'white',
+                  padding: '4px',
+                  '&:hover': {
+                    bgcolor: 'rgba(0,0,0,0.7)',
+                  }
+                }}
+              >
+                <CancelIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          )}
+          
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleImageSelect}
+              ref={fileInputRef}
+              id="image-upload"
+            />
+            <Tooltip title="Add image">
+              <IconButton 
+                onClick={() => fileInputRef.current.click()}
+                sx={{
+                  bgcolor: '#fff',
+                  border: '1px solid #e2e8f0',
+                  '&:hover': {
+                    bgcolor: '#f1f5f9',
+                  }
+                }}
+              >
+                <PhotoCameraIcon />
+              </IconButton>
+            </Tooltip>
+            
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Type your message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              sx={{ 
+                bgcolor: '#fff', 
                 borderRadius: 2,
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3498db',
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#3498db',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#000',
+                  },
+                }
+              }}
+              inputProps={{ maxLength: 300 }}
+            />
+            <Button
+              variant="contained"
+              onClick={handleSendMessage}
+              disabled={!newMessage.trim() && !selectedImage}
+              sx={{
+                borderRadius: 2,
+                minWidth: 'unset',
+                bgcolor: '#000',
+                '&:hover': {
+                  bgcolor: '#333',
                 },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#000',
+                '&.Mui-disabled': {
+                  bgcolor: '#cbd5e1',
+                  color: '#94a3b8',
                 },
-              }
-            }}
-            inputProps={{ maxLength: 300 }}
-          />
-          <Button
-            variant="contained"
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
-            sx={{
-              borderRadius: 2,
-              minWidth: 'unset',
-              bgcolor: '#000',
-              '&:hover': {
-                bgcolor: '#333',
-              },
-              '&.Mui-disabled': {
-                bgcolor: '#cbd5e1',
-                color: '#94a3b8',
-              },
-              transition: 'background-color 0.3s ease',
-            }}
-          >
-            <SendIcon />
-          </Button>
+                transition: 'background-color 0.3s ease',
+              }}
+            >
+              <SendIcon />
+            </Button>
+          </Box>
         </Box>
       </DialogContent>
     </Dialog>
