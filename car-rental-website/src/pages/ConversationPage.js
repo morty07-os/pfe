@@ -17,8 +17,10 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import SendIcon from '@mui/icons-material/Send';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import dayjs from 'dayjs';
 import Navbar from '../components/Navbar';
 
 const ConversationPage = () => {
@@ -242,19 +244,33 @@ const ConversationPage = () => {
                       </Typography>
                     </Box>
                   </Box>
-                  {owner?.email && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2" sx={{ color: '#64748b' }}>
-                        Email:
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#475569' }}>
-                        {owner.email}
-                      </Typography>
+                      {owner?.email && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Email:
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#475569' }}>
+                            {owner.email}
+                          </Typography>
+                        </Box>
+                      )}
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: '#1e293b' }}>
+                          Availability
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CalendarMonthIcon sx={{ color: '#475569' }} />
+                          <Typography sx={{ color: '#475569' }}>
+                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 0.5, sm: 2 } }}>
+                              <span><span style={{ fontWeight: 500 }}>From:</span> {car?.availabilityStart ? dayjs(car.availabilityStart).format('DD-MM-YYYY') : 'Not Available'}</span>
+                              <span><span style={{ fontWeight: 500 }}>To:</span> {car?.availabilityEnd ? dayjs(car.availabilityEnd).format('DD-MM-YYYY') : 'Not Available'}</span>
+                            </Box>
+                          </Typography>
+                        </Box>
+                      </Box>
                     </Box>
-                  )}
-                </Box>
-              </Paper>
-            </Grid>
+                  </Paper>
+                </Grid>
             <Grid item xs={12} md={6}>
               <Paper
                 elevation={3}
@@ -282,10 +298,24 @@ const ConversationPage = () => {
                   borderTopRightRadius: 12,
                   borderBottom: '1px solid #e2e8f0',
                 }}>
-                  <ChatBubbleOutlineIcon sx={{ fontSize: 22, mr: 1 }} />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Chat with Owner
-                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <ChatBubbleOutlineIcon sx={{ fontSize: 22, mr: 1 }} />
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        Chat with Owner
+                      </Typography>
+                    </Box>
+                    {(car?.availabilityStart || car?.availabilityEnd) && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, ml: 1 }}>
+                        <CalendarMonthIcon sx={{ fontSize: '0.9rem' }} />
+                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.75rem' }}>
+                          <span style={{ fontWeight: 500 }}>From:</span> {car?.availabilityStart ? dayjs(car.availabilityStart).format('DD-MM-YYYY') : 'Not set'} 
+                          <span style={{ margin: '0 4px' }}>|</span> 
+                          <span style={{ fontWeight: 500 }}>To:</span> {car?.availabilityEnd ? dayjs(car.availabilityEnd).format('DD-MM-YYYY') : 'Not set'}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
                 </Box>
                 <Box
                   sx={{

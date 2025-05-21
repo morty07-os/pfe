@@ -20,6 +20,7 @@ import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import EventNoteIcon from '@mui/icons-material/EventNote'; // Added for availability dates
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import ImageIcon from '@mui/icons-material/Image';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -31,6 +32,8 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
   const [userName, setUserName] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
   const [carName, setCarName] = useState('');
+  const [carAvailabilityStart, setCarAvailabilityStart] = useState(null); // Added for availability start date
+  const [carAvailabilityEnd, setCarAvailabilityEnd] = useState(null); // Added for availability end date
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const chatEndRef = useRef(null);
@@ -87,7 +90,7 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
           if (firstMessage.carId && typeof firstMessage.carId === 'string') {
             try {
               const carResponse = await axios.get(
-                `http://localhost:5001/api/cars/${firstMessage.carId}`,
+                `http://localhost:5001/api/cars/details/${firstMessage.carId}`, // Updated endpoint
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -95,8 +98,16 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
                   },
                 }
               );
-              if (carResponse.data && carResponse.data.carName) {
-                setCarName(carResponse.data.carName);
+              if (carResponse.data) {
+                if (carResponse.data.carName) {
+                  setCarName(carResponse.data.carName);
+                }
+                if (carResponse.data.availabilityStart) {
+                  setCarAvailabilityStart(carResponse.data.availabilityStart);
+                }
+                if (carResponse.data.availabilityEnd) {
+                  setCarAvailabilityEnd(carResponse.data.availabilityEnd);
+                }
               }
             } catch (carError) {
               console.error('Error fetching car details:', carError);
@@ -105,10 +116,10 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
         }
         
         // If carId is provided directly as a prop, fetch car details
-        if (carId && !carName) {
+        if (carId && !carName) { // Also update carName condition if needed, but availability is primary
           try {
             const carResponse = await axios.get(
-              `http://localhost:5001/api/cars/${carId}`,
+              `http://localhost:5001/api/cars/details/${carId}`, // Updated endpoint
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -116,8 +127,16 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
                 },
               }
             );
-            if (carResponse.data && carResponse.data.carName) {
-              setCarName(carResponse.data.carName);
+            if (carResponse.data) {
+              if (carResponse.data.carName) {
+                setCarName(carResponse.data.carName);
+              }
+              if (carResponse.data.availabilityStart) {
+                setCarAvailabilityStart(carResponse.data.availabilityStart);
+              }
+              if (carResponse.data.availabilityEnd) {
+                setCarAvailabilityEnd(carResponse.data.availabilityEnd);
+              }
             }
           } catch (carError) {
             console.error('Error fetching car details:', carError);
@@ -285,10 +304,23 @@ const ConversationDialog = ({ open, onClose, userId, carId }) => {
               </Box>
             </Typography>
           )}
+          {carName && carAvailabilityStart && carAvailabilityEnd && (
+            <Typography variant="caption" sx={{
+              display: 'block',
+              color: 'rgba(255,255,255,0.7)',
+              mt: 0.5,
+              fontSize: '0.75rem'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <EventNoteIcon sx={{ fontSize: '0.9rem' }} />
+                Available: {new Date(carAvailabilityStart).toISOString().split('T')[0]} to {new Date(carAvailabilityEnd).toISOString().split('T')[0]}
+              </Box>
+            </Typography>
+          )}
         </Box>
-        <IconButton 
-          onClick={onClose} 
-          sx={{ 
+        <IconButton
+          onClick={onClose}
+          sx={{
             color: 'white',
             '&:hover': {
               color: '#3498db',
