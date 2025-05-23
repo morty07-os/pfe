@@ -16,7 +16,8 @@ import path from "path";
 import carRoutes from "./routes/car.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
 import messageRoutes from "./routes/message.routes.js";
-
+import ratingRoutes from "./routes/rating.routes.js"; // Import rating routes
+import feedbackRoutes from "./routes/feedback.routes.js"; // Import feedback routes
 
 
 // Load environment variables
@@ -90,8 +91,8 @@ app.use("/api/cars", carRoutes);
 // Mount booking routes
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/messages", messageRoutes);
-
-
+app.use("/api/ratings", ratingRoutes); // Mount rating routes
+app.use("/api/feedbacks", feedbackRoutes); // Mount feedback routes
 
 
 // Centralized error handling middleware

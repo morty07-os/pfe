@@ -1,15 +1,20 @@
 import mongoose from "mongoose";
 
 const ratingSchema = new mongoose.Schema({
-    userId: {
+    raterId: { // The user giving the rating
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
     },
-    carId: {
+    carId: { // The car being rated (optional, if rating a user)
         type: mongoose.Schema.Types.ObjectId,
         ref: "Car",
-        required: true,
+        required: false,
+    },
+    ratedUserId: { // The user being rated (optional, if rating a car)
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: false,
     },
     rating: {
         type: Number,

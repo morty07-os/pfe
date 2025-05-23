@@ -18,7 +18,10 @@ import {
   Fade,
   IconButton,
   Tooltip,
+  Link,
+  Alert, // Import Alert component
 } from '@mui/material';
+import RnF_user from '../components/RnF_user';
 import EventSeatIcon from '@mui/icons-material/EventSeat';
 import DoorFrontIcon from '@mui/icons-material/DoorFront';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
@@ -36,6 +39,9 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import dayjs from 'dayjs';
 import Navbar from '../components/Navbar';
+import axios from 'axios'; // Import axios
+import { Rating } from '@mui/material'; // Import Rating component
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote'; // Import FormatQuoteIcon
 
 export default function CarDetailsPage() {
   const { carId } = useParams();
@@ -45,6 +51,16 @@ export default function CarDetailsPage() {
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isOwnCar, setIsOwnCar] = useState(false);
+  const [userRatingDialogOpen, setUserRatingDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedUserName, setSelectedUserName] = useState('');
+
+  // New state for owner's ratings and feedback
+  const [ownerAverageRating, setOwnerAverageRating] = useState(0);
+  const [ownerTotalReviews, setOwnerTotalReviews] = useState(0);
+  const [ownerFeedbacks, setOwnerFeedbacks] = useState([]);
+  const [ownerRatingsLoading, setOwnerRatingsLoading] = useState(false);
+  const [ownerRatingsError, setOwnerRatingsError] = useState(null);
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -115,19 +131,40 @@ export default function CarDetailsPage() {
     const fetchCarDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5001/api/cars/details/${carId}`);
-        if (!response.ok) throw new Error('Failed to fetch car details');
-        const data = await response.json();
+        const response = await axios.get(`http://localhost:5001/api/cars/details/${carId}`);
+        const data = response.data;
         setCar(data);
         
         // Check if the car belongs to the current user
         if (currentUser && data.owner) {
           // Compare owner ID with current user ID
-          const isOwner = 
-            (typeof data.owner === 'string' && data.owner === currentUser._id) || 
-            (data.owner._id && data.owner._id === currentUser._id);
-          
+          const ownerId = typeof data.owner === 'string' ? data.owner : data.owner._id;
+          const isOwner = ownerId === currentUser._id;
           setIsOwnCar(isOwner);
+
+          // Fetch owner's ratings and average rating
+          setOwnerRatingsLoading(true);
+          setOwnerRatingsError(null);
+          try {
+            const token = localStorage.getItem('token');
+            const ownerRatingsResponse = await axios.get(
+              `http://localhost:5001/api/ratings/user/${ownerId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setOwnerFeedbacks(ownerRatingsResponse.data || []);
+
+            const ownerAverageRatingResponse = await axios.get(
+              `http://localhost:5001/api/ratings/average/user/${ownerId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setOwnerAverageRating(ownerAverageRatingResponse.data.averageRating || 0);
+            setOwnerTotalReviews(ownerAverageRatingResponse.data.totalRatings || 0);
+          } catch (ratingsError) {
+            console.error('Error fetching owner ratings:', ratingsError);
+            setOwnerRatingsError('Failed to load owner ratings.');
+          } finally {
+            setOwnerRatingsLoading(false);
+          }
         }
         
         setError(null);
@@ -145,6 +182,18 @@ export default function CarDetailsPage() {
   // Go back to previous page
   const handleGoBack = () => {
     navigate(-1);
+  };
+  
+  // Open user rating dialog
+  const handleOpenUserRatingDialog = (userId, userName) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setUserRatingDialogOpen(true);
+  };
+  
+  // Close user rating dialog
+  const handleCloseUserRatingDialog = () => {
+    setUserRatingDialogOpen(false);
   };
 
   if (loading) {
@@ -845,54 +894,207 @@ export default function CarDetailsPage() {
                             <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569', mb: 1 }}>
                               Car Owner
                             </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Avatar 
-                                sx={{ 
-                                  bgcolor: '#e2e8f0', 
-                                  color: '#475569',
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  '& .owner-name': {
+                                    color: 'primary.main'
+                                  }
+                                }
+                              }}
+                              onClick={() => handleOpenUserRatingDialog(
+                                typeof car.owner === 'string' ? car.owner : car.owner._id,
+                                typeof car.owner === 'string' ? car.ownerName : `${car.owner.firstName} ${car.owner.lastName}`
+                              )}
+                            >
+                              <Avatar
+                                src={typeof car.owner === 'string' ? null : car.owner.avatar}
+                                sx={{
                                   width: 40,
                                   height: 40,
-                                  mr: 1.5,
-                                  border: '2px solid #cbd5e1'
+                                  bgcolor: 'primary.main',
+                                  color: 'primary.contrastText',
+                                  fontSize: '1rem'
                                 }}
                               >
-                                {car.ownerName?.firstName?.charAt(0) || car.owner?.firstName?.charAt(0) || 'U'}
+                                {typeof car.owner === 'string' ? car.ownerName?.[0] : car.owner.firstName?.[0]}
                               </Avatar>
-                              <Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{ color: '#475569', fontSize: 15, fontWeight: 600 }}
-                                  >
-                                    {car.ownerName?.firstName} {car.ownerName?.lastName || 
-                                    car.owner?.firstName} {car.owner?.lastName || 'Unknown Owner'}
-                                  </Typography>
-                                  
-                                  {car.isOwner && (
-                                    <Chip 
-                                      label="Your Car" 
-                                      size="small" 
-                                      sx={{ 
-                                        ml: 1, 
-                                        bgcolor: '#fee2e2', 
-                                        color: '#ef4444',
-                                        fontWeight: 600,
-                                        fontSize: '0.7rem'
-                                      }} 
-                                    />
-                                  )}
-                                </Box>
-                                <Typography variant="caption" sx={{ color: '#64748b' }}>
-                                  Vehicle owner
-                                </Typography>
-                              </Box>
+                              <Typography
+                                variant="subtitle1"
+                                className="owner-name"
+                                sx={{
+                                  fontWeight: 500,
+                                  transition: 'color 0.2s'
+                                }}
+                              >
+                                {typeof car.owner === 'string' ? car.ownerName : `${car.owner.firstName} ${car.owner.lastName}`}
+                              </Typography>
                             </Box>
+                            {ownerRatingsLoading ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                    <Skeleton variant="text" width={100} height={20} />
+                                    <Skeleton variant="text" width={50} height={20} sx={{ ml: 1 }} />
+                                </Box>
+                            ) : ownerRatingsError ? (
+                                <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+                                    {ownerRatingsError}
+                                </Typography>
+                            ) : (
+                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                    <Rating
+                                        value={ownerAverageRating}
+                                        precision={0.5}
+                                        readOnly
+                                        size="small"
+                                        sx={{ mr: 0.5 }}
+                                    />
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>
+                                        {ownerAverageRating.toFixed(1)}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>
+                                        ({ownerTotalReviews} {ownerTotalReviews === 1 ? 'review' : 'reviews'})
+                                    </Typography>
+                                </Box>
+                            )}
                           </Box>
                         </Box>
                       </Paper>
                     </CardContent>
                   </Grid>
                 </Grid>
+
+                {/* Owner Feedbacks Section */}
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: { xs: 2.5, sm: 3 },
+                        borderRadius: 2,
+                        mt: 3,
+                        border: '1px solid #e2e8f0',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                            boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
+                            borderColor: '#cbd5e1',
+                        }
+                    }}
+                >
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            mb: 2,
+                            fontWeight: 700,
+                            color: '#1e293b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                        }}
+                    >
+                        <PersonIcon sx={{ color: '#475569' }} /> Owner Feedback
+                    </Typography>
+
+                    {ownerRatingsLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                            <Skeleton variant="rectangular" width="100%" height={100} sx={{ borderRadius: 2 }} />
+                        </Box>
+                    ) : ownerRatingsError ? (
+                        <Alert severity="error" sx={{ my: 2 }}>{ownerRatingsError}</Alert>
+                    ) : ownerFeedbacks.length === 0 ? (
+                        <Box sx={{ p: 3, textAlign: 'center', bgcolor: '#f8fafc', borderRadius: 2, border: '1px dashed #cbd5e1' }}>
+                            <Typography variant="body1" color="text.secondary">
+                                No feedback received for this owner yet.
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Grid container spacing={2}>
+                            {ownerFeedbacks
+                              .slice() // copy array
+                              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                              .map((feedback, index) => (
+                                <Grid item xs={12} sm={6} md={4} key={index}>
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 2,
+                                            border: '1px solid #e2e8f0',
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                            minHeight: 180,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'space-between',
+                                            '&::before': {
+                                                content: '""',
+                                                position: 'absolute',
+                                                left: 0,
+                                                top: 0,
+                                                bottom: 0,
+                                                width: 4,
+                                                bgcolor: feedback.rating >= 4 ? '#10b981' :
+                                                    feedback.rating >= 3 ? '#f59e0b' : '#ef4444',
+                                            }
+                                        }}
+                                    >
+                                        <Box>
+                                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                              <Rating value={feedback.rating} readOnly size="small" />
+                                              <Typography variant="caption" color="text.secondary">
+                                                  {dayjs(feedback.createdAt).format('DD-MM-YYYY')}
+                                              </Typography>
+                                          </Box>
+
+                                          {feedback.review && (
+                                              <Box sx={{ display: 'flex', mt: 1 }}>
+                                                  <FormatQuoteIcon
+                                                      sx={{
+                                                          fontSize: 20,
+                                                          color: 'text.secondary',
+                                                          mr: 1,
+                                                          transform: 'scaleX(-1)'
+                                                      }}
+                                                  />
+                                                  <Typography variant="body2">
+                                                      {feedback.review}
+                                                  </Typography>
+                                              </Box>
+                                          )}
+                                        </Box>
+
+                                        {feedback.raterId && (
+                                            <Box sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                mt: 2,
+                                                mb: 0,
+                                            }}>
+                                                <Avatar
+                                                    src={feedback.raterId.profileImage || ''}
+                                                    sx={{
+                                                        width: 24,
+                                                        height: 24,
+                                                        mr: 1,
+                                                        bgcolor: '#64748b'
+                                                    }}
+                                                >
+                                                    {feedback.raterId.firstName?.[0] || feedback.raterId.username?.[0] || 'U'}
+                                                </Avatar>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Feedback from {feedback.raterId.firstName && feedback.raterId.lastName
+                                                        ? `${feedback.raterId.firstName} ${feedback.raterId.lastName}`
+                                                        : feedback.raterId.username || 'Anonymous User'}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Paper>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                </Paper>
 
                 <Paper 
                   elevation={0}
@@ -971,6 +1173,14 @@ export default function CarDetailsPage() {
           </Fade>
         </Container>
       </Box>
+      
+      {/* UserRatingDialog is no longer needed as we display ratings directly */}
+      {/* <UserRatingDialog
+        open={userRatingDialogOpen}
+        onClose={handleCloseUserRatingDialog}
+        userId={selectedUserId}
+        userName={selectedUserName}
+      /> */}
     </>
   );
 }

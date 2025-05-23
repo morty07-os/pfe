@@ -7,6 +7,7 @@ import {
   DialogContentText,
   TextField,
   Button,
+  userAvatar,
   Box,
   CircularProgress,
   Typography,
@@ -27,6 +28,8 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import ImageIcon from '@mui/icons-material/Image';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import StarIcon from '@mui/icons-material/Star';
+import FeedbackDialog from './FeedbackDialog';
 
 const ConversationDialog = ({ open, onClose, userId, carId, conversationId }) => {
   const [messages, setMessages] = useState([]);
@@ -46,6 +49,10 @@ const ConversationDialog = ({ open, onClose, userId, carId, conversationId }) =>
   const [ownerConfirmed, setOwnerConfirmed] = useState(false); // To track if owner confirmed
   const [renterConfirmed, setRenterConfirmed] = useState(false); // To track if renter confirmed
   const [carAvailable, setCarAvailable] = useState(true); // To track if the car is still available
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false); // For feedback dialog
+  const [hasFeedback, setHasFeedback] = useState(false); // To track if user has already given feedback
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false); // To track if feedback was just submitted
+  const [ownerName, setOwnerName] = useState(''); // To store the car owner's name
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -297,12 +304,19 @@ const ConversationDialog = ({ open, onClose, userId, carId, conversationId }) =>
               
               // Check if current user is the car owner
               if (carResponse.data.owner) {
-                const ownerId = typeof carResponse.data.owner === 'object' 
-                  ? carResponse.data.owner._id 
-                  : carResponse.data.owner;
+                const owner = carResponse.data.owner;
+                const ownerId = typeof owner === 'object' 
+                  ? owner._id 
+                  : owner;
                 
                 setCarOwnerId(ownerId);
                 setIsCarOwner(ownerId === currentId);
+                
+                // Set owner name if available
+                if (typeof owner === 'object' && owner.firstName && owner.lastName) {
+                  setOwnerName(`${owner.firstName} ${owner.lastName}`);
+                }
+                
                 console.log('Car owner check:', { ownerId, currentId, isOwner: ownerId === currentId });
               }
             }
@@ -328,6 +342,49 @@ const ConversationDialog = ({ open, onClose, userId, carId, conversationId }) =>
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+  
+  // Check if user has already given feedback - only when both parties have confirmed the booking
+  useEffect(() => {
+    const checkFeedbackStatus = async () => {
+      // Only check feedback status if both parties have confirmed the booking
+      if (!carId || !currentUserId || !bookingConfirmed || !ownerConfirmed || !renterConfirmed) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+          `http://localhost:5001/api/feedback/check?carId=${carId}&userId=${currentUserId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        
+        if (response.data && response.data.hasFeedback) {
+          setHasFeedback(true);
+        }
+      } catch (error) {
+        console.error('Error checking feedback status:', error);
+      }
+    };
+    
+    if (bookingConfirmed && ownerConfirmed && renterConfirmed && currentUserId && carId) {
+      checkFeedbackStatus();
+    }
+  }, [bookingConfirmed, ownerConfirmed, renterConfirmed, currentUserId, carId, feedbackSubmitted]);
+  
+  const handleOpenFeedbackDialog = () => {
+    setFeedbackDialogOpen(true);
+  };
+  
+  const handleCloseFeedbackDialog = (submitted = false) => {
+    setFeedbackDialogOpen(false);
+    if (submitted) {
+      setFeedbackSubmitted(true);
+      setHasFeedback(true);
+    }
+  };
 
   const handleSendButtonClick = () => {
     handleSendMessage();
@@ -1173,6 +1230,67 @@ const ConversationDialog = ({ open, onClose, userId, carId, conversationId }) =>
                   : `You (as the renter) and the car owner have both confirmed the booking for ${carName}.`}
                 {" This car has been removed from listings."}
               </Typography>
+              
+              {/* Rate and Feedback Button - Only show when both parties have confirmed the booking */}
+              {(ownerConfirmed && renterConfirmed) && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  mt: 2,
+                  mb: 0.5
+                }}>
+                  {hasFeedback ? (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      bgcolor: 'rgba(0, 0, 0, 0.05)',
+                      px: 2,
+                      py: 1,
+                      borderRadius: 2
+                    }}>
+                      <StarIcon sx={{ color: '#FFD700', mr: 1, fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        Thank you for your feedback!
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      startIcon={<StarIcon sx={{ color: '#FFD700' }} />}
+                      onClick={handleOpenFeedbackDialog}
+                      sx={{
+                        borderRadius: 2,
+                        py: 1.2,
+                        px: 3,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        bgcolor: '#000',
+                        '&:hover': {
+                          bgcolor: '#333',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
+                        },
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        animation: 'pulse 2s infinite',
+                        '@keyframes pulse': {
+                          '0%': {
+                            boxShadow: '0 0 0 0 rgba(0, 0, 0, 0.3)',
+                          },
+                          '70%': {
+                            boxShadow: '0 0 0 10px rgba(0, 0, 0, 0)',
+                          },
+                          '100%': {
+                            boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
+                          },
+                        },
+                      }}
+                    >
+                      {isCarOwner ? 'Rate the Renter' : 'Rate Car & Owner'}
+                    </Button>
+                  )}
+                </Box>
+              )}
             </Box>
           )}
         </Box>
@@ -1248,6 +1366,17 @@ const ConversationDialog = ({ open, onClose, userId, carId, conversationId }) =>
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Feedback Dialog */}
+      <FeedbackDialog
+        open={feedbackDialogOpen}
+        onClose={handleCloseFeedbackDialog}
+        carId={carId}
+        userId={currentUserId}
+        isCarOwner={isCarOwner}
+        carName={carName}
+        ownerName={ownerName}
+      />
     </Dialog>
   );
 };
