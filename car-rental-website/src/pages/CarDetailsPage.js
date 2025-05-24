@@ -151,14 +151,19 @@ export default function CarDetailsPage() {
               `http://localhost:5001/api/ratings/user/${ownerId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
-            setOwnerFeedbacks(ownerRatingsResponse.data || []);
-
-            const ownerAverageRatingResponse = await axios.get(
-              `http://localhost:5001/api/ratings/average/user/${ownerId}`,
-              { headers: { Authorization: `Bearer ${token}` } }
+            // Filter out ratings where the rater is the owner themselves
+            const filteredFeedbacks = (ownerRatingsResponse.data || []).filter(
+              (feedback) => feedback.raterId._id !== ownerId
             );
-            setOwnerAverageRating(ownerAverageRatingResponse.data.averageRating || 0);
-            setOwnerTotalReviews(ownerAverageRatingResponse.data.totalRatings || 0);
+            setOwnerFeedbacks(filteredFeedbacks);
+
+            // Calculate average rating based on filtered feedbacks
+            const totalRatings = filteredFeedbacks.length;
+            const sumOfRatings = filteredFeedbacks.reduce((sum, feedback) => sum + feedback.rating, 0);
+            const averageRating = totalRatings > 0 ? sumOfRatings / totalRatings : 0;
+
+            setOwnerAverageRating(averageRating || 0);
+            setOwnerTotalReviews(totalRatings || 0);
           } catch (ratingsError) {
             console.error('Error fetching owner ratings:', ratingsError);
             setOwnerRatingsError('Failed to load owner ratings.');
@@ -186,8 +191,12 @@ export default function CarDetailsPage() {
   
   // Open user rating dialog
   const handleOpenUserRatingDialog = (userId, userName) => {
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
+    // Make sure we're using the car owner's ID for ratings, not the current user's ID
+    const ownerId = car?.owner?._id || car?.owner;
+    if (!ownerId) return;
+    
+    setSelectedUserId(ownerId);
+    setSelectedUserName(car.owner?.firstName ? `${car.owner.firstName} ${car.owner.lastName || ''}`.trim() : userName);
     setUserRatingDialogOpen(true);
   };
   

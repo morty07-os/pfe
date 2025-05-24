@@ -623,6 +623,7 @@ function PostCarDialog({ open, onClose }) {
       if (typeof token !== 'string' || token.split('.').length !== 3) {
         console.error("Invalid token format");
         localStorage.removeItem('token'); // Remove invalid token
+        localStorage.removeItem('userId'); // Remove invalid userId
         setSnackbar({ open: true, message: 'Your session is invalid. Please sign in again.', severity: 'error' });
         onClose();
         return;

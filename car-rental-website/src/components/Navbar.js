@@ -102,6 +102,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
       if (tokenParts.length !== 3) {
         // Invalid token format, clear it
         localStorage.removeItem('token');
+        localStorage.removeItem('userId');
         return false;
       }
       
@@ -111,6 +112,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
         if (payload.exp && payload.exp < Date.now() / 1000) {
           // Token expired, clear it
           localStorage.removeItem('token');
+          localStorage.removeItem('userId');
           return false;
         }
       } catch (e) {
@@ -277,6 +279,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
   const handleLogout = () => {
     // Clear all auth-related data
     localStorage.removeItem('token');
+    localStorage.removeItem('userId');
     localStorage.removeItem('user');
     
     // Clear any pending state

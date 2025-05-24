@@ -1372,7 +1372,9 @@ const ConversationDialog = ({ open, onClose, userId, carId, conversationId }) =>
         open={feedbackDialogOpen}
         onClose={handleCloseFeedbackDialog}
         carId={carId}
-        userId={currentUserId}
+        // If current user is the car owner, rate the other user (renter)
+        // If current user is the renter, rate the car owner
+        userId={isCarOwner ? userId : carOwnerId}
         isCarOwner={isCarOwner}
         carName={carName}
         ownerName={ownerName}

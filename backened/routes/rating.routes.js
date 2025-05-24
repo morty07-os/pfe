@@ -16,8 +16,8 @@ const router = express.Router();
 // Public routes (e.g., getting ratings for a car or user)
 router.get('/car/:carId', getRatingsByCarId);
 router.get('/average/car/:carId', getAverageRatingByCarId); // Corrected path for average car rating
-router.get('/user/:ratedUserId', getRatingsByRatedUserId); // New route for user ratings
-router.get('/average/user/:ratedUserId', getAverageRatingByRatedUserId); // New route for average user rating
+router.get('/user/:userId', getRatingsByRatedUserId); // New route for user ratings
+router.get('/average/user/:userId', getAverageRatingByRatedUserId); // New route for average user rating
 router.get('/', getRatings); // Get all ratings (might be admin-only later)
 
 // Protected routes (e.g., creating, updating, deleting a rating)

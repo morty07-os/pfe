@@ -128,6 +128,7 @@ const ProfilePage = () => {
         credentials: 'include',
       });
       localStorage.removeItem('token');
+      localStorage.removeItem('userId');
       navigate('/');
     } catch (err) {
       console.error("Logout error:", err.message);
