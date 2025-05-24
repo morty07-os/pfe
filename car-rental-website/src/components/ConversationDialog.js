@@ -565,6 +565,10 @@ const ConversationDialog = ({ open, onClose, userId, carId, conversationId }) =>
           
           // 5. Notify the user of success
           alert('Booking confirmed by both parties! The car has been removed from listings.');
+          
+          // 6. Dispatch a custom event to notify other components (e.g., AllOffersPage)
+          window.dispatchEvent(new CustomEvent('carRemoved', { detail: { carId } }));
+
         } catch (error) {
           console.error('Error during car booking confirmation:', error);
           alert(`Error confirming booking: ${error.message}`);
