@@ -325,7 +325,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: '#000', ...sx }}>
+      <AppBar position="static" sx={{ backgroundColor: '#000', zIndex: 1200, ...sx }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <IconButton
             size="large"
@@ -1030,39 +1030,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                 />
               </ListItem>
 
-              {isLoggedIn && (
-                <ListItem 
-                  button 
-                  onClick={handlePostCarClick}
-                  sx={{
-                    borderRadius: '12px',
-                    mb: 0.5,
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    '&:hover': {
-                      backgroundColor: 'rgba(51, 65, 85, 0.2)',
-                      transform: 'translateX(6px)',
-                    }
-                  }}
-                >
-                  <ListItemIcon>
-                    <AddCircleIcon sx={{ 
-                      color: '#94a3b8',
-                      transition: 'all 0.3s ease',
-                      'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
-                    }} />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Post Your Car" 
-                    primaryTypographyProps={{
-                      variant: 'body1',
-                      color: '#e2e8f0',
-                      fontWeight: 500,
-                      fontSize: '0.95rem',
-                      letterSpacing: '0.2px'
-                    }}
-                  />
-                </ListItem>
-              )}
+              {/* Post Your Car menu item removed */}
             </List>
 
             <Divider sx={{ my: 2, backgroundColor: 'rgba(148, 163, 184, 0.15)' }} />

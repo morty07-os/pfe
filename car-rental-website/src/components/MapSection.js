@@ -77,12 +77,11 @@ const MapSection = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
   
-  // Map functionality has been removed based on user preference for a minimalist UI
+  // Map functionality has been completely disabled as requested
   const handleShowMap = () => {
-    // Navigate to offers page with the selected city as a filter
-    if (selectedCity) {
-      navigate(`/offers?wilaya=${selectedCity}`);
-    }
+    // Function intentionally left empty - map functionality is disabled
+    console.log('Map functionality is disabled');
+    // No navigation occurs
   };
 
   // This would be replaced with actual map integration
@@ -257,12 +256,27 @@ const MapSection = () => {
                         sx={{
                           bgcolor: '#475569',
                           '&:hover': {
-                            bgcolor: '#334155'
+                            bgcolor: '#334155',
+                            '&::after': {
+                              content: '"Unavailable"',
+                              position: 'absolute',
+                              top: '-40px',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                              color: 'white',
+                              padding: '5px 10px',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              whiteSpace: 'nowrap',
+                              zIndex: 1000
+                            }
                           },
                           '&.Mui-disabled': {
                             bgcolor: '#94a3b8',
                             color: 'white'
-                          }
+                          },
+                          position: 'relative'
                         }}
                       >
                         Go to Map

@@ -20,6 +20,7 @@ import {
   Avatar
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import InfoIcon from '@mui/icons-material/Info';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EventSeatIcon from '@mui/icons-material/EventSeat';
@@ -403,6 +404,7 @@ export default function AllOffersPage() {
     <React.Fragment>
       <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
       <Box sx={{
+        position: 'relative',
         p: 0,
         pt: 0,
         mx: 0,
@@ -412,7 +414,53 @@ export default function AllOffersPage() {
         bgcolor: '#f8fafc',
         minHeight: '100vh'
       }}>
-        <QuickSearch noBackground sx={{ mt: 0, mb: 3, bgcolor: 'none', background: 'none' }} />
+        <Box sx={{ 
+          position: 'relative', 
+          top: -20, 
+          zIndex: 1100,
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center'
+        }}>
+          <QuickSearch noBackground sx={{ 
+            mt: 0, 
+            mb: 2,
+            bgcolor: 'none', 
+            background: 'none',
+            maxWidth: '1200px',
+            width: '100%',
+            mx: 'auto',
+            transform: 'translateY(-15px)',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              borderRadius: '16px',
+              boxShadow: [
+                '0 10px 15px -3px rgba(15, 23, 42, 0.08)',
+                '0 4px 6px -2px rgba(15, 23, 42, 0.05)',
+                '0 25px 50px -12px rgba(15, 23, 42, 0.25)'
+              ].join(', '),
+              zIndex: -1
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 6,
+              left: '5%',
+              right: '5%',
+              bottom: 0,
+              borderRadius: '16px',
+              boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.18)',
+              filter: 'blur(10px)',
+              zIndex: -2
+            }
+          }} />
+        </Box>
         <Box sx={{
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
@@ -494,44 +542,193 @@ export default function AllOffersPage() {
             <Box sx={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: filteredOffers.length === 0 ? 'center' : 'space-between',
               mb: 3,
-              flexDirection: { xs: 'column', sm: 'row' }
+              flexDirection: filteredOffers.length === 0 ? 'column' : 'row',
+              gap: filteredOffers.length === 0 ? 2 : 0
             }}>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#334155' }}>
-                {filteredOffers.length} {filteredOffers.length === 1 ? 'Car' : 'Cars'} Available
-              </Typography>
-              <Paper
-                component="form"
-                elevation={0}
+              {filteredOffers.length > 0 && (
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#334155' }}>
+                  {filteredOffers.length} {filteredOffers.length === 1 ? 'Car' : 'Cars'} Available
+                </Typography>
+              )}
+              <Box
                 sx={{
-                  p: '2px 4px',
-                  display: { xs: 'none', sm: 'flex' },
-                  alignItems: 'center',
-                  width: 280,
-                  borderRadius: 2,
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  position: 'relative',
+                  width: filteredOffers.length === 0 ? '100%' : 'auto',
+                  maxWidth: 420,
+                  mx: filteredOffers.length === 0 ? 'auto' : 0,
+                  mb: filteredOffers.length === 0 ? 4 : 0,
+                  zIndex: 5
                 }}
               >
-                <InputAdornment position="start" sx={{ pl: 1 }}>
-                  <SearchIcon sx={{ color: '#64748b' }} />
-                </InputAdornment>
-                <input
-                  style={{
-                    flex: 1,
-                    border: 'none',
-                    outline: 'none',
-                    padding: '10px 8px',
-                    fontSize: '0.95rem',
-                    fontFamily: 'inherit',
-                    backgroundColor: 'transparent'
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 5,
+                    top: 8,
+                    left: 0,
+                    background: 'linear-gradient(135deg, #475569, #1e293b)',
+                    opacity: 0.5,
+                    filter: 'blur(20px)',
+                    transform: 'translateZ(0)', // Force GPU acceleration
+                    zIndex: -1
                   }}
-                  placeholder="Search cars..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
                 />
-              </Paper>
+                <Paper
+                  component="form"
+                  elevation={0}
+                  sx={{
+                    p: '8px 12px',
+                    display: { xs: 'none', sm: 'flex' },
+                    alignItems: 'center',
+                    width: '100%',
+                    borderRadius: 5,
+                    border: '2px solid rgba(203, 213, 225, 0.8)',
+                    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.12)',
+                    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    '&:hover': {
+                      boxShadow: '0 15px 35px rgba(15, 23, 42, 0.15)',
+                      borderColor: '#94a3b8',
+                      transform: 'translateY(-3px) scale(1.01)'
+                    },
+                    '&:focus-within': {
+                      boxShadow: '0 15px 35px rgba(15, 23, 42, 0.18)',
+                      borderColor: '#475569',
+                      borderWidth: '2px',
+                      transform: 'translateY(-3px) scale(1.01)'
+                    },
+                    bgcolor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(12px)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '4px',
+                      background: 'linear-gradient(90deg, #475569, #64748b)',
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease',
+                    },
+                    '&:focus-within::before': {
+                      opacity: 1
+                    },
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: 0,
+                      left: '10%',
+                      width: '80%',
+                      height: '1px',
+                      background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.2), transparent)',
+                      opacity: 0.5
+                    }
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 45,
+                      height: 45,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.08), rgba(51, 65, 85, 0.04))',
+                      mr: 1.5,
+                      ml: 0.5,
+                      transition: 'all 0.3s ease',
+                      '.MuiPaper-root:focus-within &': {
+                        background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.12), rgba(51, 65, 85, 0.08))',
+                      }
+                    }}
+                  >
+                    <SearchIcon sx={{ 
+                      color: '#475569',
+                      fontSize: '1.5rem',
+                      transition: 'all 0.3s ease',
+                      '.MuiPaper-root:focus-within &': {
+                        color: '#334155',
+                        transform: 'scale(1.1)'
+                      }
+                    }} />
+                  </Box>
+                  <input
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      padding: '16px 12px',
+                      fontSize: '1.05rem',
+                      fontFamily: 'inherit',
+                      backgroundColor: 'transparent',
+                      color: '#334155',
+                      fontWeight: 500,
+                      letterSpacing: '0.3px'
+                    }}
+                    placeholder="Search cars by brand, model or location..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                  {search && (
+                    <IconButton 
+                      size="small" 
+                      onClick={() => setSearch('')}
+                      sx={{
+                        color: '#94a3b8',
+                        width: 36,
+                        height: 36,
+                        mr: 0.5,
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          color: '#64748b',
+                          backgroundColor: 'rgba(203, 213, 225, 0.2)',
+                          transform: 'scale(1.05)'
+                        }
+                      }}
+                    >
+                      <RestartAltIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Paper>
+                {filteredOffers.length === 0 && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: -30,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 1,
+                      width: '100%'
+                    }}
+                  >
+                    <Typography 
+                      variant="caption" 
+                      sx={{
+                        color: '#64748b',
+                        fontStyle: 'italic',
+                        opacity: 0.9,
+                        textAlign: 'center',
+                        fontSize: '0.8rem',
+                        letterSpacing: '0.2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
+                      }}
+                    >
+                      <InfoIcon sx={{ fontSize: '0.9rem', opacity: 0.7 }} />
+                      Try searching by brand, model or location
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
             </Box>
             {hasActiveFilters && (
               <Box sx={{
@@ -584,20 +781,204 @@ export default function AllOffersPage() {
             )}
             <Grid container spacing={3} sx={{ width: '100%' }}>
               {filteredOffers.length === 0 ? (
-                <Paper elevation={0} sx={{
-                  p: 4,
-                  borderRadius: 3,
-                  textAlign: 'center',
-                  border: '1px dashed #cbd5e1',
-                  bgcolor: 'rgba(241, 245, 249, 0.7)'
-                }}>
-                  <Typography variant="h6" sx={{ color: '#64748b', fontWeight: 600, mb: 1 }}>
-                    No cars match your filters
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                    Try adjusting your filters or search criteria
-                  </Typography>
-                </Paper>
+                <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                  <Box sx={{ 
+                    position: 'relative', 
+                    width: '100%', 
+                    maxWidth: '500px',
+                    mt: 3,
+                    mb: 4
+                  }}>
+                    {/* Shadow effect */}
+                    <Box sx={{
+                      position: 'absolute',
+                      width: '90%',
+                      height: '90%',
+                      top: '15%',
+                      left: '5%',
+                      borderRadius: 6,
+                      background: 'linear-gradient(135deg, #334155, #1e293b)',
+                      opacity: 0.4,
+                      filter: 'blur(25px)',
+                      transform: 'translateZ(0)', // Force GPU acceleration
+                      zIndex: 0
+                    }} />
+                    
+                    <Paper elevation={0} sx={{
+                      p: 4,
+                      borderRadius: 4,
+                      textAlign: 'center',
+                      border: '1px solid rgba(203, 213, 225, 0.8)',
+                      bgcolor: 'rgba(248, 250, 252, 0.95)',
+                      backdropFilter: 'blur(12px)',
+                      width: '100%',
+                      mx: 'auto',
+                      boxShadow: '0 15px 30px rgba(15, 23, 42, 0.1)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      zIndex: 1,
+                      '&:hover': {
+                        boxShadow: '0 20px 40px rgba(15, 23, 42, 0.15)',
+                        transform: 'translateY(-5px)'
+                      },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '5px',
+                        background: 'linear-gradient(90deg, #475569, #64748b)',
+                      },
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        bottom: 0,
+                        left: '15%',
+                        width: '70%',
+                        height: '1px',
+                        background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.3), transparent)',
+                      }
+                    }}>
+                      {/* Decorative elements */}
+                      <Box sx={{ 
+                        position: 'absolute', 
+                        top: 20, 
+                        right: 20, 
+                        width: 60, 
+                        height: 60,
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0) 70%)',
+                      }} />
+                      <Box sx={{ 
+                        position: 'absolute', 
+                        bottom: 30, 
+                        left: 30, 
+                        width: 80, 
+                        height: 80,
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0) 70%)',
+                      }} />
+                      
+                      {/* Icon container with gradient background */}
+                      <Box sx={{ 
+                        mb: 3,
+                        position: 'relative',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Box sx={{
+                          width: 70,
+                          height: 70,
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.1), rgba(51, 65, 85, 0.05))',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 6px 15px rgba(15, 23, 42, 0.08)',
+                          border: '1px solid rgba(203, 213, 225, 0.5)',
+                          position: 'relative',
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: -3,
+                            left: -3,
+                            right: -3,
+                            bottom: -3,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, rgba(203, 213, 225, 0.5), rgba(148, 163, 184, 0.2))',
+                            zIndex: -1,
+                            opacity: 0.5
+                          }
+                        }}>
+                          <DirectionsCarIcon sx={{ 
+                            fontSize: '2.5rem', 
+                            color: '#475569',
+                            filter: 'drop-shadow(0 3px 5px rgba(15, 23, 42, 0.1))'
+                          }} />
+                        </Box>
+                      </Box>
+                      
+                      {/* Main heading with gradient */}
+                      <Typography variant="h4" sx={{ 
+                        fontWeight: 800, 
+                        mb: 1.5,
+                        background: 'linear-gradient(135deg, #334155, #64748b)',
+                        backgroundClip: 'text',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        textShadow: '0 2px 10px rgba(15, 23, 42, 0.1)',
+                        letterSpacing: '-0.5px'
+                      }}>
+                        0 Cars Available
+                      </Typography>
+                      
+                      {/* Subheading */}
+                      <Typography variant="h6" sx={{ 
+                        color: '#475569', 
+                        fontWeight: 600, 
+                        mb: 2,
+                        letterSpacing: '0.3px',
+                        position: 'relative',
+                        display: 'inline-block',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          bottom: -8,
+                          left: '30%',
+                          width: '40%',
+                          height: 2,
+                          background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.5), transparent)',
+                          borderRadius: 2
+                        }
+                      }}>
+                        No cars match your filters
+                      </Typography>
+                      
+                      {/* Description text */}
+                      <Typography variant="body2" sx={{ 
+                        color: '#64748b',
+                        maxWidth: '80%',
+                        mx: 'auto',
+                        mb: 3,
+                        lineHeight: 1.6,
+                        letterSpacing: '0.2px'
+                      }}>
+                        Try adjusting your filters or search criteria to find available cars.
+                      </Typography>
+                      
+                      {/* Action button */}
+                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<RestartAltIcon />}
+                          onClick={handleClearAllFilters}
+                          sx={{
+                            bgcolor: '#475569',
+                            color: 'white',
+                            borderRadius: '8px',
+                            px: 3,
+                            py: 1,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            boxShadow: '0 6px 15px rgba(15, 23, 42, 0.15)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              bgcolor: '#334155',
+                              boxShadow: '0 8px 20px rgba(15, 23, 42, 0.2)',
+                              transform: 'translateY(-2px)'
+                            }
+                          }}
+                        >
+                          Reset All Filters
+                        </Button>
+                      </Box>
+                    </Paper>
+                  </Box>
+                </Grid>
               ) : (
                 filteredOffers.map((offer) => {
                   // Check if the current offer belongs to the logged-in user
