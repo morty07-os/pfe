@@ -34,6 +34,16 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// List of Algerian Wilayas
+const wilayas = [
+  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira",
+  "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda",
+  "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla",
+  "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela",
+  "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar",
+  "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Meniaa"
+];
+
 // Create a custom search component that doesn't use useMap
 function SearchControl({ onLocationFound, mapRef }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -442,6 +452,7 @@ function PostCarDialog({ open, onClose }) {
   const [formData, setFormData] = useState({
     carName: '',
     brand: '',
+    wilaya: '', // Added wilaya field
     description: '',
     price: '',
     energy: '',
@@ -583,6 +594,7 @@ function PostCarDialog({ open, onClose }) {
       // Append all form fields
       data.append('carName', formData.carName);
       data.append('brand', formData.brand);
+      data.append('wilaya', formData.wilaya); // Added wilaya field
       data.append('description', formData.description);
       data.append('energy', formData.energy);
       data.append('seats', formData.seats);
@@ -590,7 +602,6 @@ function PostCarDialog({ open, onClose }) {
       data.append('transmission', formData.transmission);
       data.append('mileage', formData.mileage);
       data.append('engine', formData.engine);
-      // No longer using wilaya field, using location coordinates instead
       data.append('availabilityStart', formData.availabilityStart);
       data.append('availabilityEnd', formData.availabilityEnd);
       data.append('price', formData.price);
@@ -853,44 +864,71 @@ function PostCarDialog({ open, onClose }) {
                   {brands.map(b => <MenuItem key={b} value={b}>{b}</MenuItem>)}
                 </TextField>
                 <TextField
+                  required
+                  select
                   fullWidth
-                  onClick={handleOpenMapDialog}
-                  value={formData.location ? 'Pickup Location Set ✓' : 'Click to set pickup location'}
-                  sx={{ 
-                    cursor: 'pointer',
-                    '& .MuiInputBase-input': { 
-                      color: formData.location ? '#334155' : '#64748b',
-                      fontWeight: formData.location ? 500 : 400
-                    }
-                  }}
+                  label="Wilaya"
+                  name="wilaya"
+                  value={formData.wilaya}
+                  onChange={handleChange}
                   InputProps={{
-                    readOnly: true,
                     startAdornment: (
                       <InputAdornment position="start">
-                        <LocationOnIcon sx={{ color: formData.location ? '#475569' : '#64748b' }} />
+                        <LocationOnIcon sx={{ color: '#64748b' }} />
                       </InputAdornment>
                     ),
-                    endAdornment: formData.location ? (
-                      <InputAdornment position="end">
-                        <Typography variant="caption" sx={{ color: '#475569', fontWeight: 500, mr: 1 }}>
-                          Click to change
-                        </Typography>
-                      </InputAdornment>
-                    ) : null,
                     sx: {
                       borderRadius: 2.5,
-                      bgcolor: formData.location ? '#e2e8f0' : '#f1f5f9',
-                      border: formData.location ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
-                      boxShadow: formData.location ? '0 2px 6px rgba(30,41,59,0.08)' : '0 1px 4px rgba(30,41,59,0.03)',
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: '#e2e8f0', borderColor: '#cbd5e1' },
-                      '&.Mui-focused': { boxShadow: '0 0 0 2px #475569', borderColor: '#475569' },
-                      height: 56,
-                      pl: 2
+                      bgcolor: '#f1f5f9',
+                      boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                      '&:hover': { bgcolor: '#e2e8f0' },
+                      '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
                     }
                   }}
-                />
+                  InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+                >
+                  {wilayas.map(w => <MenuItem key={w} value={w}>{w}</MenuItem>)}
+                </TextField>
               </Box>
+              {/* Pickup Location */}
+              <TextField
+                fullWidth
+                onClick={handleOpenMapDialog}
+                value={formData.location ? 'Pickup Location Set ✓' : 'Click to set pickup location'}
+                sx={{ 
+                  cursor: 'pointer',
+                  '& .MuiInputBase-input': { 
+                    color: formData.location ? '#334155' : '#64748b',
+                    fontWeight: formData.location ? 500 : 400
+                  }
+                }}
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LocationOnIcon sx={{ color: formData.location ? '#475569' : '#64748b' }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: formData.location ? (
+                    <InputAdornment position="end">
+                      <Typography variant="caption" sx={{ color: '#475569', fontWeight: 500, mr: 1 }}>
+                        Click to change
+                      </Typography>
+                    </InputAdornment>
+                  ) : null,
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: formData.location ? '#e2e8f0' : '#f1f5f9',
+                    border: formData.location ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                    boxShadow: formData.location ? '0 2px 6px rgba(30,41,59,0.08)' : '0 1px 4px rgba(30,41,59,0.03)',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: '#e2e8f0', borderColor: '#cbd5e1' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #475569', borderColor: '#475569' },
+                    height: 56,
+                    pl: 2
+                  }
+                }}
+              />
               
               {/* Energy, Engine, Transmission */}
               <Box sx={{ display: 'flex', gap: 2 }}>

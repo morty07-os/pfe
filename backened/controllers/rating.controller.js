@@ -12,9 +12,9 @@ export const createRating = async (req, res) => {
             return res.status(400).send("Missing required fields: raterId, rating");
         }
 
-        // Ensure either carId or ratedUserId is provided
+       // Ensure either carId or ratedUserId is provided
         if (!carId && !ratedUserId) {
-            return res.status(400).send("Either carId or ratedUserId must be provided");
+            return res.status(400).json({ message: "Either carId or ratedUserId must be provided" });
         }
 
         // Create and save the new rating
@@ -87,13 +87,22 @@ export const deleteRating = async (req, res) => {
 // Function to get ratings for a specific user (ratedUserId)
 export const getRatingsByRatedUserId = async (req, res) => {
     try {
-        const { ratedUserId } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(ratedUserId)) {
+        const { userId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ message: "Invalid user ID format" });
         }
-        const ratings = await Rating.find({ ratedUserId }).populate('raterId', 'username email firstName lastName profileImage');
-        // Return empty array if no ratings found, instead of 404
-        res.status(200).json(ratings || []);
+        
+        // Find ratings where the user is the one being rated
+        const ratings = await Rating.find({ 
+            ratedUserId: userId 
+        })
+        .populate('raterId', 'username email firstName lastName profileImage')
+        .sort({ createdAt: -1 }); // Sort by newest first
+        
+        // Filter out any potential null or undefined ratings just in case
+        const validRatings = ratings.filter(rating => rating && rating.raterId);
+        
+        res.status(200).json(validRatings);
     } catch (error) {
         console.error("Error fetching ratings by rated user ID:", error.message);
         res.status(500).json({ error: "Server error" });
@@ -133,7 +142,8 @@ export const getAverageRatingByCarId = async (req, res) => {
 // Function to calculate average rating for a specific user (ratedUserId)
 export const getAverageRatingByRatedUserId = async (req, res) => {
     try {
-        const { ratedUserId } = req.params;
+        const { userId } = req.params;
+        const ratedUserId = userId; // Keep the same variable name for consistency
         if (!mongoose.Types.ObjectId.isValid(ratedUserId)) {
             return res.status(400).json({ message: "Invalid user ID format" });
         }
