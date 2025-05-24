@@ -92,8 +92,37 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
   };
 
   const isAuthenticated = () => {
-    const token = localStorage.getItem('token');
-    return !!(token && token !== 'null' && typeof token === 'string' && token.trim() !== '');
+    try {
+      const token = localStorage.getItem('token');
+      // Additional check for token format if needed
+      if (!token) return false;
+      
+      // Verify token is a valid JWT format (basic check)
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        // Invalid token format, clear it
+        localStorage.removeItem('token');
+        return false;
+      }
+      
+      // Check if token is expired (only works if token has exp claim)
+      try {
+        const payload = JSON.parse(atob(tokenParts[1]));
+        if (payload.exp && payload.exp < Date.now() / 1000) {
+          // Token expired, clear it
+          localStorage.removeItem('token');
+          return false;
+        }
+      } catch (e) {
+        console.error('Error parsing token:', e);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Authentication check failed:', error);
+      return false;
+    }
   };
 
   const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
@@ -208,6 +237,14 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
   };
 
   // Effect to show welcome message from location state
+  // Add a cleanup effect to handle component unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup any pending state
+      setSnackbar({ open: false, message: '', severity: 'info' });
+    };
+  }, []);
+
   useEffect(() => {
     if (location.state?.showWelcome && location.state?.userName) {
       setSnackbar({
@@ -238,9 +275,22 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
   }, [location.state, navigate, location.pathname]);
 
   const handleLogout = () => {
+    // Clear all auth-related data
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Clear any pending state
     setIsLoggedIn(false);
     handleClose();
+    
+    // Clear any existing cookies by setting an expired cookie
+    document.cookie = 'jwt=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    
+    // Clear any cached data in sessionStorage
+    sessionStorage.clear();
+    
+    // Notify other components about the logout
     window.dispatchEvent(new Event('loginStateChanged'));
     
     // Show logout confirmation message
@@ -248,7 +298,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
       open: true,
       message: 'You have been successfully signed out.',
       severity: 'info',
-      autoHideDuration: 4000,
+      autoHideDuration: 1000, // Shorter duration before refresh
       anchorOrigin: {
         vertical: 'top',
         horizontal: 'center',
@@ -266,6 +316,11 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
         borderRadius: '12px',
       }
     });
+    
+    // Force a hard refresh after a short delay to ensure the message is seen
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
   };
 
   return (

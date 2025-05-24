@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, Paper, Avatar, CircularProgress, IconButton,
   Tooltip, Button, Chip, Container, Grid, Divider, Card, CardContent,
-  Tab, Tabs, Badge, LinearProgress, Rating, Link, TextField
+  Tab, Tabs, Badge, LinearProgress, Rating, Link
 } from '@mui/material';
 import {
   Edit as EditIcon, Logout as LogoutIcon,
@@ -10,11 +10,10 @@ import {
   Email as EmailIcon, Person as PersonIcon, CalendarToday as CalendarIcon,
   DirectionsCar as DirectionsCarIcon, History as HistoryIcon, 
   AddCircle as AddCircleIcon, Verified as VerifiedIcon, 
-  Settings as SettingsIcon,
+  CreditCard as CreditCardIcon, Settings as SettingsIcon,
   Notifications as NotificationsIcon, Star as StarIcon,
-  Dashboard as DashboardIcon,
-  Favorite as FavoriteIcon, EventAvailable as EventAvailableIcon,
-  Chat as ChatIcon, Send as SendIcon
+  Security as SecurityIcon, Dashboard as DashboardIcon,
+  Favorite as FavoriteIcon, EventAvailable as EventAvailableIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
@@ -23,7 +22,7 @@ import Navbar from '../components/Navbar';
 // Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.spacing(2),
-  boxShadow: '0 10px 30px rgba(51, 65, 85, 0.08)',
+  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.05)',
   transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
   overflow: 'hidden',
   height: '100%',
@@ -33,24 +32,23 @@ const StyledCard = styled(Card)(({ theme }) => ({
   backgroundColor: '#ffffff',
   '&:hover': {
     transform: 'translateY(-5px)',
-    boxShadow: '0 15px 35px rgba(51, 65, 85, 0.15)',
+    boxShadow: '0 15px 35px rgba(0, 0, 0, 0.1)',
   },
 }));
 
 const CardHeader = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2.5, 3),
-  background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+  background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
   color: 'white',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  borderBottom: '1px solid rgba(226, 232, 240, 0.1)',
-  boxShadow: '0 4px 12px rgba(71, 85, 105, 0.15)'
+  borderBottom: '1px solid rgba(226, 232, 240, 0.1)'
 }));
 
 const GlassCard = styled(Box)(({ theme }) => ({
   backdropFilter: 'blur(10px)',
-  backgroundColor: alpha('#f8fafc', 0.8),
+  backgroundColor: alpha('#ffffff', 0.8),
   borderRadius: theme.spacing(2),
   border: '1px solid rgba(255, 255, 255, 0.18)',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -72,8 +70,8 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     color: '#0f172a',
   },
   '&:hover': {
-    color: '#334155',
-    backgroundColor: 'rgba(203, 213, 225, 0.4)',
+    color: '#1e293b',
+    backgroundColor: 'rgba(226, 232, 240, 0.4)',
   },
 }));
 
@@ -149,9 +147,9 @@ const ProfilePage = () => {
           justifyContent: 'center', 
           alignItems: 'center', 
           minHeight: '70vh',
-          bgcolor: '#f1f5f9'
+          bgcolor: '#f8fafc'
         }}>
-          <CircularProgress sx={{ color: '#334155' }} />
+          <CircularProgress sx={{ color: '#475569' }} />
         </Box>
       </>
     );
@@ -174,8 +172,8 @@ const ProfilePage = () => {
                 variant="contained" 
                 onClick={() => navigate('/')}
                 sx={{ 
-                  bgcolor: '#334155',
-                  '&:hover': { bgcolor: '#1e293b' },
+                  bgcolor: '#475569',
+                  '&:hover': { bgcolor: '#334155' },
                   borderRadius: 2,
                   px: 3,
                   py: 1
@@ -196,7 +194,7 @@ const ProfilePage = () => {
       
       {/* Hero section with profile summary */}
       <Box sx={{
-        background: 'linear-gradient(135deg, #334155 0%, #64748b 100%)',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
         color: 'white',
         pt: 6,
         pb: 6,
@@ -209,8 +207,7 @@ const ProfilePage = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%23ffffff\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
-          backgroundSize: '24px 24px',
+          backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 20%), radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 0%, transparent 20%)',
           zIndex: 1,
         }
       }}>
@@ -223,7 +220,7 @@ const ProfilePage = () => {
                     width: { xs: 100, md: 120 },
                     height: { xs: 100, md: 120 },
                     bgcolor: '#e2e8f0',
-                    color: '#334155',
+                    color: '#0f172a',
                     fontSize: { xs: '2.5rem', md: '3rem' },
                     fontWeight: 'bold',
                     border: '4px solid rgba(255, 255, 255, 0.2)',
@@ -237,7 +234,7 @@ const ProfilePage = () => {
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   badgeContent={
                     <Tooltip title="Verified User">
-                      <VerifiedIcon sx={{ color: '#475569', fontSize: 28, bgcolor: 'white', borderRadius: '50%', padding: '2px' }} />
+                      <VerifiedIcon sx={{ color: '#3b82f6', fontSize: 28, bgcolor: 'white', borderRadius: '50%', padding: '2px' }} />
                     </Tooltip>
                   }
                   sx={{ position: 'absolute', bottom: 5, right: 5 }}
@@ -253,18 +250,22 @@ const ProfilePage = () => {
                 
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, justifyContent: { xs: 'center', md: 'flex-start' } }}>
                   <Chip
-                    icon={<EventAvailableIcon sx={{ color: '#0f172a' }} />}
-                    label={`Member since ${new Date(profile.createdAt).getFullYear() || new Date().getFullYear()}`}
+                    icon={<StarIcon sx={{ color: '#f59e0b !important' }} />}
+                    label="Premium Member"
                     sx={{
-                      bgcolor: '#e2e8f0',
-                      color: '#0f172a',
+                      bgcolor: 'rgba(245, 158, 11, 0.15)',
+                      color: '#f59e0b',
                       fontWeight: 600,
-                      borderColor: '#cbd5e1',
-                      border: '1px solid',
-                      py: 0.5,
-                      '& .MuiChip-label': {
-                        px: 1
-                      }
+                      '& .MuiChip-icon': { color: '#f59e0b' }
+                    }}
+                  />
+                  <Chip
+                    icon={<EventAvailableIcon />}
+                    label="Member since 2023"
+                    sx={{
+                      bgcolor: 'rgba(255, 255, 255, 0.1)',
+                      color: '#e2e8f0',
+                      fontWeight: 500
                     }}
                   />
                 </Box>
@@ -298,36 +299,34 @@ const ProfilePage = () => {
                   variant="contained"
                   startIcon={<EditIcon />}
                   sx={{
-                    bgcolor: 'rgba(226, 232, 240, 0.1)',
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
                     color: 'white',
                     borderRadius: 2,
                     px: 3,
                     py: 1,
                     textTransform: 'none',
                     fontWeight: 600,
-                    '&:hover': { bgcolor: 'rgba(226, 232, 240, 0.2)' },
+                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.2)' },
                     backdropFilter: 'blur(5px)'
                   }}
                 >
                   Edit Profile
                 </Button>
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   startIcon={<LogoutIcon />}
                   onClick={handleLogout}
                   sx={{
-                    bgcolor: '#475569',
-                    color: 'white',
+                    borderColor: 'rgba(239, 68, 68, 0.5)',
+                    color: '#ef4444',
                     borderRadius: 2,
                     px: 3,
                     py: 1,
                     textTransform: 'none',
                     fontWeight: 600,
-                    border: '2px solid #e2e8f0',
-                    boxShadow: '0 4px 6px rgba(15, 23, 42, 0.1)',
                     '&:hover': {
-                      bgcolor: '#334155',
-                      borderColor: '#cbd5e1'
+                      borderColor: '#ef4444',
+                      bgcolor: 'rgba(239, 68, 68, 0.08)'
                     }
                   }}
                 >
@@ -341,15 +340,13 @@ const ProfilePage = () => {
       
       {/* Main content area */}
       <Box sx={{ 
-        bgcolor: '#f1f5f9', 
+        bgcolor: '#f8fafc', 
         minHeight: '60vh', 
-        py: 4,
-        backgroundImage: 'linear-gradient(rgba(226, 232, 240, 0.9) 0%, rgba(226, 232, 240, 0.9) 100%), url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23cbd5e1\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-        backgroundSize: '60px 60px'
+        py: 4
       }}>
         <Container maxWidth="lg">
           {/* Navigation tabs */}
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4, backgroundColor: '#f8fafc', borderRadius: '12px 12px 0 0', boxShadow: '0 4px 6px -1px rgba(51, 65, 85, 0.05)', p: 1 }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
             <Tabs 
               value={activeTab} 
               onChange={handleTabChange}
@@ -357,7 +354,7 @@ const ProfilePage = () => {
               scrollButtons="auto"
               sx={{
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#475569',
+                  backgroundColor: '#0f172a',
                   height: 3,
                   borderRadius: '3px 3px 0 0'
                 },
@@ -365,8 +362,10 @@ const ProfilePage = () => {
             >
               <StyledTab icon={<DashboardIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Dashboard" />
               <StyledTab icon={<DirectionsCarIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="My Vehicles" />
-              <StyledTab icon={<ChatIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Chats" />
+              <StyledTab icon={<HistoryIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Rental History" />
               <StyledTab icon={<FavoriteIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Favorites" />
+              <StyledTab icon={<CreditCardIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Payments" />
+              <StyledTab icon={<SecurityIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Security" />
               <StyledTab icon={<SettingsIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Settings" />
             </Tabs>
           </Box>
@@ -379,20 +378,8 @@ const ProfilePage = () => {
                 component="h2" 
                 sx={{ 
                   fontWeight: 700, 
-                  color: '#334155',
-                  mb: 3,
-                  position: 'relative',
-                  display: 'inline-block',
-                  '&:after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: -8,
-                    left: 0,
-                    width: '60px',
-                    height: '4px',
-                    backgroundColor: '#475569',
-                    borderRadius: '2px'
-                  }
+                  color: '#0f172a',
+                  mb: 3
                 }}
               >
                 Dashboard Overview
@@ -416,9 +403,21 @@ const ProfilePage = () => {
                     </CardHeader>
                     
                     <CardContent sx={{ p: 3, pt: 1, flexGrow: 1 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 700, textAlign: 'center', mb: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, textAlign: 'center', mb: 2 }}>
                         {profile.firstName} {profile.lastName}
                       </Typography>
+                      <Chip 
+                        label="Premium Member" 
+                        size="small" 
+                        sx={{ 
+                          bgcolor: 'rgba(71, 85, 105, 0.1)', 
+                          color: '#475569',
+                          fontWeight: 500,
+                          display: 'flex',
+                          mx: 'auto',
+                          mb: 3
+                        }} 
+                      />
                       
                       <Divider sx={{ mb: 2 }} />
                       
@@ -429,7 +428,7 @@ const ProfilePage = () => {
                             <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
                               Email Address
                             </Typography>
-                            <Typography variant="body1" sx={{ color: '#475569' }}>
+                            <Typography variant="body1" sx={{ color: '#334155' }}>
                               {profile.email}
                             </Typography>
                           </Box>
@@ -441,7 +440,7 @@ const ProfilePage = () => {
                             <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
                               Phone Number
                             </Typography>
-                            <Typography variant="body1" sx={{ color: '#475569' }}>
+                            <Typography variant="body1" sx={{ color: '#334155' }}>
                               {profile.phone}
                             </Typography>
                           </Box>
@@ -453,7 +452,7 @@ const ProfilePage = () => {
                             <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
                               Location
                             </Typography>
-                            <Typography variant="body1" sx={{ color: '#475569' }}>
+                            <Typography variant="body1" sx={{ color: '#334155' }}>
                               {profile.residence}
                             </Typography>
                           </Box>
@@ -466,9 +465,7 @@ const ProfilePage = () => {
                 {/* My Vehicles Card */}
                 <Grid item xs={12} md={4}>
                   <StyledCard>
-                    <CardHeader sx={{ 
-                      background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
-                    }}>
+                    <CardHeader>
                       <Typography variant="h6" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
                         <DirectionsCarIcon /> My Vehicles
                       </Typography>
@@ -478,9 +475,9 @@ const ProfilePage = () => {
                         startIcon={<AddCircleIcon />}
                         onClick={() => navigate('/add-car')}
                         sx={{ 
-                          bgcolor: 'rgba(226, 232, 240, 0.15)', 
+                          bgcolor: 'rgba(255,255,255,0.15)', 
                           color: 'white',
-                          '&:hover': { bgcolor: 'rgba(226, 232, 240, 0.25)' },
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
                           textTransform: 'none',
                           fontWeight: 600
                         }}
@@ -504,8 +501,8 @@ const ProfilePage = () => {
                             startIcon={<AddCircleIcon />}
                             onClick={() => navigate('/add-car')}
                             sx={{
-                              bgcolor: '#334155',
-                              '&:hover': { bgcolor: '#1e293b' },
+                              bgcolor: '#475569',
+                              '&:hover': { bgcolor: '#334155' },
                               borderRadius: 2,
                               px: 3,
                               py: 1,
@@ -555,7 +552,7 @@ const ProfilePage = () => {
                                 />
                               </Box>
                               <Box sx={{ flex: 1 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#334155' }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1e293b' }}>
                                   {car.carName}
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
@@ -563,7 +560,7 @@ const ProfilePage = () => {
                                     label={car.brand}
                                     size="small"
                                     sx={{
-                                      bgcolor: '#e2e8f0',
+                                      bgcolor: '#f1f5f9',
                                       color: '#475569',
                                       fontWeight: 500,
                                       fontSize: '0.7rem'
@@ -573,7 +570,7 @@ const ProfilePage = () => {
                                     label={`€${car.price}/day`}
                                     size="small"
                                     sx={{
-                                      bgcolor: '#f1f5f9',
+                                      bgcolor: '#e6f0fa',
                                       color: '#64748b',
                                       fontWeight: 500,
                                       fontSize: '0.7rem'
@@ -629,19 +626,17 @@ const ProfilePage = () => {
                 {/* Rental History Card */}
                 <Grid item xs={12} md={4}>
                   <StyledCard>
-                    <CardHeader sx={{ 
-                      background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
-                    }}>
+                    <CardHeader>
                       <Typography variant="h6" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <ChatIcon /> Chats
+                        <HistoryIcon /> Rental History
                       </Typography>
                       <Button 
                         variant="contained" 
                         size="small"
                         sx={{ 
-                          bgcolor: 'rgba(226, 232, 240, 0.15)', 
+                          bgcolor: 'rgba(255,255,255,0.15)', 
                           color: 'white',
-                          '&:hover': { bgcolor: 'rgba(226, 232, 240, 0.25)' },
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
                           textTransform: 'none',
                           fontWeight: 600
                         }}
@@ -654,14 +649,13 @@ const ProfilePage = () => {
                       <Box sx={{ textAlign: 'center', py: 4 }}>
                         <HistoryIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
                         <Typography variant="h6" sx={{ color: '#64748b', fontWeight: 600, mb: 1 }}>
-                          No Active Conversations
+                          No Rental History
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3 }}>
-                          Your conversations with car owners and renters will appear here
+                          Your past and upcoming rentals will appear here
                         </Typography>
                         <Button
                           variant="outlined"
-                          onClick={() => navigate('/offers')}
                           sx={{
                             borderColor: '#475569',
                             color: '#475569',
@@ -698,256 +692,10 @@ const ProfilePage = () => {
           
           {activeTab === 2 && (
             <Box>
-              <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: '#334155', mb: 3, position: 'relative', display: 'inline-block', '&:after': { content: '""', position: 'absolute', bottom: -8, left: 0, width: '60px', height: '4px', backgroundColor: '#475569', borderRadius: '2px' } }}>
-                Chats
+              <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: '#0f172a', mb: 3 }}>
+                Rental History
               </Typography>
-              
-              {/* Chat Interface */}
-              <Grid container spacing={3}>
-                {/* Chat List */}
-                <Grid item xs={12} md={4}>
-                  <Paper elevation={2} sx={{ height: '100%', borderRadius: 2, overflow: 'hidden' }}>
-                    <Box sx={{ p: 2, bgcolor: '#1e293b', color: 'white' }}>
-                      <Typography variant="h6">Recent Conversations</Typography>
-                    </Box>
-                    <Box sx={{ height: '500px', overflowY: 'auto' }}>
-                      {/* Sample conversation items */}
-                      <Box 
-                        sx={{ 
-                          p: 2, 
-                          borderBottom: '1px solid #e2e8f0', 
-                          cursor: 'pointer',
-                          bgcolor: '#f8fafc',
-                          '&:hover': { bgcolor: '#f1f5f9' }
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: '#475569' }}>JD</Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>John Doe</Typography>
-                              <Typography variant="caption" sx={{ color: '#64748b' }}>2h ago</Typography>
-                            </Box>
-                            <Typography variant="body2" noWrap sx={{ color: '#475569' }}>
-                              BMW X5 • Booking Confirmed
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                      
-                      <Box 
-                        sx={{ 
-                          p: 2, 
-                          borderBottom: '1px solid #e2e8f0', 
-                          cursor: 'pointer',
-                          '&:hover': { bgcolor: '#f1f5f9' }
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: '#64748b' }}>AS</Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Alice Smith</Typography>
-                              <Typography variant="caption" sx={{ color: '#64748b' }}>Yesterday</Typography>
-                            </Box>
-                            <Typography variant="body2" noWrap sx={{ color: '#475569' }}>
-                              Mercedes C-Class • Pending
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                      
-                      <Box 
-                        sx={{ 
-                          p: 2, 
-                          borderBottom: '1px solid #e2e8f0', 
-                          cursor: 'pointer',
-                          '&:hover': { bgcolor: '#f1f5f9' }
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: '#94a3b8' }}>RJ</Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Robert Johnson</Typography>
-                              <Typography variant="caption" sx={{ color: '#64748b' }}>3 days ago</Typography>
-                            </Box>
-                            <Typography variant="body2" noWrap sx={{ color: '#475569' }}>
-                              Audi A4 • Completed
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Box>
-                  </Paper>
-                </Grid>
-                
-                {/* Chat Messages */}
-                <Grid item xs={12} md={8}>
-                  <Paper 
-                    elevation={3} 
-                    sx={{ 
-                      p: 2, 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      height: '500px',
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      background: '#fff'
-                    }}
-                  >
-                    {/* Selected Chat Header */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pb: 2, borderBottom: '1px solid #e2e8f0' }}>
-                      <Avatar sx={{ bgcolor: '#475569' }}>JD</Avatar>
-                      <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>John Doe</Typography>
-                        <Typography variant="body2" sx={{ color: '#64748b' }}>BMW X5 • Booking Confirmed</Typography>
-                      </Box>
-                    </Box>
-                    
-                    {/* Messages Container */}
-                    <Box sx={{ flexGrow: 1, overflowY: 'auto', my: 2, px: 1 }}>
-                      {/* Sample messages */}
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'flex-start',
-                          mb: 1.5,
-                        }}
-                      >
-                        <Paper
-                          elevation={1}
-                          sx={{
-                            p: 1.5,
-                            borderRadius: '12px 12px 12px 0',
-                            bgcolor: '#e2e8f0',
-                            color: '#1e293b',
-                            maxWidth: '70%',
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          <Typography variant="body2">Hello! I see you are interested in booking my BMW X5.</Typography>
-                          <Typography 
-                              variant="caption" 
-                              display="block" 
-                              sx={{ 
-                                  mt: 0.5, 
-                                  textAlign: 'right', 
-                                  fontSize: '0.65rem',
-                                  color: '#64748b'
-                              }}
-                          >
-                              10:30 AM
-                          </Typography>
-                        </Paper>
-                      </Box>
-                      
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'flex-end',
-                          mb: 1.5,
-                        }}
-                      >
-                        <Paper
-                          elevation={1}
-                          sx={{
-                            p: 1.5,
-                            borderRadius: '12px 12px 0 12px',
-                            bgcolor: '#1e293b',
-                            color: 'white',
-                            maxWidth: '70%',
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          <Typography variant="body2">Yes, I would like to confirm the dates from July 15 to July 20.</Typography>
-                          <Typography 
-                              variant="caption" 
-                              display="block" 
-                              sx={{ 
-                                  mt: 0.5, 
-                                  textAlign: 'right', 
-                                  fontSize: '0.65rem',
-                                  color: '#cbd5e1'
-                              }}
-                          >
-                              10:32 AM
-                          </Typography>
-                        </Paper>
-                      </Box>
-                      
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'flex-start',
-                          mb: 1.5,
-                        }}
-                      >
-                        <Paper
-                          elevation={1}
-                          sx={{
-                            p: 1.5,
-                            borderRadius: '12px 12px 12px 0',
-                            bgcolor: '#e2e8f0',
-                            color: '#1e293b',
-                            maxWidth: '70%',
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          <Typography variant="body2">Perfect! Those dates are available. The total cost will be $750 for 5 days. Would you like to proceed with the booking?</Typography>
-                          <Typography 
-                              variant="caption" 
-                              display="block" 
-                              sx={{ 
-                                  mt: 0.5, 
-                                  textAlign: 'right', 
-                                  fontSize: '0.65rem',
-                                  color: '#64748b'
-                              }}
-                          >
-                              10:35 AM
-                          </Typography>
-                        </Paper>
-                      </Box>
-                    </Box>
-                    
-                    {/* Message Input */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', borderTop: '1px solid #e2e8f0', pt: 2 }}>
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        placeholder="Type your message..."
-                        size="small"
-                        sx={{ 
-                            mr: 1,
-                            '& .MuiOutlinedInput-root': {
-                                borderRadius: '20px',
-                                backgroundColor: '#f1f5f9',
-                                '& fieldset': {
-                                    borderColor: 'transparent',
-                                },
-                                '&:hover fieldset': {
-                                    borderColor: '#cbd5e1',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: '#475569',
-                                },
-                            },
-                        }}
-                      />
-                      <IconButton 
-                        sx={{ 
-                            bgcolor: '#1e293b', 
-                            color: 'white',
-                            '&:hover': { bgcolor: '#334155' },
-                        }}
-                      >
-                        <SendIcon />
-                      </IconButton>
-                    </Box>
-                  </Paper>
-                </Grid>
-              </Grid>
+              {/* History content */}
             </Box>
           )}
         </Container>
