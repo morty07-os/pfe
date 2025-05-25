@@ -162,8 +162,8 @@ const ConversationPage = () => {
   return (
     <>
       <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
-      <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pt: 4, pb: 8 }}>
-        <Container maxWidth="lg">
+      <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pt: 4, pb: 8, display: 'flex', justifyContent: 'center' }}>
+        <Container maxWidth="lg" sx={{ width: '100%', maxWidth: { xs: '95%', sm: '90%', md: '85%', lg: '80%' } }}>
           <Button
             startIcon={<ArrowBackIcon />}
             onClick={handleGoBack}
@@ -183,89 +183,257 @@ const ConversationPage = () => {
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Paper
-                elevation={2}
+                elevation={0}
                 sx={{
-                  borderRadius: 3,
+                  borderRadius: 2,
                   overflow: 'hidden',
-                  boxShadow: '0 8px 24px rgba(71, 85, 105, 0.12)',
+                  boxShadow: '0 4px 20px rgba(71, 85, 105, 0.08)',
                   bgcolor: '#fff',
                   mb: { xs: 3, md: 0 },
+                  border: '1px solid rgba(203, 213, 225, 0.5)',
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '4px',
+                    background: 'linear-gradient(90deg, #475569 0%, #64748b 100%)',
+                    borderTopLeftRadius: '8px',
+                    borderTopRightRadius: '8px',
+                  },
+                  backdropFilter: 'blur(8px)',
                 }}
               >
-                <Box sx={{ position: 'relative', height: 200 }}>
-                  <img
-                    src={`http://localhost:5001/${car?.images?.[0]}`}
-                    alt={car?.carName}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                    }}
-                  />
-                </Box>
-                <Box sx={{ p: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
+
+                <Box sx={{ p: 4 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 2.5, color: '#1e293b', position: 'relative', display: 'inline-block' }}>
                     {car?.carName}
+                    <Box sx={{ position: 'absolute', bottom: -6, left: 0, width: '40%', height: '3px', background: 'linear-gradient(90deg, #475569 0%, rgba(100, 116, 139, 0.3) 100%)', borderRadius: '2px' }} />
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <AttachMoneyIcon sx={{ color: '#3b82f6' }} />
-                    <Typography sx={{ color: '#3b82f6', fontWeight: 600 }}>
-                      €{car?.price}/day
-                    </Typography>
+                  <Box sx={{
+                    background: 'linear-gradient(135deg, rgba(51, 65, 85, 0.03), rgba(71, 85, 105, 0.08))',
+                    color: '#334155',
+                    fontWeight: 700,
+                    borderRadius: 1.5,
+                    px: 1.75,
+                    py: 0.6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    boxShadow: '0 2px 6px rgba(15, 23, 42, 0.04)',
+                    border: '1px solid rgba(203, 213, 225, 0.3)',
+                    width: 'fit-content',
+                    mb: 2,
+                    backdropFilter: 'blur(4px)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&:hover': {
+                      boxShadow: '0 3px 8px rgba(15, 23, 42, 0.06)',
+                      background: 'linear-gradient(135deg, rgba(51, 65, 85, 0.05), rgba(71, 85, 105, 0.1))'
+                    },
+                  }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                        <Typography 
+                          component="span" 
+                          sx={{ 
+                            fontWeight: 700, 
+                            fontSize: '0.7rem',
+                            color: '#475569',
+                            letterSpacing: '0.02em',
+                            textTransform: 'uppercase'
+                          }}
+                        >
+                          DZD
+                        </Typography>
+                        <Typography 
+                          component="span" 
+                          sx={{ 
+                            fontWeight: 700, 
+                            fontSize: '1.1rem',
+                            color: '#334155',
+                            letterSpacing: '-0.01em'
+                          }}
+                        >
+                          {car?.price?.toLocaleString()}
+                        </Typography>
+                      </Box>
+                      <Typography 
+                        component="span" 
+                        sx={{ 
+                          fontSize: '0.65rem', 
+                          color: '#64748b',
+                          fontWeight: 600,
+                          letterSpacing: '0.02em',
+                          opacity: 0.9,
+                          mt: -0.3
+                        }}
+                      >
+                        per day
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <LocationOnIcon sx={{ color: '#475569' }} />
-                    <Typography sx={{ color: '#475569' }}>
-                      {car?.wilaya}, {car?.address}
-                    </Typography>
+                  <Typography variant="subtitle2" sx={{ 
+                    color: '#475569', 
+                    fontWeight: 700,
+                    fontSize: '0.7rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.4,
+                    pl: 0.5,
+                    mb: 0.75,
+                    mt: 0.5,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    <LocationOnIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} />
+                    Location
+                  </Typography>
+                  
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    mb: 2, 
+                    flexWrap: 'wrap',
+                    gap: 1,
+                    bgcolor: 'rgba(241, 245, 249, 0.5)',
+                    borderRadius: 1.5,
+                    p: 1,
+                    border: '1px solid rgba(226, 232, 240, 0.4)',
+                    boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)'
+                  }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 0.75,
+                      bgcolor: 'white',
+                      borderRadius: 1.5,
+                      py: 0.75,
+                      px: 1.5,
+                      boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                      border: '1px solid rgba(226, 232, 240, 0.8)'
+                    }}>
+                      <LocationOnIcon sx={{ 
+                        color: '#475569', 
+                        fontSize: '1.1rem' 
+                      }} />
+                      <Typography variant="body2" sx={{
+                        color: '#334155',
+                        fontWeight: 600,
+                        fontSize: '0.85rem'
+                      }}>
+                        {car?.wilaya || 'Unknown Location'}{car?.address ? `, ${car?.address}` : ''}
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1e293b' }}>
+                  <Divider sx={{ my: 3, opacity: 0.6 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2.5, color: '#1e293b', position: 'relative', display: 'inline-block' }}>
                     About the Owner
+                    <Box sx={{ position: 'absolute', bottom: -4, left: 0, width: '60%', height: '2px', background: 'linear-gradient(90deg, #475569 0%, rgba(100, 116, 139, 0.3) 100%)', borderRadius: '2px' }} />
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2.5 }}>
                     <Avatar
                       sx={{
-                        bgcolor: '#e2e8f0',
-                        color: '#3b82f6',
-                        width: 50,
-                        height: 50,
-                        border: '2px solid #cbd5e1'
+                        bgcolor: '#475569',
+                        color: '#fff',
+                        width: 56,
+                        height: 56,
+                        border: '2px solid #cbd5e1',
+                        boxShadow: '0 4px 12px rgba(71, 85, 105, 0.15)',
+                        fontSize: '1.2rem',
+                        fontWeight: 600
                       }}
                     >
                       {owner?.firstName?.charAt(0) || 'O'}
                     </Avatar>
                     <Box>
-                      <Typography sx={{ fontWeight: 600, color: '#1e293b' }}>
+                      <Typography sx={{ fontWeight: 600, color: '#1e293b', fontSize: '1.05rem', letterSpacing: '0.01em' }}>
                         {owner?.firstName} {owner?.lastName}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: '#64748b' }}>
+                      <Typography variant="body2" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#475569', marginRight: '4px' }}></span>
                         Car Owner
                       </Typography>
                     </Box>
                   </Box>
                       {owner?.email && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 1, 
+                          p: 1.5, 
+                          bgcolor: 'rgba(241, 245, 249, 0.7)', 
+                          borderRadius: 1.5,
+                          border: '1px solid rgba(203, 213, 225, 0.4)',
+                          mb: 2
+                        }}>
+                          <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
                             Email:
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#475569' }}>
+                          <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
                             {owner.email}
                           </Typography>
                         </Box>
                       )}
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: '#1e293b' }}>
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1e293b', position: 'relative', display: 'inline-block' }}>
                           Availability
+                          <Box sx={{ position: 'absolute', bottom: -4, left: 0, width: '40%', height: '2px', background: 'linear-gradient(90deg, #475569 0%, rgba(100, 116, 139, 0.3) 100%)', borderRadius: '2px' }} />
                         </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <CalendarMonthIcon sx={{ color: '#475569' }} />
-                          <Typography sx={{ color: '#475569' }}>
-                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 0.5, sm: 2 } }}>
-                              <span><span style={{ fontWeight: 500 }}>From:</span> {car?.availabilityStart ? dayjs(car.availabilityStart).format('DD-MM-YYYY') : 'Not Available'}</span>
-                              <span><span style={{ fontWeight: 500 }}>To:</span> {car?.availabilityEnd ? dayjs(car.availabilityEnd).format('DD-MM-YYYY') : 'Not Available'}</span>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          gap: 1.5,
+                          p: 2,
+                          bgcolor: 'rgba(241, 245, 249, 0.7)', 
+                          borderRadius: 2,
+                          border: '1px solid rgba(203, 213, 225, 0.4)',
+                          boxShadow: '0 2px 8px rgba(71, 85, 105, 0.06)'
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ 
+                              width: 40, 
+                              height: 40, 
+                              borderRadius: '50%', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              bgcolor: 'rgba(71, 85, 105, 0.1)'
+                            }}>
+                              <CalendarMonthIcon sx={{ color: '#475569', fontSize: '1.3rem' }} />
                             </Box>
-                          </Typography>
+                            <Box>
+                              <Typography sx={{ fontSize: '0.85rem', color: '#64748b', mb: 0.5 }}>
+                                Available From
+                              </Typography>
+                              <Typography sx={{ fontWeight: 600, color: '#1e293b' }}>
+                                {car?.availabilityStart ? dayjs(car.availabilityStart).format('DD MMMM YYYY') : 'Not Available'}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ 
+                              width: 40, 
+                              height: 40, 
+                              borderRadius: '50%', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              bgcolor: 'rgba(71, 85, 105, 0.1)'
+                            }}>
+                              <CalendarMonthIcon sx={{ color: '#475569', fontSize: '1.3rem' }} />
+                            </Box>
+                            <Box>
+                              <Typography sx={{ fontSize: '0.85rem', color: '#64748b', mb: 0.5 }}>
+                                Available Until
+                              </Typography>
+                              <Typography sx={{ fontWeight: 600, color: '#1e293b' }}>
+                                {car?.availabilityEnd ? dayjs(car.availabilityEnd).format('DD MMMM YYYY') : 'Not Available'}
+                              </Typography>
+                            </Box>
+                          </Box>
                         </Box>
                       </Box>
                     </Box>
@@ -273,30 +441,51 @@ const ConversationPage = () => {
                 </Grid>
             <Grid item xs={12} md={6}>
               <Paper
-                elevation={3}
+                elevation={0}
                 sx={{
-                  borderRadius: 3,
+                  borderRadius: 2,
                   overflow: 'hidden',
-                  boxShadow: '0 8px 32px rgba(59, 130, 246, 0.10)',
+                  boxShadow: '0 8px 24px rgba(71, 85, 105, 0.12)',
                   bgcolor: '#fff',
                   display: 'flex',
                   flexDirection: 'column',
                   minHeight: 420,
                   maxHeight: 540,
                   height: { md: 500, xs: 'auto' },
+                  border: '1px solid rgba(203, 213, 225, 0.5)',
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '4px',
+                    background: 'linear-gradient(90deg, #475569 0%, #64748b 100%)',
+                    borderTopLeftRadius: '8px',
+                    borderTopRightRadius: '8px',
+                  },
                 }}
               >
                 <Box sx={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1,
-                  px: 2,
-                  py: 1.5,
-                  bgcolor: '#3b82f6',
+                  px: 3,
+                  py: 2,
+                  bgcolor: '#475569',
                   color: 'white',
-                  borderTopLeftRadius: 12,
-                  borderTopRightRadius: 12,
-                  borderBottom: '1px solid #e2e8f0',
+                  borderBottom: '1px solid rgba(226, 232, 240, 0.2)',
+                  position: 'relative',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '5%',
+                    right: '5%',
+                    height: '1px',
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                  },
                 }}>
                   <Box sx={{ flex: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -321,19 +510,35 @@ const ConversationPage = () => {
                   sx={{
                     flex: 1,
                     overflowY: 'auto',
-                    px: 2,
-                    py: 2,
+                    px: 3,
+                    py: 3,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 1.5,
+                    gap: 2,
                     bgcolor: '#f8fafc',
                     minHeight: 120,
+                    backgroundImage: 'radial-gradient(rgba(203, 213, 225, 0.1) 1px, transparent 0)',
+                    backgroundSize: '20px 20px',
                   }}
                 >
                   {chatMessages.length === 0 ? (
-                    <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 4 }}>
-                      No messages yet. Start the conversation!
-                    </Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      mt: 8,
+                      gap: 2,
+                      opacity: 0.8
+                    }}>
+                      <ChatBubbleOutlineIcon sx={{ fontSize: 40, color: '#64748b' }} />
+                      <Typography variant="body1" color="#475569" sx={{ textAlign: 'center', fontWeight: 500 }}>
+                        No messages yet. Start the conversation!
+                      </Typography>
+                      <Typography variant="body2" color="#64748b" sx={{ textAlign: 'center', maxWidth: 300 }}>
+                        Ask about availability, car details, or any other questions you may have.
+                      </Typography>
+                    </Box>
                   ) : (
                     chatMessages.map((msg, idx) => {
                       const userId = localStorage.getItem('token') ? JSON.parse(atob(localStorage.getItem('token').split('.')[1])).userId : null;
@@ -343,19 +548,24 @@ const ConversationPage = () => {
                           key={idx}
                           sx={{
                             alignSelf: isUser ? 'flex-end' : 'flex-start',
-                            bgcolor: isUser ? '#3b82f6' : '#fff',
+                            bgcolor: isUser ? '#475569' : '#fff',
                             color: isUser ? 'white' : '#1e293b',
-                            px: 2,
-                            py: 1,
+                            px: 2.5,
+                            py: 1.5,
                             borderRadius: 2,
-                            mb: 0.5,
+                            mb: 1,
                             maxWidth: '80%',
-                            boxShadow: isUser ? '0 1px 4px rgba(59,130,246,0.10)' : '0 1px 4px rgba(71,85,105,0.06)',
-                            borderTopLeftRadius: isUser ? 12 : 4,
-                            borderTopRightRadius: isUser ? 4 : 12,
+                            boxShadow: isUser ? '0 4px 12px rgba(71, 85, 105, 0.15)' : '0 4px 12px rgba(71, 85, 105, 0.06)',
+                            borderTopLeftRadius: isUser ? 16 : 4,
+                            borderTopRightRadius: isUser ? 4 : 16,
                             fontSize: '1rem',
-                            transition: 'background 0.2s',
-                            border: isUser ? '1px solid #3b82f6' : '1px solid #e2e8f0',
+                            transition: 'all 0.2s',
+                            border: isUser ? '1px solid #475569' : '1px solid #e2e8f0',
+                            position: 'relative',
+                            '&:hover': {
+                              transform: 'translateY(-1px)',
+                              boxShadow: isUser ? '0 6px 16px rgba(71, 85, 105, 0.18)' : '0 6px 16px rgba(71, 85, 105, 0.08)',
+                            },
                           }}
                         >
                           <Typography variant="body2" sx={{ fontWeight: 400 }}>{msg.text}</Typography>
@@ -371,14 +581,15 @@ const ConversationPage = () => {
                 <Box
                   sx={{
                     display: 'flex',
-                    gap: 1,
-                    px: 2,
-                    py: 1.5,
+                    gap: 1.5,
+                    px: 3,
+                    py: 2,
                     bgcolor: '#fff',
                     borderTop: '1px solid #e2e8f0',
                     position: 'sticky',
                     bottom: 0,
                     zIndex: 1,
+                    boxShadow: '0 -4px 12px rgba(71, 85, 105, 0.05)',
                   }}
                 >
                   <TextField
@@ -388,8 +599,23 @@ const ConversationPage = () => {
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyPress={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendChat())}
-                    sx={{ bgcolor: '#f8fafc', borderRadius: 2 }}
-                    inputProps={{ maxLength: 300 }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        bgcolor: '#f8fafc',
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#64748b',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#475569',
+                          borderWidth: '1px',
+                        },
+                      },
+                    }}
+                    inputProps={{ 
+                      maxLength: 300,
+                      style: { padding: '10px 14px' } 
+                    }}
                     disabled={false}
                   />
                   <IconButton
@@ -397,14 +623,17 @@ const ConversationPage = () => {
                     onClick={handleSendChat}
                     disabled={!chatInput.trim()}
                     sx={{
-                      bgcolor: !chatInput.trim() ? '#e2e8f0' : '#3b82f6',
+                      bgcolor: !chatInput.trim() ? '#e2e8f0' : '#475569',
                       color: !chatInput.trim() ? '#94a3b8' : 'white',
+                      width: 42,
+                      height: 42,
                       '&:hover': {
-                        bgcolor: !chatInput.trim() ? '#e2e8f0' : '#2563eb',
+                        bgcolor: !chatInput.trim() ? '#e2e8f0' : '#64748b',
+                        transform: chatInput.trim() ? 'scale(1.05)' : 'none',
                       },
                       transition: 'all 0.2s',
                       borderRadius: 2,
-                      boxShadow: '0 1px 4px rgba(59,130,246,0.08)',
+                      boxShadow: '0 4px 12px rgba(71, 85, 105, 0.15)',
                     }}
                   >
                     <SendIcon />

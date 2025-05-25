@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
 // Assuming you have an AuthContext or similar to get user info
@@ -17,7 +17,13 @@ import {
   IconButton,
   Tooltip,
   Button,
-  Avatar
+  Avatar,
+  Pagination,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import InfoIcon from '@mui/icons-material/Info';
@@ -161,7 +167,14 @@ function formatDateDMY(dateStr) {
 export default function AllOffersPage() {
   const [search, setSearch] = React.useState('');
   const [sidebarFilters, setSidebarFilters] = React.useState({});
-  const [showMobileSidebar, setShowMobileSidebar] = React.useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  
+  // Reference for scrolling to top of offers
+  const offersTopRef = useRef(null);
   const [offers, setOffers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null); // Added for current user
   const [userCars, setUserCars] = useState([]); // Added to store user's cars
@@ -538,27 +551,27 @@ export default function AllOffersPage() {
               isMobile={showMobileSidebar}
             />
           </Box>
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ flex: 1 }} ref={offersTopRef}>
             <Box sx={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: filteredOffers.length === 0 ? 'center' : 'space-between',
+              justifyContent: 'center',
               mb: 3,
-              flexDirection: filteredOffers.length === 0 ? 'column' : 'row',
-              gap: filteredOffers.length === 0 ? 2 : 0
+              flexDirection: 'column',
+              gap: 2
             }}>
               {filteredOffers.length > 0 && (
-                <Typography variant="h5" sx={{ fontWeight: 800, color: '#334155' }}>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#334155', mb: 1 }}>
                   {filteredOffers.length} {filteredOffers.length === 1 ? 'Car' : 'Cars'} Available
                 </Typography>
               )}
               <Box
                 sx={{
                   position: 'relative',
-                  width: filteredOffers.length === 0 ? '100%' : 'auto',
+                  width: '100%',
                   maxWidth: 420,
-                  mx: filteredOffers.length === 0 ? 'auto' : 0,
-                  mb: filteredOffers.length === 0 ? 4 : 0,
+                  mx: 'auto',
+                  mb: filteredOffers.length === 0 ? 4 : 2,
                   zIndex: 5
                 }}
               >
@@ -980,63 +993,91 @@ export default function AllOffersPage() {
                   </Box>
                 </Grid>
               ) : (
-                filteredOffers.map((offer) => {
-                  // Check if the current offer belongs to the logged-in user
-                  const isOwnOffer = currentUser && offer.owner && (
-                    console.log('Owner ID:', offer.owner),
-                    console.log('Current User ID:', currentUser._id),
-                    offer.owner.toString() === currentUser._id.toString()
-                  );
+                // Pagination logic
+                filteredOffers
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((offer) => {
+                    // Check if the current offer belongs to the logged-in user
+                    const isOwnOffer = currentUser && offer.owner && (
+                      console.log('Owner ID:', offer.owner),
+                      console.log('Current User ID:', currentUser._id),
+                      offer.owner.toString() === currentUser._id.toString()
+                    );
 
-                  // Add a console log to debug the car data
-                  if (isOwnOffer) {
-                    console.log('Found user car:', offer);
-                  }
+                    // Add a console log to debug the car data
+                    if (isOwnOffer) {
+                      console.log('Found user car:', offer);
+                    }
 
-                  return (
-                    <Grid item xs={12} key={offer._id || offer.id} sx={{ width: '100%' }}>
-                      <Card sx={{
-                        borderRadius: 2,
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                        border: isOwnOffer ? '2px solid #ef4444' : '1px solid #e2e8f0',
-                        backgroundColor: isOwnOffer ? '#fff5f5' : 'inherit',
-                        transition: 'all 0.2s ease-in-out',
-                        '&:hover': {
-                          boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
-                          transform: 'translateY(-4px)',
-                        },
-                        mb: 3,
-                        overflow: 'visible',
-                        position: 'relative',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          left: 0,
-                          top: 0,
-                          height: '100%',
-                          width: 5,
-                          bgcolor: isOwnOffer ? '#ef4444' : '#64748b',
-                          borderRadius: '4px 0 0 4px',
-                        }
-                      }}>
+                    return (
+                      <Grid item xs={12} key={offer._id || offer.id} sx={{ width: '100%' }}>
+                        <Card sx={{
+                          borderRadius: 2,
+                          boxShadow: '0 6px 16px rgba(15, 23, 42, 0.04)',
+                          border: isOwnOffer ? '1.5px solid #ef4444' : '1px solid rgba(226, 232, 240, 0.6)',
+                          backgroundColor: isOwnOffer ? 'rgba(254, 242, 242, 0.8)' : 'rgba(255, 255, 255, 0.98)',
+                          backdropFilter: 'blur(10px)',
+                          transition: 'all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                          '&:hover': {
+                            boxShadow: '0 10px 24px rgba(15, 23, 42, 0.07)',
+                            transform: 'translateY(-3px)',
+                          },
+                          mb: 2.5,
+                          overflow: 'visible',
+                          position: 'relative',
+                          maxWidth: '100%',
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            height: '100%',
+                            width: 3,
+                            background: isOwnOffer 
+                              ? 'linear-gradient(to bottom, #ef4444, #f87171)' 
+                              : 'linear-gradient(to bottom, #475569, #64748b)',
+                            borderRadius: '2px 0 0 2px',
+                            opacity: 0.85
+                          },
+                          // Add a subtle gradient overlay at the top
+                          '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            width: '100%',
+                            height: '30px',
+                            background: isOwnOffer
+                              ? 'linear-gradient(to bottom, rgba(254, 242, 242, 0.7), rgba(254, 242, 242, 0))'
+                              : 'linear-gradient(to bottom, rgba(248, 250, 252, 0.7), rgba(248, 250, 252, 0))',
+                            borderRadius: '2px 2px 0 0',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                          }
+                        }}>
                         {isOwnOffer && (
                           <Box sx={{ 
                             position: 'absolute', 
-                            top: 8, 
-                            right: 8, 
-                            zIndex: 1,
+                            top: 12, 
+                            right: 12, 
+                            zIndex: 2,
                             display: 'flex',
                             alignItems: 'center',
                             gap: 1
                           }}>
                             <Chip
-                              icon={<CheckCircleIcon sx={{ color: 'white !important' }} />}
+                              icon={<CheckCircleIcon sx={{ color: 'white !important', fontSize: '1rem' }} />}
                               label="Your Car"
                               sx={{
-                                bgcolor: '#ef4444',
+                                bgcolor: 'rgba(239, 68, 68, 0.9)',
+                                backdropFilter: 'blur(4px)',
                                 color: 'white',
                                 fontWeight: 600,
-                                '& .MuiChip-label': { px: 1 }
+                                fontSize: '0.75rem',
+                                height: 28,
+                                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)',
+                                '& .MuiChip-label': { px: 1 },
+                                borderRadius: '14px'
                               }}
                             />
                           </Box>
@@ -1044,14 +1085,35 @@ export default function AllOffersPage() {
                         <Box sx={{
                           display: 'flex',
                           flexDirection: { xs: 'column', md: 'row' },
-                          gap: 2,
-                          p: 2
+                          gap: 1.5,
+                          p: { xs: 1.5, sm: 1.75 },
+                          position: 'relative',
+                          zIndex: 1
                         }}>
                           <Box sx={{
                             flexShrink: 0,
-                            width: { xs: '100%', md: 120 },
-                            height: { xs: 200, md: 120 },
-                            position: 'relative'
+                            width: { xs: '100%', md: 130 },
+                            height: { xs: 130, md: 130 },
+                            position: 'relative',
+                            borderRadius: 1.25,
+                            overflow: 'hidden',
+                            // Add a subtle shadow container for the image
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              inset: -1,
+                              background: 'linear-gradient(135deg, rgba(203, 213, 225, 0.3), rgba(148, 163, 184, 0.08))',
+                              borderRadius: 'inherit',
+                              zIndex: -1
+                            },
+                            // Add a subtle gradient overlay
+                            '&::after': {
+                              content: '""',
+                              position: 'absolute',
+                              inset: 0,
+                              background: 'linear-gradient(to top, rgba(15, 23, 42, 0.25), rgba(15, 23, 42, 0) 50%)',
+                              zIndex: 1
+                            }
                           }}>
                             <CardMedia
                               component="img"
@@ -1059,59 +1121,205 @@ export default function AllOffersPage() {
                               alt={offer.title || 'Car image'}
                               sx={{
                                 objectFit: 'cover',
-                                borderRadius: 1,
                                 width: '100%',
                                 height: '100%',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                borderRadius: 1.25,
+                                boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
+                                transition: 'all 0.3s ease',
+                                filter: 'contrast(1.02) saturate(1.03)',
+                                '&:hover': {
+                                  transform: 'scale(1.03)',
+                                  filter: 'contrast(1.04) saturate(1.06)'
+                                },
+                                position: 'relative',
+                                zIndex: 0
                               }}
                             />
                           </Box>
                           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              mb: 1.5,
+                              flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                              gap: 0.75
+                            }}>
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'flex-start', 
+                                gap: 0.75,
+                                flexDirection: 'column'
+                              }}>
                                 {isOwnOffer && (
                                   <Chip
                                     label="Your Car"
                                     color="error"
                                     size="small"
                                     sx={{
+                                      display: { md: 'none' }, // Only show on mobile when top-right badge might be hidden
                                       bgcolor: '#ef4444',
                                       color: 'white',
                                       fontWeight: 600,
+                                      fontSize: '0.7rem',
+                                      height: 24,
                                       '& .MuiChip-label': { px: 1 }
                                     }}
                                   />
                                 )}
-                                <Typography variant="h6" sx={{
-                                  fontWeight: 700,
-                                  color: '#1e293b',
-                                  fontSize: '1.25rem'
-                                }}>
+                                <Typography 
+                                  variant="subtitle1" 
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: '#1e293b',
+                                    fontSize: { xs: '0.95rem', md: '1rem' },
+                                    lineHeight: 1.2,
+                                    letterSpacing: '-0.01em',
+                                    position: 'relative',
+                                    textShadow: '0 1px 1px rgba(15, 23, 42, 0.05)',
+                                    // Underline effect
+                                    '&::after': {
+                                      content: '""',
+                                      position: 'absolute',
+                                      bottom: -2,
+                                      left: 0,
+                                      width: '30px',
+                                      height: '2px',
+                                      background: 'linear-gradient(90deg, #475569, rgba(71, 85, 105, 0.2))',
+                                      borderRadius: '1px'
+                                    }
+                                  }}
+                                >
                                   {offer.title || offer.carName || 'Car Listing'}
                                 </Typography>
                               </Box>
                               <Box sx={{
-                                bgcolor: '#e6f0fa',
-                                color: '#64748b',
+                                background: 'linear-gradient(135deg, rgba(51, 65, 85, 0.03), rgba(71, 85, 105, 0.08))',
+                                color: '#334155',
                                 fontWeight: 700,
-                                borderRadius: 1,
-                                px: 1.5,
-                                py: 0.5,
+                                borderRadius: 1.5,
+                                px: 1.75,
+                                py: 0.6,
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 0.5
+                                gap: 0.5,
+                                boxShadow: '0 2px 6px rgba(15, 23, 42, 0.04)',
+                                border: '1px solid rgba(203, 213, 225, 0.3)',
+                                height: 'fit-content',
+                                minWidth: 100,
+                                justifyContent: 'center',
+                                backdropFilter: 'blur(4px)',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                '&:hover': {
+                                  boxShadow: '0 3px 8px rgba(15, 23, 42, 0.06)',
+                                  background: 'linear-gradient(135deg, rgba(51, 65, 85, 0.05), rgba(71, 85, 105, 0.1))'
+                                },
+                                '&::before': {
+                                  content: '""',
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                  background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                                  transform: 'translateX(-100%)',
+                                  transition: 'transform 0.6s',
+                                  zIndex: 1
+                                },
+                                '&:hover::before': {
+                                  transform: 'translateX(100%)'
+                                }
                               }}>
-                                <AttachMoneyIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                                <span>DZD {offer.price}</span>
-                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}> /day</span>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 2 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                    <Typography 
+                                      component="span" 
+                                      sx={{ 
+                                        fontWeight: 700, 
+                                        fontSize: '0.7rem',
+                                        color: '#475569',
+                                        letterSpacing: '0.02em',
+                                        textTransform: 'uppercase'
+                                      }}
+                                    >
+                                      DZD
+                                    </Typography>
+                                    <Typography 
+                                      component="span" 
+                                      sx={{ 
+                                        fontWeight: 700, 
+                                        fontSize: '1.1rem',
+                                        color: '#334155',
+                                        letterSpacing: '-0.01em'
+                                      }}
+                                    >
+                                      {offer.price.toLocaleString()}
+                                    </Typography>
+                                  </Box>
+                                  <Typography 
+                                    component="span" 
+                                    sx={{ 
+                                      fontSize: '0.65rem', 
+                                      color: '#64748b',
+                                      fontWeight: 600,
+                                      letterSpacing: '0.02em',
+                                      opacity: 0.9,
+                                      mt: -0.3
+                                    }}
+                                  >
+                                    per day
+                                  </Typography>
+                                </Box>
                               </Box>
                             </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-                                <LocationOnIcon sx={{ color: '#64748b', mr: 0.5 }} />
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#475569', 
+                              fontWeight: 700,
+                              fontSize: '0.7rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.4,
+                              pl: 0.5,
+                              mb: 0.75,
+                              mt: 0.5,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              <LocationOnIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} />
+                              Location
+                            </Typography>
+                            
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              mb: 1.5, 
+                              flexWrap: 'wrap',
+                              gap: 1,
+                              bgcolor: 'rgba(241, 245, 249, 0.5)',
+                              borderRadius: 1.5,
+                              p: 1,
+                              border: '1px solid rgba(226, 232, 240, 0.4)',
+                              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)'
+                            }}>
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 0.75,
+                                bgcolor: 'white',
+                                borderRadius: 1.5,
+                                py: 0.75,
+                                px: 1.5,
+                                boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                                border: '1px solid rgba(226, 232, 240, 0.8)'
+                              }}>
+                                <LocationOnIcon sx={{ 
+                                  color: '#475569', 
+                                  fontSize: '1.1rem' 
+                                }} />
                                 <Typography variant="body2" sx={{
-                                  color: '#64748b',
-                                  fontWeight: 600
+                                  color: '#334155',
+                                  fontWeight: 600,
+                                  fontSize: '0.85rem'
                                 }}>
                                   {offer.wilaya || 'Unknown Location'}
                                 </Typography>
@@ -1143,128 +1351,240 @@ export default function AllOffersPage() {
                                 sx={{ 
                                   display: 'flex', 
                                   alignItems: 'center',
-                                  background: 'none',
-                                  border: 'none',
+                                  background: 'white',
+                                  border: '1px solid rgba(226, 232, 240, 0.8)',
                                   cursor: 'pointer',
-                                  padding: '4px 8px',
-                                  borderRadius: 1,
+                                  py: 0.75,
+                                  px: 1.5,
+                                  borderRadius: 1.5,
                                   transition: 'all 0.2s',
+                                  boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
                                   '&:hover': {
-                                    bgcolor: '#e2e8f0'
+                                    bgcolor: '#f1f5f9',
+                                    boxShadow: '0 4px 8px rgba(15, 23, 42, 0.08)',
+                                    transform: 'translateY(-2px)'
                                   }
                                 }}
                               >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L16 5m0 12V5m0 0L9 7" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                  <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L16 5m0 12V5m0 0L9 7" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                                 <Typography variant="body2" sx={{
-                                  color: '#64748b',
+                                  color: '#475569',
                                   fontWeight: 600,
-                                  ml: 0.5,
-                                  fontSize: '0.8rem',
-                                  textDecoration: 'underline',
-                                  textUnderlineOffset: '2px'
+                                  ml: 0.75,
+                                  fontSize: '0.85rem'
                                 }}>
                                   View on map
                                 </Typography>
                               </Box>
                             </Box>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                              <Chip
-                                icon={<AirlineSeatReclineNormalIcon sx={{ color: '#64748b' }} />}
-                                label={`${offer.seats} Seats`}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#f8fafc',
-                                  color: '#475569',
-                                  fontWeight: 500,
-                                  borderRadius: 1
-                                }}
-                              />
-                              <Chip
-                                icon={<MeetingRoomIcon sx={{ color: '#64748b' }} />}
-                                label={`${offer.doors} Doors`}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#f8fafc',
-                                  color: '#475569',
-                                  fontWeight: 500,
-                                  borderRadius: 1
-                                }}
-                              />
-                              {offer.location && (
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#475569', 
+                              fontWeight: 700,
+                              fontSize: '0.7rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.4,
+                              pl: 0.5,
+                              mb: 0.75,
+                              mt: 0.75,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              <DirectionsCarIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} />
+                              Specifications
+                            </Typography>
+                            
+                            <Box sx={{ 
+                              mb: 1.5,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 0.75
+                            }}>
+                              <Box sx={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: 0.75,
+                                bgcolor: 'rgba(241, 245, 249, 0.5)',
+                                borderRadius: 1.5,
+                                p: 1,
+                                border: '1px solid rgba(226, 232, 240, 0.4)',
+                                boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)'
+                              }}>
                                 <Chip
-                                  icon={<LocationOnIcon sx={{ color: '#64748b' }} />}
-                                  label={offer.location.name || offer.location.address || 'Pickup Location'}
+                                  icon={<AirlineSeatReclineNormalIcon sx={{ color: '#475569', fontSize: '0.8rem' }} />}
+                                  label={`${offer.seats} Seats`}
                                   size="small"
                                   sx={{
-                                    bgcolor: '#f1f5f9',
-                                    color: '#475569',
-                                    fontWeight: 500,
-                                    borderRadius: 1,
-                                    maxWidth: 200,
-                                    '& .MuiChip-label': {
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis'
+                                    bgcolor: 'white',
+                                    color: '#334155',
+                                    fontWeight: 600,
+                                    fontSize: '0.7rem',
+                                    borderRadius: 0.75,
+                                    border: '1px solid rgba(203, 213, 225, 0.3)',
+                                    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
+                                    height: 24,
+                                    '& .MuiChip-label': { px: 0.6 },
+                                    '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
+                                    '&:hover': {
+                                      boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                                      bgcolor: '#f8fafc'
                                     }
                                   }}
-                                  title={offer.location.name || offer.location.address}
                                 />
-                              )}
-                              <Chip
-                                icon={<LocalGasStationIcon sx={{ color: '#64748b' }} />}
-                                label={offer.energy || 'N/A'}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#f8fafc',
-                                  color: '#475569',
-                                  fontWeight: 500,
-                                  borderRadius: 1
-                                }}
-                              />
-                              <Chip
-                                icon={<SettingsIcon sx={{ color: '#64748b' }} />}
-                                label={offer.transmission || 'N/A'}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#f8fafc',
-                                  color: '#475569',
-                                  fontWeight: 500,
-                                  borderRadius: 1
-                                }}
-                              />
+                                <Chip
+                                  icon={<MeetingRoomIcon sx={{ color: '#475569', fontSize: '0.8rem' }} />}
+                                  label={`${offer.doors} Doors`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: 'white',
+                                    color: '#334155',
+                                    fontWeight: 600,
+                                    fontSize: '0.7rem',
+                                    borderRadius: 0.75,
+                                    border: '1px solid rgba(203, 213, 225, 0.3)',
+                                    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
+                                    height: 24,
+                                    '& .MuiChip-label': { px: 0.6 },
+                                    '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
+                                    '&:hover': {
+                                      boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                                      bgcolor: '#f8fafc'
+                                    }
+                                  }}
+                                />
+                                {offer.location && (
+                                  <Chip
+                                    icon={<LocationOnIcon sx={{ color: '#475569', fontSize: '0.8rem' }} />}
+                                    label={offer.location.name || offer.location.address || 'Pickup Location'}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: 'white',
+                                      color: '#334155',
+                                      fontWeight: 600,
+                                      fontSize: '0.7rem',
+                                      borderRadius: 0.75,
+                                      border: '1px solid rgba(203, 213, 225, 0.3)',
+                                      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
+                                      height: 24,
+                                      maxWidth: 160,
+                                      '& .MuiChip-label': { 
+                                        px: 0.6,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      },
+                                      '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
+                                      '&:hover': {
+                                        boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                                        bgcolor: '#f8fafc'
+                                      }
+                                    }}
+                                    title={offer.location.name || offer.location.address}
+                                  />
+                                )}
+                                <Chip
+                                  icon={<LocalGasStationIcon sx={{ color: '#475569', fontSize: '0.8rem' }} />}
+                                  label={offer.energy || 'N/A'}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: 'white',
+                                    color: '#334155',
+                                    fontWeight: 600,
+                                    fontSize: '0.7rem',
+                                    borderRadius: 0.75,
+                                    border: '1px solid rgba(203, 213, 225, 0.3)',
+                                    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
+                                    height: 24,
+                                    '& .MuiChip-label': { px: 0.6 },
+                                    '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
+                                    '&:hover': {
+                                      boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                                      bgcolor: '#f8fafc'
+                                    }
+                                  }}
+                                />
+                                <Chip
+                                  icon={<SettingsIcon sx={{ color: '#475569', fontSize: '0.8rem' }} />}
+                                  label={offer.transmission || 'N/A'}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: 'white',
+                                    color: '#334155',
+                                    fontWeight: 600,
+                                    fontSize: '0.7rem',
+                                    borderRadius: 0.75,
+                                    border: '1px solid rgba(203, 213, 225, 0.3)',
+                                    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
+                                    height: 24,
+                                    '& .MuiChip-label': { px: 0.6 },
+                                    '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
+                                    '&:hover': {
+                                      boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                                      bgcolor: '#f8fafc'
+                                    }
+                                  }}
+                                />
+                              </Box>
                             </Box>
 
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#475569', 
+                              fontWeight: 700,
+                              fontSize: '0.7rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.4,
+                              pl: 0.5,
+                              mb: 0.75,
+                              mt: 0.75,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              <CalendarMonthIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} />
+                              Availability
+                            </Typography>
+                            
                             <Box sx={{ 
                               display: 'flex',
                               flexDirection: { xs: 'column', sm: 'row' },
-                              gap: 1,
-                              mb: 2,
+                              gap: 0.75,
+                              mb: 1.5,
                               flexWrap: 'wrap'
                             }}>
                               <Chip
-                                icon={<CalendarMonthIcon sx={{ color: '#64748b' }} />}
+                                icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
                                 label={`From: ${formatDateDMY(offer.availabilityStart)}`}
                                 size="small"
                                 sx={{
-                                  bgcolor: '#e6f0fa',
-                                  color: '#64748b',
+                                  bgcolor: 'rgba(226, 232, 240, 0.5)',
+                                  color: '#475569',
                                   fontWeight: 600,
-                                  borderRadius: 1,
-                                  borderColor: '#94a3b8'
+                                  borderRadius: 0.75,
+                                  border: '1px solid rgba(203, 213, 225, 0.3)',
+                                  fontSize: '0.7rem',
+                                  height: 24,
+                                  '& .MuiChip-label': { px: 0.6 },
+                                  '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
+                                  boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)'
                                 }}
                               />
                               <Chip
-                                icon={<CalendarMonthIcon sx={{ color: '#64748b' }} />}
+                                icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
                                 label={`To: ${formatDateDMY(offer.availabilityEnd)}`}
                                 size="small"
                                 sx={{
-                                  bgcolor: '#e6f0fa',
-                                  color: '#64748b',
+                                  bgcolor: 'rgba(226, 232, 240, 0.5)',
+                                  color: '#475569',
                                   fontWeight: 600,
-                                  borderRadius: 1,
-                                  borderColor: '#94a3b8'
+                                  borderRadius: 0.75,
+                                  border: '1px solid rgba(203, 213, 225, 0.3)',
+                                  fontSize: '0.7rem',
+                                  height: 24,
+                                  '& .MuiChip-label': { px: 0.6 },
+                                  '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
+                                  boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)'
                                 }}
                               />
                             </Box>
@@ -1323,23 +1643,33 @@ export default function AllOffersPage() {
                               component={isOwnOffer ? undefined : Link}
                               to={isOwnOffer ? undefined : `/car-details/${offer._id}`}
                               variant="contained"
+                              size="small"
                               disabled={isOwnOffer}
                               sx={{
                                 alignSelf: 'flex-start',
-                                bgcolor: isOwnOffer ? '#e0e0e0' : '#64748b',
+                                bgcolor: isOwnOffer ? '#e0e0e0' : '#475569',
                                 color: isOwnOffer ? '#a0a0a0' : 'white',
-                                borderRadius: 1,
-                                px: 3,
-                                py: 1,
+                                borderRadius: 0.75,
+                                px: 1.25,
+                                py: 0.5,
                                 fontWeight: 600,
+                                fontSize: '0.7rem',
                                 textTransform: 'none',
+                                boxShadow: isOwnOffer ? 'none' : '0 2px 4px rgba(15, 23, 42, 0.06)',
                                 '&:hover': {
-                                  bgcolor: isOwnOffer ? '#e0e0e0' : '#475569',
+                                  bgcolor: isOwnOffer ? '#e0e0e0' : '#334155',
+                                  boxShadow: isOwnOffer ? 'none' : '0 3px 6px rgba(15, 23, 42, 0.1)',
+                                  transform: isOwnOffer ? 'none' : 'translateY(-1px)'
                                 },
+                                transition: 'all 0.2s ease',
                                 cursor: isOwnOffer ? 'not-allowed' : 'pointer',
+                                height: 28,
+                                minWidth: 'auto',
+                                letterSpacing: '0.2px',
+                                mt: 0.5
                               }}
                             >
-                              <DirectionsCarIcon sx={{ mr: 1 }} /> 
+                              <DirectionsCarIcon sx={{ mr: 0.4, fontSize: '0.8rem' }} /> 
                               {isOwnOffer ? "Your Listing" : "View Details"}
                             </Button>
                           </Box>
@@ -1349,6 +1679,192 @@ export default function AllOffersPage() {
                   );
                 }))}
             </Grid>
+            
+            {/* Pagination Controls */}
+            {filteredOffers.length > 0 && (
+              <Box sx={{ 
+                mt: 5, 
+                mb: 3,
+                position: 'relative',
+                overflow: 'visible'
+              }}>
+                {/* Shadow effect */}
+                <Box sx={{
+                  position: 'absolute',
+                  width: '90%',
+                  height: '90%',
+                  top: '15%',
+                  left: '5%',
+                  borderRadius: 4,
+                  background: 'linear-gradient(135deg, #334155, #1e293b)',
+                  opacity: 0.2,
+                  filter: 'blur(20px)',
+                  transform: 'translateZ(0)', // Force GPU acceleration
+                  zIndex: 0
+                }} />
+                
+                <Paper elevation={0} sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', md: 'row' }, 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 2,
+                  bgcolor: 'rgba(248, 250, 252, 0.95)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: 3,
+                  py: 2.5,
+                  px: 3,
+                  border: '1px solid rgba(203, 213, 225, 0.8)',
+                  boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
+                  position: 'relative',
+                  zIndex: 1,
+                  transition: 'all 0.3s ease',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '4px',
+                    background: 'linear-gradient(90deg, #475569, #64748b)',
+                    borderRadius: '3px 3px 0 0'
+                  }
+                }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 2,
+                    flexWrap: { xs: 'wrap', md: 'nowrap' },
+                    justifyContent: { xs: 'center', md: 'flex-start' },
+                    width: { xs: '100%', md: 'auto' }
+                  }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1,
+                      bgcolor: 'rgba(241, 245, 249, 0.7)',
+                      py: 1,
+                      px: 2,
+                      borderRadius: 2,
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      <DirectionsCarIcon sx={{ color: '#475569', fontSize: '1.2rem' }} />
+                      <Typography variant="body2" sx={{ 
+                        color: '#475569', 
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        letterSpacing: '0.2px'
+                      }}>
+                        Showing <Box component="span" sx={{ fontWeight: 700, color: '#334155' }}>
+                          {page * rowsPerPage + 1}-{Math.min(filteredOffers.length, (page + 1) * rowsPerPage)}
+                        </Box> of <Box component="span" sx={{ fontWeight: 700, color: '#334155' }}>
+                          {filteredOffers.length}
+                        </Box> cars
+                      </Typography>
+                    </Box>
+                    
+                    <FormControl size="small" sx={{ 
+                      minWidth: 130,
+                      '& .MuiFormLabel-root': {
+                        color: '#64748b',
+                        fontWeight: 500
+                      },
+                      '& .MuiFormLabel-root.Mui-focused': {
+                        color: '#475569'
+                      }
+                    }}>
+                      <InputLabel id="rows-per-page-label">Cars per page</InputLabel>
+                      <Select
+                        labelId="rows-per-page-label"
+                        id="rows-per-page"
+                        value={rowsPerPage}
+                        label="Cars per page"
+                        onChange={(e) => {
+                          setRowsPerPage(parseInt(e.target.value, 10));
+                          setPage(0);
+                          // Scroll to top when changing items per page
+                          if (offersTopRef.current) {
+                            offersTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }}
+                        sx={{ 
+                          bgcolor: 'white',
+                          boxShadow: '0 2px 5px rgba(15, 23, 42, 0.05)',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#cbd5e1',
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#94a3b8',
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#475569',
+                          },
+                          '& .MuiSelect-select': {
+                            color: '#334155',
+                            fontWeight: 600
+                          }
+                        }}
+                      >
+                        <MenuItem value={3}>3 cars</MenuItem>
+                        <MenuItem value={5}>5 cars</MenuItem>
+                        <MenuItem value={10}>10 cars</MenuItem>
+                        <MenuItem value={20}>20 cars</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
+                  
+                  <Pagination 
+                    count={Math.ceil(filteredOffers.length / rowsPerPage)} 
+                    page={page + 1}
+                    onChange={(event, newPage) => {
+                      setPage(newPage - 1);
+                      // Scroll to top of offers section when changing pages
+                      if (offersTopRef.current) {
+                        offersTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
+                    color="primary"
+                    variant="outlined"
+                    shape="rounded"
+                    showFirstButton
+                    showLastButton
+                    sx={{
+                      '& .MuiPaginationItem-root': {
+                        color: '#475569',
+                        fontWeight: 600,
+                        borderColor: '#cbd5e1',
+                        mx: 0.2,
+                        transition: 'all 0.2s ease',
+                        '&.Mui-selected': {
+                          bgcolor: '#475569',
+                          color: 'white',
+                          borderColor: '#475569',
+                          boxShadow: '0 4px 8px rgba(15, 23, 42, 0.15)',
+                          '&:hover': {
+                            bgcolor: '#334155',
+                            borderColor: '#334155',
+                          }
+                        },
+                        '&:hover': {
+                          bgcolor: 'rgba(71, 85, 105, 0.08)',
+                          borderColor: '#94a3b8',
+                        },
+                        '&.MuiPaginationItem-ellipsis': {
+                          border: 'none',
+                          backgroundColor: 'transparent'
+                        },
+                        '&.MuiPaginationItem-firstLast, &.MuiPaginationItem-previousNext': {
+                          bgcolor: 'white',
+                          '&:hover': {
+                            bgcolor: 'rgba(71, 85, 105, 0.08)',
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </Paper>
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>

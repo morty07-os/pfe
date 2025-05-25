@@ -541,7 +541,6 @@ export default function CarDetailsPage() {
                 <Divider sx={{ my: 3, borderColor: 'rgba(226, 232, 240, 0.8)' }} />
               </Box>
 
-              <React.Fragment>
               <Box sx={{ p: { xs: 2.5, sm: 3.5 }, pt: 0 }}> {/* Main content area for Grid */
                 <Grid container spacing={{ xs: 2.5, md: 4 }}>
                   <Grid item xs={12} md={6}>
@@ -1349,7 +1348,7 @@ export default function CarDetailsPage() {
                     )}
                 </Paper>
               </Box>
-              </React.Fragment>
+              </Box>
             </Paper>
           </Fade>
         </Container>

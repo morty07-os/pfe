@@ -13,7 +13,11 @@ import {
   useTheme,
   useMediaQuery,
   TextField,
-  Alert
+  Alert,
+  CircularProgress,
+  Avatar,
+  Rating,
+  Divider
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -26,12 +30,32 @@ import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import InfoIcon from '@mui/icons-material/Info';
+import SpeedIcon from '@mui/icons-material/Speed';
+import ColorLensIcon from '@mui/icons-material/ColorLens';
+import FeaturedPlayListIcon from '@mui/icons-material/FeaturedPlayList';
+import AcUnitIcon from '@mui/icons-material/AcUnit';
+import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
+import LuggageIcon from '@mui/icons-material/Luggage'; // Keep for potential future use or other pages
+import BluetoothIcon from '@mui/icons-material/Bluetooth';
+import WifiIcon from '@mui/icons-material/Wifi';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import SettingsInputSvideoIcon from '@mui/icons-material/SettingsInputSvideo';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
+import PersonIcon from '@mui/icons-material/Person';
+
+// Imports for react-slick carousel
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
 
 export default function BookingPage() {
   const { carId } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +65,14 @@ export default function BookingPage() {
   const [endDate, setEndDate] = useState(null);
   const [totalCost, setTotalCost] = useState(0);
   const [dateError, setDateError] = useState('');
+
+  const today = dayjs(new Date().setHours(0, 0, 0, 0));
+
+  useEffect(() => {
+    if (car) {
+      console.log("Car object for carousel:", car);
+    }
+  }, [car]);
 
   useEffect(() => {
     const fetchCarDetails = async () => {
@@ -118,162 +150,893 @@ export default function BookingPage() {
     });
   };
 
+  // Prepare images for the carousel
+  let processedImages = [];
+  if (car) {
+    const imageBaseUrl = 'http://localhost:5001/';
+    if (car.images && Array.isArray(car.images) && car.images.length > 0) {
+      processedImages = car.images.map(imgPath => 
+        imgPath.startsWith('http') ? imgPath : `${imageBaseUrl}${imgPath.replace(/^\.\//, '')}`
+      );
+    } else if (car.image_url) { // Fallback if car.images is not there or empty
+      processedImages = [
+        car.image_url.startsWith('http') ? car.image_url : `${imageBaseUrl}${car.image_url.replace(/^\.\//, '')}`
+      ];
+    }
+  }
+  if (processedImages.length === 0) {
+    processedImages = ['https://via.placeholder.com/400x300?text=Car+Image']; // Default placeholder
+  }
+  console.log("Processed images for carousel:", processedImages);
+
+  const carouselSettings = {
+    dots: true,
+    infinite: processedImages.length > 1,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    adaptiveHeight: true,
+    arrows: processedImages.length > 1,
+    autoplay: processedImages.length > 1,
+    autoplaySpeed: 3000,
+  };
+
   if (loading) {
     return (
-      <>
-        <Navbar />
-        <Container sx={{ py: 4 }}>
-          <Skeleton variant="text" width="60%" height={40} />
-          <Skeleton variant="rectangular" height={300} sx={{ my: 2 }} />
-          <Skeleton variant="text" width="80%" />
-          <Skeleton variant="text" width="70%" />
-        </Container>
-      </>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
-  if (error || !car) {
-    return (
-      <>
-        <Navbar />
-        <Container sx={{ py: 4, textAlign: 'center' }}>
-          <Typography variant="h5" color="error">
-            {error || 'Car details not found.'}
-          </Typography>
-          <Button variant="outlined" onClick={handleGoBack} sx={{ mt: 2 }}>
-            Go Back
-          </Button>
-        </Container>
-      </>
-    );
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
+
+  if (!car) {
+    return <Typography>Car not found.</Typography>;
   }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Navbar />
-      <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', py: 4 }}>
-        <Container maxWidth="md">
-          <Button 
-            startIcon={<ArrowBackIcon />}
-            onClick={handleGoBack}
-            sx={{ 
-              mb: 3, 
-              color: '#475569',
-              fontWeight: 500,
-              '&:hover': { 
-                bgcolor: 'rgba(71, 85, 105, 0.08)',
-              },
-            }}
-          >
-            Back to Car Details
-          </Button>
+      <Container maxWidth="lg" sx={{ py: isMobile ? 3 : 5, mt: 4, mb: 4 }}>
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 0,
+            borderRadius: 3, 
+            bgcolor: 'rgba(248, 250, 252, 0.97)', 
+            boxShadow: '0px 8px 16px rgba(15, 23, 42, 0.04), 0px 12px 32px rgba(15, 23, 42, 0.06)', 
+            position: 'relative',
+            overflow: 'hidden', 
+            border: '1px solid rgba(226, 232, 240, 0.7)',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(to right, #475569, #64748b)',
+              zIndex: 1
+            }
+          }}
+        >
+          <Box sx={{ 
+            background: 'linear-gradient(135deg, #334155 0%, #475569 100%)',
+            py: 3.5, 
+            px: isMobile ? 3 : 4,
+            borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Decorative elements */}
+            <Box sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              opacity: 0.05,
+              backgroundImage: 'radial-gradient(circle at 20% 90%, rgba(255,255,255,0.8) 0%, transparent 20%), radial-gradient(circle at 80% 10%, rgba(255,255,255,0.8) 0%, transparent 20%)',
+              zIndex: 0
+            }} />
+            
+            <Button 
+              startIcon={<ArrowBackIcon />} 
+              onClick={handleGoBack}
+              sx={{
+                color: 'white',
+                fontWeight: 600,
+                textTransform: 'none',
+                borderRadius: 1.5,
+                px: 2.5, 
+                py: 0.75,
+                bgcolor: 'rgba(255, 255, 255, 0.15)', 
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(4px)',
+                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)', 
+                '&:hover': { 
+                  bgcolor: 'rgba(255, 255, 255, 0.25)', 
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.2s ease-in-out',
+                mb: 3.5,
+                zIndex: 1
+              }}
+            >
+              Back to Car Details
+            </Button>
 
-          <Paper elevation={3} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-            <Box sx={{ p: { xs: 2, sm: 3 } }}>
-              <Typography variant={isMobile ? "h5" : "h4"} gutterBottom sx={{ fontWeight: 700, color: '#1e293b' }}>
-                Confirm Your Booking
-              </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <CardMedia
-                    component="img"
-                    image={`http://localhost:5001/${car.images?.[0]}`}
-                    alt={car.carName}
-                    sx={{
-                      borderRadius: 2,
-                      height: isMobile ? 200 : 280,
-                      objectFit: 'cover',
-                      mb: 2
-                    }}
-                  />
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155' }}>{car.carName}</Typography>
-                  <Typography variant="body1" color="text.secondary">{car.brand} {car.year}</Typography>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, color: '#475569' }}>
-                    <EventSeatIcon fontSize="small" /> <Typography variant="body2">{car.seats} Seats</Typography>
-                    <LocalGasStationIcon fontSize="small" /> <Typography variant="body2">{car.energy}</Typography>
-                    <SettingsIcon fontSize="small" /> <Typography variant="body2">{car.transmission}</Typography>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 2 }}>
-                    Select Rental Dates
-                  </Typography>
-                  
-                  <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2, mb: 2 }}>
-                    <DatePicker
-                      label="Start Date"
-                      value={startDate}
-                      onChange={(newValue) => setStartDate(newValue)}
-                      minDate={dayjs(car.availabilityStart)}
-                      maxDate={dayjs(car.availabilityEnd)}
-                      slotProps={{ textField: { fullWidth: true } }}
-                    />
-                    <DatePicker
-                      label="End Date"
-                      value={endDate}
-                      onChange={(newValue) => setEndDate(newValue)}
-                      minDate={startDate || dayjs(car.availabilityStart)}
-                      maxDate={dayjs(car.availabilityEnd)}
-                      disabled={!startDate}
-                      slotProps={{ textField: { fullWidth: true } }}
-                    />
-                  </Box>
-
-                  {dateError && (
-                    <Alert severity="error" sx={{ mb: 2 }}>{dateError}</Alert>
-                  )}
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Available from: {dayjs(car.availabilityStart).format('DD MMM YYYY')} to {dayjs(car.availabilityEnd).format('DD MMM YYYY')}
-                  </Typography>
-
-                  <Box sx={{ 
-                    p: 2, 
-                    bgcolor: '#e0f2fe', 
-                    borderRadius: 2, 
-                    textAlign: 'center',
-                    border: `1px solid #7dd3fc`
-                  }}>
-                    <Typography variant="body1" sx={{ color: '#0c4a6e', fontWeight: 500 }}>
-                      Estimated Total Cost
-                    </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: '#0369a1', mt: 0.5 }}>
-                      <AttachMoneyIcon sx={{ verticalAlign: 'middle', fontSize: '1.8rem' }} />
-                      {totalCost.toFixed(2)}
-                    </Typography>
-                    {startDate && endDate && !dateError && (
-                       <Typography variant="caption" sx={{ color: '#075985' }}>
-                         ({endDate.diff(startDate, 'day') + 1} days at €{car.price}/day)
-                       </Typography>
-                    )}
-                  </Box>
-
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    size="large"
-                    onClick={handleContinueToChat}
-                    disabled={!startDate || !endDate || !!dateError || totalCost === 0}
-                    sx={{
-                      mt: 3,
-                      py: 1.5,
-                      fontWeight: 600,
-                      background: 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
-                      '&:hover': {
-                        background: 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
-                      },
+            <Typography 
+              variant={isMobile ? "h5" : "h4"} 
+              sx={{
+                fontWeight: 700, 
+                color: 'white',
+                letterSpacing: '0.5px', 
+                position: 'relative',
+                textAlign: 'center',
+                pb: 1.5,
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                zIndex: 1,
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 0,
+                  left: '50%', 
+                  transform: 'translateX(-50%)', 
+                  width: '100px', 
+                  height: '3px', 
+                  background: 'linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0.8), rgba(255,255,255,0.2))', 
+                  borderRadius: '3px'
+                }
+              }}
+            >
+              Confirm Your Booking
+            </Typography>
+          </Box>
+          <Grid container spacing={3} sx={{ justifyContent: 'center', p: isMobile ? 3 : 4, pt: isMobile ? 3 : 4 }}>
+            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}> 
+              
+              {/* Car Name and Brand */}
+              {car && (
+                <Box sx={{ 
+                  mb: 2.5, 
+                  pb: 0, 
+                  width: '100%', 
+                  textAlign: 'center',
+                  maxWidth: 400,
+                  bgcolor: 'rgba(248, 250, 252, 0.75)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: 3,
+                  p: 3.5,
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: '0 8px 16px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04)',
+                  background: 'linear-gradient(145deg, rgba(248, 250, 252, 0.75), rgba(241, 245, 249, 0.7))',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 12px 20px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.06)'
+                  }
+                }}>
+                  <Typography 
+                    variant="h6" 
+                    component="div" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: '#1e293b', 
+                      mb: 0.5 
                     }}
                   >
-                    Continue to Chat
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          </Paper>
-        </Container>
-      </Box>
+                    {car.carName}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#475569', mb: 1.5 }}> 
+                    {car.brand} • {car.year}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Car Owner Information */}
+              {car && (
+                <Box sx={{
+                  width: '100%',
+                  maxWidth: 400,
+                  mb: 3,
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)',
+                  border: '1px solid rgba(226, 232, 240, 0.8)',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 25px rgba(15, 23, 42, 0.12)'
+                  }
+                }}>
+                  {/* Header section with gradient background */}
+                  <Box sx={{
+                    bgcolor: '#475569',
+                    background: 'linear-gradient(to right, #475569, #64748b)',
+                    p: 2.5,
+                    position: 'relative'
+                  }}>
+                    <Typography variant="h6" sx={{ 
+                      fontWeight: 700, 
+                      color: 'white', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      position: 'relative',
+                      zIndex: 1
+                    }}>
+                      <PersonIcon sx={{ color: 'white' }} /> Car Owner
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      width: '30%',
+                      height: '100%',
+                      background: 'radial-gradient(circle at bottom right, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+                      zIndex: 0
+                    }} />
+                  </Box>
+                  
+                  {/* Owner profile section */}
+                  <Box sx={{
+                    p: 3,
+                    bgcolor: 'white',
+                  }}>
+                    <Box sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      mb: 2.5
+                    }}>
+                      <Avatar
+                        src={typeof car.owner === 'string' || !car.owner ? null : car.owner.avatar}
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          bgcolor: '#475569',
+                          color: 'white',
+                          fontSize: '1.4rem',
+                          mr: 2.5,
+                          border: '2px solid white',
+                          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.15)'
+                        }}
+                      >
+                        {typeof car.owner === 'string' ? car.ownerName?.[0] : 
+                         car.owner?.firstName?.[0] || (car.ownerName ? car.ownerName[0] : 'U')}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="subtitle1" sx={{ 
+                          fontWeight: 600, 
+                          color: '#334155',
+                          fontSize: '1.1rem',
+                          mb: 0.5
+                        }}>
+                          {typeof car.owner === 'string' ? car.ownerName : 
+                           (car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : car.ownerName || 'Unknown Owner')}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Rating
+                            value={car.ownerRating || 0}
+                            precision={0.5}
+                            readOnly
+                            size="small"
+                            sx={{ mr: 0.75 }}
+                          />
+                          <Typography variant="body2" sx={{ 
+                            color: '#64748b',
+                            fontWeight: 500
+                          }}>
+                            {car.ownerRating ? `${car.ownerRating.toFixed(1)} (${car.ownerReviews || 0})` : 'No ratings yet'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    
+                    <Divider sx={{ 
+                      my: 2, 
+                      borderColor: 'rgba(226, 232, 240, 0.9)',
+                      '&::before, &::after': {
+                        borderColor: 'rgba(226, 232, 240, 0.9)',
+                      }
+                    }} />
+                    
+                    {/* Owner details with icons */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <CalendarTodayIcon sx={{ color: '#64748b', fontSize: '1.2rem' }} />
+                        <Typography variant="body2" sx={{ color: '#475569' }}>
+                          <span style={{ fontWeight: 600, marginRight: '4px' }}>Member since:</span>
+                          {car.owner?.joinDate ? dayjs(car.owner.joinDate).format('MMMM YYYY') : 'Unknown'}
+                        </Typography>
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <InfoIcon sx={{ color: '#64748b', fontSize: '1.2rem' }} />
+                        <Typography variant="body2" sx={{ color: '#475569' }}>
+                          <span style={{ fontWeight: 600, marginRight: '4px' }}>Response rate:</span>
+                          {car.owner?.responseRate || 'Unknown'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+
+              {/* Car Specifications Container with premium styling */}
+              {car && (
+                <Box sx={{
+                  width: '100%',
+                  maxWidth: 400,
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)',
+                  border: '1px solid rgba(226, 232, 240, 0.8)',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 25px rgba(15, 23, 42, 0.12)'
+                  }
+                }}>
+                  {/* Header section with gradient background */}
+                  <Box sx={{
+                    bgcolor: '#475569',
+                    background: 'linear-gradient(to right, #475569, #64748b)',
+                    p: 2.5,
+                    position: 'relative'
+                  }}>
+                    <Typography variant="h6" sx={{ 
+                      fontWeight: 700, 
+                      color: 'white', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      position: 'relative',
+                      zIndex: 1
+                    }}>
+                      <DirectionsCarIcon sx={{ color: 'white' }} /> Car Specifications
+                    </Typography>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      width: '30%',
+                      height: '100%',
+                      background: 'radial-gradient(circle at bottom right, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+                      zIndex: 0
+                    }} />
+                  </Box>
+                  
+                  {/* Specifications content */}
+                  <Box sx={{
+                    p: 3,
+                    bgcolor: 'white',
+                  }}>
+                    <Grid container spacing={3}>
+                      {/* Performance Specs */}
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle1" sx={{ 
+                          fontWeight: 600, 
+                          color: '#334155',
+                          mb: 1.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.75,
+                          fontSize: '0.95rem',
+                          '&::after': {
+                            content: '""',
+                            display: 'block',
+                            height: '1px',
+                            flexGrow: 1,
+                            bgcolor: 'rgba(226, 232, 240, 0.9)',
+                            ml: 1
+                          }
+                        }}>
+                          <SpeedIcon sx={{ color: '#475569', fontSize: '1rem' }} /> Performance
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 1.5,
+                              p: 1.5,
+                              borderRadius: 2,
+                              bgcolor: 'rgba(248, 250, 252, 0.8)',
+                              border: '1px solid rgba(226, 232, 240, 0.8)',
+                              height: '100%'
+                            }}>
+                              <LocalGasStationIcon sx={{ color: '#475569', fontSize: '1.2rem' }} />
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', fontSize: '0.85rem' }}>
+                                  Fuel Type
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.85rem' }}>
+                                  {car.energy || 'N/A'}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 1.5,
+                              p: 1.5,
+                              borderRadius: 2,
+                              bgcolor: 'rgba(248, 250, 252, 0.8)',
+                              border: '1px solid rgba(226, 232, 240, 0.8)',
+                              height: '100%'
+                            }}>
+                              <SettingsInputSvideoIcon sx={{ color: '#475569', fontSize: '1.2rem' }} />
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', fontSize: '0.85rem' }}>
+                                  Transmission
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.85rem' }}>
+                                  {car.transmission || 'N/A'}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      </Grid>
+                      
+                      {/* Comfort & Utility Specs */}
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle1" sx={{ 
+                          fontWeight: 600, 
+                          color: '#334155',
+                          mb: 1.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.75,
+                          fontSize: '0.95rem',
+                          '&::after': {
+                            content: '""',
+                            display: 'block',
+                            height: '1px',
+                            flexGrow: 1,
+                            bgcolor: 'rgba(226, 232, 240, 0.9)',
+                            ml: 1
+                          }
+                        }}>
+                          <EventSeatIcon sx={{ color: '#475569', fontSize: '1rem' }} /> Comfort & Utility
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 1.5,
+                              p: 1.5,
+                              borderRadius: 2,
+                              bgcolor: 'rgba(248, 250, 252, 0.8)',
+                              border: '1px solid rgba(226, 232, 240, 0.8)',
+                              height: '100%'
+                            }}>
+                              <PeopleAltIcon sx={{ color: '#475569', fontSize: '1.2rem' }} />
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', fontSize: '0.85rem' }}>
+                                  Capacity
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.85rem' }}>
+                                  {car.seats ? `${car.seats} Seats` : 'N/A'}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 1.5,
+                              p: 1.5,
+                              borderRadius: 2,
+                              bgcolor: 'rgba(248, 250, 252, 0.8)',
+                              border: '1px solid rgba(226, 232, 240, 0.8)',
+                              height: '100%'
+                            }}>
+                              <MeetingRoomIcon sx={{ color: '#475569', fontSize: '1.2rem' }} />
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', fontSize: '0.85rem' }}>
+                                  Doors
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.85rem' }}>
+                                  {car.doors ? `${car.doors} Doors` : 'N/A'}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      </Grid>
+                    </Grid>
+
+                    {/* Additional Features */}
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="subtitle1" sx={{ 
+                        fontWeight: 600, 
+                        color: '#334155',
+                        mb: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.75,
+                        fontSize: '0.95rem',
+                        '&::after': {
+                          content: '""',
+                          display: 'block',
+                          height: '1px',
+                          flexGrow: 1,
+                          bgcolor: 'rgba(226, 232, 240, 0.9)',
+                          ml: 1
+                        }
+                      }}>
+                        <FeaturedPlayListIcon sx={{ color: '#475569', fontSize: '1rem' }} /> Additional Features
+                      </Typography>
+                      
+                      <Box sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 1.5,
+                        mt: 1.5
+                      }}>
+                        <Chip 
+                          icon={<AcUnitIcon sx={{ fontSize: '1rem !important', color: '#475569 !important' }} />}
+                          label={`A/C: ${car.hasAC === undefined ? 'N/A' : (car.hasAC ? 'Yes' : 'No')}`}
+                          sx={{ 
+                            bgcolor: 'rgba(248, 250, 252, 0.8)',
+                            border: '1px solid rgba(226, 232, 240, 0.8)',
+                            color: '#475569',
+                            fontWeight: 500,
+                            '& .MuiChip-icon': {
+                              color: '#475569'
+                            }
+                          }}
+                        />
+                        
+                        {car.mileage && (
+                          <Chip 
+                            icon={<SpeedIcon sx={{ fontSize: '1rem !important', color: '#475569 !important' }} />}
+                            label={`${car.mileage} km`}
+                            sx={{ 
+                              bgcolor: 'rgba(248, 250, 252, 0.8)',
+                              border: '1px solid rgba(226, 232, 240, 0.8)',
+                              color: '#475569',
+                              fontWeight: 500,
+                              '& .MuiChip-icon': {
+                                color: '#475569'
+                              }
+                            }}
+                          />
+                        )}
+                        
+                        {car.engine && (
+                          <Chip 
+                            icon={<SettingsIcon sx={{ fontSize: '1rem !important', color: '#475569 !important' }} />}
+                            label={car.engine}
+                            sx={{ 
+                              bgcolor: 'rgba(248, 250, 252, 0.8)',
+                              border: '1px solid rgba(226, 232, 240, 0.8)',
+                              color: '#475569',
+                              fontWeight: 500,
+                              '& .MuiChip-icon': {
+                                color: '#475569'
+                              }
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+            </Grid>
+
+            {/* Right Column: Booking Form */}
+            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Box sx={{ 
+                bgcolor: 'rgba(248, 250, 252, 0.75)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: 3,
+                p: 3.5,
+                mb: 3,
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 8px 16px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04)',
+                background: 'linear-gradient(145deg, rgba(248, 250, 252, 0.75), rgba(241, 245, 249, 0.7))',
+                width: '100%', 
+                maxWidth: 420,
+                position: 'relative', 
+                overflow: 'hidden',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 20px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.06)'
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  background: 'linear-gradient(90deg, #64748b, #94a3b8)',
+                  opacity: 0.7
+                }
+              }}>
+                <Typography 
+                  variant="subtitle1" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    color: '#334155', 
+                    mb: 2,
+                    width: '100%', 
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      bgcolor: 'white',
+                      '& fieldset': {
+                        borderColor: 'rgba(203, 213, 225, 0.5)' 
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#64748b' 
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#475569',
+                        boxShadow: '0 0 0 2px rgba(71, 85, 105, 0.1)' 
+                      }
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#64748b',
+                      '&.Mui-focused': {
+                        color: '#475569'
+                      }
+                    }
+                  }}
+                >
+                  <CalendarMonthIcon sx={{ color: '#475569', fontSize: '1.1rem' }} />
+                  Select Rental Dates
+                </Typography>
+                
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: isMobile ? 'column' : 'row', 
+                  alignItems: isMobile ? 'center' : 'stretch', 
+                  justifyContent: !isMobile ? 'center' : 'flex-start', 
+                  gap: 2, 
+                  mb: 2,
+                  width: '100%', 
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                    bgcolor: 'white',
+                    '& fieldset': {
+                      borderColor: 'rgba(203, 213, 225, 0.5)' 
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#64748b' 
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#475569',
+                      boxShadow: '0 0 0 2px rgba(71, 85, 105, 0.1)' 
+                    }
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#64748b',
+                    '&.Mui-focused': {
+                      color: '#475569'
+                    }
+                  }
+                }}>
+                  <DatePicker
+                    label="Start Date"
+                    value={startDate}
+                    onChange={(newValue) => {
+                      setStartDate(newValue);
+                      // If return date is before new start date, clear return date or adjust
+                      if (newValue && endDate && newValue.isAfter(endDate)) {
+                        setEndDate(null); 
+                      }
+                    }}
+                    minDate={today} // Prevent selecting dates before today
+                    slotProps={{ 
+                      textField: { 
+                        fullWidth: true,
+                        size: "small"
+                      } 
+                    }}
+                  />
+                  <DatePicker
+                    label="End Date"
+                    value={endDate}
+                    onChange={setEndDate}
+                    minDate={startDate || today} // Prevent selecting dates before start date or today
+                    disabled={!startDate} // Disable if no start date is selected
+                    slotProps={{ 
+                      textField: { 
+                        fullWidth: true,
+                        size: "small"
+                      } 
+                    }}
+                  />
+                </Box>
+
+                {dateError && (
+                  <Alert 
+                    severity="error" 
+                    sx={{ 
+                      mb: 2,
+                      borderRadius: 1.5,
+                      '& .MuiAlert-icon': {
+                        color: '#ef4444'
+                      }
+                    }}
+                  >
+                    {dateError}
+                  </Alert>
+                )}
+                
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#64748b', 
+                    display: 'flex',
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    gap: 0.5,
+                    fontSize: '0.7rem',
+                    fontStyle: 'italic',
+                    width: '100%' 
+                  }}
+                >
+                  <InfoIcon sx={{ fontSize: '0.8rem' }} />
+                  Available from: {dayjs(car.availabilityStart).format('DD MMM YYYY')} to {dayjs(car.availabilityEnd).format('DD MMM YYYY')}
+                </Typography>
+              </Box>
+
+              <Box sx={{ 
+                bgcolor: 'rgba(248, 250, 252, 0.75)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: 3,
+                p: 3.5,
+                mb: 3,
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 8px 16px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04)',
+                background: 'linear-gradient(145deg, rgba(248, 250, 252, 0.75), rgba(241, 245, 249, 0.7))',
+                width: '100%', 
+                maxWidth: 420,
+                position: 'relative', 
+                overflow: 'hidden',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 20px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.06)'
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: 'linear-gradient(90deg, #334155, #475569)', 
+                  opacity: 1 
+                }
+              }}>
+                <Typography 
+                  variant="subtitle2" 
+                  sx={{ 
+                    color: '#334155', 
+                    fontWeight: 700,
+                    mb: 1.5,
+                    fontSize: '0.8rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  Estimated Total Cost
+                </Typography>
+                
+                <Typography 
+                  variant="h3" 
+                  sx={{ 
+                    fontWeight: 800, 
+                    color: '#334155', 
+                    mb: 0.5,
+                    fontSize: { xs: '2rem', sm: '2.5rem' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5
+                  }}
+                >
+                  <Box 
+                    component="span" 
+                    sx={{ 
+                      fontSize: '1rem', 
+                      fontWeight: 600,
+                      color: '#475569', 
+                      alignSelf: 'flex-start',
+                      mt: {xs: 0.8, sm: 1},
+                      mr: 0.25 
+                    }}
+                  >
+                    DZD
+                  </Box>
+                  {totalCost.toLocaleString()}
+                </Typography>
+                
+                {startDate && endDate && !dateError && (
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#475569', 
+                      fontWeight: 500,
+                      display: 'inline-block',
+                      bgcolor: 'rgba(255, 255, 255, 0.8)', 
+                      px: 1.5,
+                      py: 0.75, 
+                      borderRadius: 6, 
+                      border: '1px solid rgba(203, 213, 225, 0.6)', 
+                      boxShadow: '0 2px 4px rgba(15, 23, 42, 0.04)', 
+                      fontSize: '0.8rem' 
+                    }}
+                  >
+                    {endDate.diff(startDate, 'day') + 1} days at 
+                    <Box component="span" sx={{ fontWeight: 700, color: '#475569' }}>
+                      {' '}{car.price.toLocaleString()} DZD
+                    </Box>
+                    {' '}/ day
+                  </Typography>
+                )}
+              </Box>
+
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleContinueToChat}
+                disabled={!startDate || !endDate || !!dateError || totalCost === 0}
+                sx={{
+                  width: '100%', 
+                  maxWidth: 420,
+                  py: 2, 
+                  fontWeight: 700,
+                  fontSize: '1rem', 
+                  borderRadius: 1.5,
+                  textTransform: 'none',
+                  boxShadow: '0 5px 15px rgba(15, 23, 42, 0.18)', 
+                  background: 'linear-gradient(90deg, #334155 0%, #475569 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(90deg, #1e293b 0%, #334155 100%)',
+                    boxShadow: '0 7px 20px rgba(15, 23, 42, 0.25)', 
+                    transform: 'translateY(-2px)' 
+                  },
+                  '&:active': {
+                    transform: 'translateY(0px)', 
+                    boxShadow: '0 3px 10px rgba(15, 23, 42, 0.15)' 
+                  },
+                  transition: 'all 0.25s ease-out', 
+                  '&.Mui-disabled': {
+                    background: '#94a3b8',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    boxShadow: 'none',
+                    transform: 'none'
+                  }
+                }}
+              >
+                Continue to Chat
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
+      </Container>
     </LocalizationProvider>
   );
 }

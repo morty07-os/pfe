@@ -134,7 +134,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
     
     switch(filterName) {
       case 'priceRange':
-        newFilters.priceRange = [0, 200];
+        newFilters.priceRange = [0, 100000];
         break;
       case 'seatsRange':
         newFilters.seatsRange = [2, 9];
@@ -154,7 +154,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
     return Object.keys(pendingFilters).filter(key => {
       if (key === 'priceRange') {
         return pendingFilters[key] && 
-               (pendingFilters[key][0] > 0 || pendingFilters[key][1] < 200);
+               (pendingFilters[key][0] > 0 || pendingFilters[key][1] < 100000);
       }
       if (key === 'seatsRange') {
         return pendingFilters[key] && 
@@ -171,7 +171,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
   // Format filter value for display
   const getFilterDisplayValue = (key, value) => {
     if (key === 'priceRange') {
-      return `€${value[0]} - €${value[1]}`;
+      return `DZD ${value[0]} - DZD ${value[1]}`;
     } else if (key === 'seatsRange') {
       return `${value[0]} - ${value[1]} seats`;
     } else if (key === 'doorsRange') {
@@ -242,7 +242,12 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         flexDirection: 'column',
         '&:hover': {
           boxShadow: isMobile ? '0 15px 35px rgba(0,0,0,0.2)' : '0 15px 35px rgba(0,0,0,0.12)',
-        }
+        },
+        ...(!isMobile && { 
+          maxWidth: 300, 
+          minWidth: 280, 
+          margin: '0 auto',
+        })
       }}
     >
       {/* Header with gradient background */}
@@ -320,7 +325,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             {Object.entries(pendingFilters).map(([key, value]) => {
               // Skip empty values or default ranges
               if (!value || 
-                  (key === 'priceRange' && value[0] === 0 && value[1] === 200) ||
+                  (key === 'priceRange' && value[0] === 0 && value[1] === 100000) ||
                   (key === 'seatsRange' && value[0] === 2 && value[1] === 9) ||
                   (key === 'doorsRange' && value[0] === 2 && value[1] === 5)) {
                 return null;
@@ -903,69 +908,41 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         
         {/* Price Range Section */}
         <FilterSection 
-          title="Price Range (€)" 
-          icon={<AttachMoneyIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
+          title="Price Range" 
+          icon={<AttachMoneyIcon sx={{ fontSize: '1.1rem', color: '#607d8b' }} />}
+          defaultOpen={true}
         >
-          <Box sx={{ px: 1, mt: 1, position: 'relative' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#64748b', fontSize: '0.75rem' }}>
-                Min: €{pendingFilters.priceRange?.[0] || 0}
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#64748b', fontSize: '0.75rem' }}>
-                Max: €{pendingFilters.priceRange?.[1] || 200}
-              </Typography>
-            </Box>
-            
-            <Slider
-              value={pendingFilters.priceRange || [0, 200]}
-              onChange={handleSliderChange('priceRange')}
-              valueLabelDisplay="auto"
-              min={0}
-              max={200}
-              step={10}
-              sx={{ 
-                color: '#455a64',
-                '& .MuiSlider-thumb': {
-                  height: 16,
-                  width: 16,
-                  '&:hover, &.Mui-focusVisible': {
-                    boxShadow: '0 0 0 8px rgba(69, 90, 100, 0.16)',
-                  },
-                },
-                '& .MuiSlider-valueLabel': {
-                  backgroundColor: '#455a64',
-                  fontSize: '0.7rem',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                }
-              }}
-            />
-            
-            {pendingFilters.priceRange && 
-             (pendingFilters.priceRange[0] !== 0 || pendingFilters.priceRange[1] !== 200) && (
-              <Fade in={true}>
-                <IconButton 
-                  size="small" 
-                  onClick={() => handleRemoveFilter('priceRange')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
-                    bgcolor: '#f1f5f9',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    color: '#64748b',
-                    p: 0.5,
-                    '&:hover': {
-                      bgcolor: '#fee2e2',
-                      color: '#ef4444'
-                    }
-                  }}
-                >
-                  <RestartAltIcon fontSize="small" />
-                </IconButton>
-              </Fade>
-            )}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography sx={{ fontSize: '0.8rem', color: '#546e7a' }}>
+              DZD {pendingFilters.priceRange ? pendingFilters.priceRange[0] : 0}
+            </Typography>
+            <Typography sx={{ fontSize: '0.8rem', color: '#546e7a' }}>
+              DZD {pendingFilters.priceRange ? pendingFilters.priceRange[1] : 100000}
+            </Typography>
           </Box>
+          <Slider
+            name="priceRange"
+            value={pendingFilters.priceRange || [0, 100000]}
+            onChange={handleSliderChange('priceRange')}
+            valueLabelDisplay="auto"
+            min={0}
+            max={100000}
+            step={1000}
+            sx={{
+              color: '#607d8b',
+              '& .MuiSlider-thumb': {
+                backgroundColor: '#455a64',
+                boxShadow: '0px 0px 5px rgba(0,0,0,0.2)'
+              },
+              '& .MuiSlider-track': {
+                backgroundColor: '#78909c'
+              },
+              '& .MuiSlider-rail': {
+                backgroundColor: '#cfd8dc'
+              }
+            }}
+          />
+          
         </FilterSection>
         
         {/* Availability Section */}

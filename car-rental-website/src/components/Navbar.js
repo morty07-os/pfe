@@ -218,16 +218,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
         horizontal: 'center',
       },
       sx: {
-        '& .MuiAlert-message': {
-          fontSize: '1.1rem',
-          fontWeight: 500,
-        },
-        '& .MuiAlert-icon': {
-          fontSize: '1.5rem',
-        },
         minWidth: '350px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-        borderRadius: '12px',
       }
     });
   };
@@ -257,16 +248,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
           horizontal: 'center',
         },
         sx: {
-          '& .MuiAlert-message': {
-            fontSize: '1.1rem',
-            fontWeight: 500,
-          },
-          '& .MuiAlert-icon': {
-            fontSize: '1.5rem',
-          },
           minWidth: '300px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-          borderRadius: '12px',
         }
       });
       // Clear the state to prevent message on refresh/re-navigate
@@ -304,16 +286,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
         horizontal: 'center',
       },
       sx: {
-        '& .MuiAlert-message': {
-          fontSize: '1.1rem',
-          fontWeight: 500,
-        },
-        '& .MuiAlert-icon': {
-          fontSize: '1.5rem',
-        },
         minWidth: '300px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-        borderRadius: '12px',
       }
     });
     
@@ -498,8 +471,41 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
+        anchorOrigin={snackbar.anchorOrigin || { vertical: 'top', horizontal: 'center' }}
+        sx={snackbar.sx || {}}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled" 
+          sx={{
+            width: '100%',
+            bgcolor: snackbar.severity === 'success' ? '#475569' : 
+                    snackbar.severity === 'info' ? '#64748b' : 
+                    snackbar.severity === 'warning' ? '#475569' : '#475569',
+            color: '#fff',
+            boxShadow: '0 10px 30px rgba(15, 23, 42, 0.2)',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            '& .MuiAlert-icon': {
+              color: '#fff',
+              opacity: 0.9,
+              fontSize: '1.5rem'
+            },
+            '& .MuiAlert-message': {
+              fontSize: '1.1rem',
+              fontWeight: 500,
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+            },
+            '& .MuiAlert-action': {
+              color: '#fff',
+              opacity: 0.8,
+              '&:hover': {
+                opacity: 1
+              }
+            }
+          }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
