@@ -296,6 +296,19 @@ export default function AllOffersPage() {
       }
     };
     fetchOffers();
+
+    // Add event listener for car removal
+    const handleCarRemoved = (event) => {
+      console.log('Car removed event received:', event.detail.carId);
+      fetchOffers(); // Re-fetch offers when a car is removed
+    };
+
+    window.addEventListener('carRemoved', handleCarRemoved);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('carRemoved', handleCarRemoved);
+    };
   }, [sidebarFilters]);
 
   const filteredOffers = React.useMemo(() => {

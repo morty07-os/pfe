@@ -75,15 +75,23 @@ const FeedbackDialog = ({ open, onClose, carId, userId, isCarOwner, carName, own
       
       const raterId = localStorage.getItem('userId'); // Assuming rater's ID is stored in localStorage
 
+      console.log('raterId:', raterId);
+      console.log('carId:', carId);
+      console.log('userId:', userId);
+      console.log('userRating:', userRating);
+      console.log('userFeedback:', userFeedback);
+      console.log('carRating:', carRating);
+      console.log('carFeedback:', carFeedback);
+
       // If car owner is rating the renter
       if (isCarOwner) {
         await axios.post(
-          'http://localhost:5001/api/ratings', // Corrected endpoint
+          'http://localhost:5001/api/ratings',
           {
             raterId: raterId, // The owner giving the rating
             ratedUserId: userId, // The renter being rated
             rating: userRating,
-            review: userFeedback, // Map comment to review
+            review: userFeedback,
           },
           {
             headers: {

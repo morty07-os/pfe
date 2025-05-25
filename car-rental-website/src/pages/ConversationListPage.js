@@ -21,6 +21,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 import ConversationDialog from '../components/ConversationDialog';
+import UserInfoDialog from '../components/UserInfoDialog'; // Import UserInfoDialog
 import {
   Chat as ChatIcon,
   Search as SearchIcon,
@@ -88,6 +89,7 @@ const ConversationListPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const navigate = useNavigate();
+  const [userInfoDialogOpen, setUserInfoDialogOpen] = useState(false); // State for UserInfoDialog
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -134,6 +136,7 @@ const ConversationListPage = () => {
 
   const [selectedCarId, setSelectedCarId] = useState(null);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
+  const [selectedUserName, setSelectedUserName] = useState(null);
 
   const handleConversationClick = (conversationKey) => {
     const conversation = conversations[conversationKey];
@@ -148,6 +151,20 @@ const ConversationListPage = () => {
     setSelectedUserId(null);
     setSelectedCarId(null);
     setSelectedConversationId(null);
+  };
+
+  // Function to open UserInfoDialog
+  const handleUserNameClick = (event, userId, userName) => {
+    event.stopPropagation(); // Prevent opening ConversationDialog
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setUserInfoDialogOpen(true);
+  };
+
+  const handleUserInfoDialogClose = () => {
+    setUserInfoDialogOpen(false);
+    setSelectedUserId(null);
+    setSelectedUserName(null);
   };
 
   const formatDate = (dateString) => {
@@ -302,10 +319,21 @@ const ConversationListPage = () => {
                               sx={{ 
                                 flex: 1,
                                 color: !conv.messages[conv.messages.length - 1]?.read ? 'text.primary' : 'inherit',
-                                fontWeight: !conv.messages[conv.messages.length - 1]?.read ? 600 : 'normal'
+                               fontWeight: !conv.messages[conv.messages.length - 1]?.read ? 600 : 'normal'
                               }}
                             >
-                              {conv.otherUser.firstName} {conv.otherUser.lastName}
+                              <Box
+                                component="span"
+                                sx={{
+                                  cursor: 'pointer',
+                                  '&:hover': {
+                                    textDecoration: 'underline',
+                                  },
+                                }}
+                                onClick={(event) => handleUserNameClick(event, conv.otherUser._id, `${conv.otherUser.firstName} ${conv.otherUser.lastName}`)}
+                              >
+                                {conv.otherUser.firstName} {conv.otherUser.lastName}
+                              </Box>
                             </Typography>
                             <TimeStamp>
                               {conv.messages[conv.messages.length - 1]?.read ? (
@@ -387,6 +415,12 @@ const ConversationListPage = () => {
             userId={selectedUserId}
             carId={selectedCarId}
             conversationId={selectedConversationId}
+          />
+          <UserInfoDialog
+            open={userInfoDialogOpen}
+            onClose={handleUserInfoDialogClose}
+            userId={selectedUserId}
+            userName={selectedUserName}
           />
         </Paper>
       </Container>

@@ -56,6 +56,7 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       if (response.ok) {
         setMessage('Sign in successful');
         localStorage.setItem('token', result.token);
+        localStorage.setItem('userId', result.user._id);
         onClose();
         
         const userName = result.user?.firstName || 'User';
