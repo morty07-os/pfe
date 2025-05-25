@@ -152,19 +152,14 @@ export default function CarDetailsPage() {
               `http://localhost:5001/api/ratings/user/${ownerId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
-            // Filter out ratings where the rater is the owner themselves
-            const filteredFeedbacks = (ownerRatingsResponse.data || []).filter(
-              (feedback) => feedback.raterId._id !== ownerId
+            setOwnerFeedbacks(ownerRatingsResponse.data || []);
+
+            const ownerAverageRatingResponse = await axios.get(
+              `http://localhost:5001/api/ratings/average/user/${ownerId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
             );
-            setOwnerFeedbacks(filteredFeedbacks);
-
-            // Calculate average rating based on filtered feedbacks
-            const totalRatings = filteredFeedbacks.length;
-            const sumOfRatings = filteredFeedbacks.reduce((sum, feedback) => sum + feedback.rating, 0);
-            const averageRating = totalRatings > 0 ? sumOfRatings / totalRatings : 0;
-
-            setOwnerAverageRating(averageRating || 0);
-            setOwnerTotalReviews(totalRatings || 0);
+            setOwnerAverageRating(ownerAverageRatingResponse.data.averageRating || 0);
+            setOwnerTotalReviews(ownerAverageRatingResponse.data.totalRatings || 0);
           } catch (ratingsError) {
             console.error('Error fetching owner ratings:', ratingsError);
             setOwnerRatingsError('Failed to load owner ratings.');
@@ -192,12 +187,8 @@ export default function CarDetailsPage() {
   
   // Open user rating dialog
   const handleOpenUserRatingDialog = (userId, userName) => {
-    // Make sure we're using the car owner's ID for ratings, not the current user's ID
-    const ownerId = car?.owner?._id || car?.owner;
-    if (!ownerId) return;
-    
-    setSelectedUserId(ownerId);
-    setSelectedUserName(car.owner?.firstName ? `${car.owner.firstName} ${car.owner.lastName || ''}`.trim() : userName);
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
     setUserRatingDialogOpen(true);
   };
   
@@ -347,21 +338,8 @@ export default function CarDetailsPage() {
       <Box sx={{ 
         bgcolor: '#f8fafc', 
         minHeight: '100vh', 
-        pt: { xs: 3, md: 4 }, 
-        pb: 8,
-        backgroundImage: 'linear-gradient(to bottom, rgba(241, 245, 249, 0.8), rgba(248, 250, 252, 0.95))',
-        backgroundSize: 'cover',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '300px',
-          background: 'linear-gradient(to bottom, rgba(30, 41, 59, 0.05), rgba(30, 41, 59, 0))',
-          zIndex: 0
-        }
+        pt: 4, 
+        pb: 8 
       }}>
         <Container maxWidth="lg">
           <Button 
@@ -370,21 +348,12 @@ export default function CarDetailsPage() {
             sx={{ 
               mb: 3, 
               color: '#475569',
-              fontWeight: 600,
-              borderRadius: 2,
-              py: 0.8,
-              px: 2,
-              bgcolor: 'rgba(255, 255, 255, 0.7)',
-              border: '1px solid rgba(226, 232, 240, 0.8)',
-              boxShadow: '0 2px 6px rgba(71, 85, 105, 0.08)',
+              fontWeight: 500,
               '&:hover': { 
-                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                bgcolor: 'rgba(71, 85, 105, 0.08)',
                 transform: 'translateX(-4px)',
-                boxShadow: '0 4px 12px rgba(71, 85, 105, 0.12)',
               },
               transition: 'all 0.2s ease',
-              zIndex: 1,
-              position: 'relative'
             }}
           >
             Back to results
@@ -403,20 +372,16 @@ export default function CarDetailsPage() {
                 background: isOwnCar 
                   ? 'linear-gradient(135deg, #991b1b 0%, #b91c1c 100%)' 
                   : 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
-                p: { xs: 3, sm: 3.5, md: 4 },
+                p: { xs: 2.5, sm: 3 },
                 color: 'white',
                 position: 'relative',
                 overflow: 'hidden',
-                backgroundImage: isOwnCar 
-                  ? 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%23ffffff\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' 
-                  : 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%23ffffff\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
-                backgroundSize: '200px 200px',
                 '&::after': {
                   content: '""',
                   position: 'absolute',
                   top: 0,
                   right: 0,
-                  width: '40%',
+                  width: '30%',
                   height: '100%',
                   background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 100%)',
                   transform: 'skewX(-15deg)',
@@ -441,10 +406,7 @@ export default function CarDetailsPage() {
                   sx={{
                     fontWeight: 800,
                     color: 'white',
-                    fontSize: { xs: '1.75rem', sm: '2.125rem', md: '2.5rem' },
-                    letterSpacing: '-0.02em',
-                    textShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                    mb: 0.5
+                    fontSize: { xs: '1.75rem', sm: '2.125rem' },
                   }}
                 >
                   {car.carName}
@@ -488,55 +450,15 @@ export default function CarDetailsPage() {
                 </Box>
               </Box>
 
-              <Box sx={{ 
-                p: { xs: 2.5, sm: 3.5 }, 
-                backgroundColor: '#fff',
-                borderBottom: '1px solid rgba(226, 232, 240, 0.8)' 
-              }}>
-                <Typography variant="h6" component="h3" sx={{ 
-                  fontWeight: 700, 
-                  color: '#1e293b', 
-                  mb: 2, 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  position: 'relative',
-                  '&:after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: -8,
-                    left: 0,
-                    width: '40px',
-                    height: '3px',
-                    backgroundColor: '#475569',
-                    borderRadius: '2px'
-                  }
-                }}>
-                  <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  bgcolor: 'rgba(71, 85, 105, 0.1)', 
-                  borderRadius: '50%',
-                  p: 1,
-                  mr: 1.5,
-                  width: 40,
-                  height: 40
-                }}>
-                  <InfoOutlinedIcon sx={{ color: '#475569', fontSize: '1.3rem' }} />
-                </Box> 
-                About this Car
+              <Box sx={{ p: { xs: 2, sm: 3 }, backgroundColor: '#fff' }}>
+                <Typography variant="h6" component="h3" sx={{ fontWeight: 600, color: '#374151', mb: 1.5, display: 'flex', alignItems: 'center' }}>
+                  <InfoOutlinedIcon sx={{ mr: 1, color: 'inherit', fontSize: '1.3rem' }} /> About this Car
                 </Typography>
                 <Paper elevation={0} sx={{
                   backgroundColor: 'rgba(243, 244, 246, 0.7)', 
-                  p: { xs: 2, sm: 2.5 }, 
+                  p: { xs: 1.5, sm: 2 }, 
                   borderRadius: 2, 
-                  border: '1px solid rgba(226, 232, 240, 0.8)',
-                  boxShadow: '0 2px 8px rgba(71, 85, 105, 0.05)',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
-                    backgroundColor: 'rgba(248, 250, 252, 0.8)'
-                  }
+                  border: '1px solid rgba(229, 231, 235, 0.9)' 
                 }}>
                   <Typography variant="body1" sx={{ 
                     color: '#4b5563', 
@@ -547,12 +469,11 @@ export default function CarDetailsPage() {
                     {car.description || 'No description available for this vehicle.'}
                   </Typography>
                 </Paper>
-                <Divider sx={{ my: 3, borderColor: 'rgba(226, 232, 240, 0.8)' }} />
+                <Divider sx={{ my: 3 }} />
               </Box>
 
-              <React.Fragment>
-              <Box sx={{ p: { xs: 2.5, sm: 3.5 }, pt: 0 }}> {/* Main content area for Grid */
-                <Grid container spacing={{ xs: 2.5, md: 4 }}>
+              <Box sx={{ p: { xs: 2, sm: 3 }, pt: 0 }}> {/* Main content area for Grid */}
+                <Grid container spacing={{ xs: 2, md: 4 }}>
                   <Grid item xs={12} md={6}>
                     <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
                       <CardMedia
@@ -561,16 +482,11 @@ export default function CarDetailsPage() {
                         alt={car.carName}
                         sx={{
                           borderRadius: 2,
-                          boxShadow: '0 8px 24px rgba(71, 85, 105, 0.15)',
-                          border: '1px solid rgba(226, 232, 240, 0.8)',
-                          height: { xs: 240, sm: 320, md: 380 },
+                          boxShadow: '0 3px 18px rgba(71, 85, 105, 0.1)',
+                          border: '1px solid #e3e8ee',
+                          height: { xs: 220, sm: 300, md: 340 },
                           objectFit: 'cover',
-                          transition: 'all 0.4s ease',
-                          filter: 'brightness(1.02) contrast(1.05)',
-                          '&:hover': {
-                            transform: 'scale(1.02)',
-                            filter: 'brightness(1.05) contrast(1.08)',
-                          }
+                          transition: 'transform 0.3s ease',
                         }}
                       />
                       
@@ -619,19 +535,14 @@ export default function CarDetailsPage() {
                       <Box sx={{ 
                         display: 'flex', 
                         gap: 1.5, 
-                        mt: 2.5, 
+                        mt: 2, 
                         overflowX: 'auto', 
-                        pb: 1.5,
-                        px: 0.5,
+                        pb: 1,
                         '&::-webkit-scrollbar': {
                           height: 6,
                         },
                         '&::-webkit-scrollbar-thumb': {
                           backgroundColor: 'rgba(71, 85, 105, 0.2)',
-                          borderRadius: 3,
-                        },
-                        '&::-webkit-scrollbar-track': {
-                          backgroundColor: 'rgba(226, 232, 240, 0.4)',
                           borderRadius: 3,
                         },
                       }}>
@@ -658,15 +569,13 @@ export default function CarDetailsPage() {
                               image={`http://localhost:5001/${img}`}
                               alt={`Car image ${index + 1}`}
                               sx={{
-                                width: 80,
-                                height: 80,
+                                width: 70,
+                                height: 70,
                                 objectFit: 'cover',
                                 opacity: selectedImageIndex === index ? 1 : 0.7,
-                                transition: 'all 0.3s ease',
-                                filter: selectedImageIndex === index ? 'brightness(1.05) contrast(1.05)' : 'none',
+                                transition: 'opacity 0.2s ease',
                                 '&:hover': {
                                   opacity: 1,
-                                  filter: 'brightness(1.05) contrast(1.05)',
                                 }
                               }}
                             />
@@ -677,62 +586,28 @@ export default function CarDetailsPage() {
                     
                     <Box sx={{ 
                       display: 'flex', 
-                      flexDirection: { xs: 'column', sm: 'row' },
                       justifyContent: 'space-between', 
-                      alignItems: { xs: 'stretch', sm: 'center' },
-                      gap: { xs: 2, sm: 0 },
+                      alignItems: 'center',
                       mt: 3,
-                      p: { xs: 2.5, sm: 3 },
+                      p: { xs: 2, sm: 3 },
                       borderRadius: 2,
-                      background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                      boxShadow: '0 4px 20px rgba(71, 85, 105, 0.12)',
-                      border: '1px solid rgba(226, 232, 240, 0.8)',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        width: '30%',
-                        height: '100%',
-                        background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 100%)',
-                        transform: 'skewX(-15deg)',
-                        display: { xs: 'none', md: 'block' }
-                      }
+                      background: 'linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 100%)',
+                      boxShadow: '0 2px 10px rgba(71, 85, 105, 0.08)',
                     }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          bgcolor: 'rgba(30, 41, 59, 0.08)', 
-                          borderRadius: '50%',
-                          p: 1,
-                          width: 45,
-                          height: 45
-                        }}>
-                          <AttachMoneyIcon sx={{ color: '#1e293b', fontSize: { xs: 24, sm: 26 } }} />
-                        </Box>
-                        <Box>
-                          <Typography
-                            variant="h5"
-                            sx={{
-                              fontWeight: 800,
-                              color: '#1e293b',
-                              fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                              letterSpacing: '-0.02em',
-                              lineHeight: 1.2
-                            }}
-                          >
-                            {new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', maximumFractionDigits: 0 }).format(car.price)}
-                          </Typography>
-                          <Typography variant="subtitle2" sx={{ color: '#64748b', fontWeight: 500, mt: 0.5 }}>
-                            per day
-                          </Typography>
-                        </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <AttachMoneyIcon sx={{ color: '#1e293b', fontSize: { xs: 24, sm: 28 } }} />
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            fontWeight: 800,
+                            color: '#1e293b',
+                            fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                          }}
+                        >
+                          €{car.price}/day
+                        </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', gap: 2, zIndex: 1, position: 'relative' }}>
+                      <Box sx={{ display: 'flex', gap: 2 }}>
                         <Tooltip 
                           title={isOwnCar ? "You cannot book your own car" : ""}
                           placement="top"
@@ -748,21 +623,19 @@ export default function CarDetailsPage() {
                                   ? '#e0e0e0' 
                                   : 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
                                 color: isOwnCar ? '#a0a0a0' : '#fff',
-                                fontWeight: 700,
-                                py: { xs: 1, sm: 1.2 },
-                                px: { xs: 2.5, sm: 3.5 },
+                                fontWeight: 600,
+                                py: { xs: 0.8, sm: 1 },
+                                px: { xs: 2, sm: 3 },
                                 textTransform: 'none',
-                                fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                                fontSize: { xs: '0.8rem', sm: '0.9rem' },
                                 whiteSpace: 'nowrap',
-                                boxShadow: '0 4px 12px rgba(30, 41, 59, 0.2)',
                                 '&:hover': {
                                   background: isOwnCar 
                                     ? '#e0e0e0' 
                                     : 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
-                                  boxShadow: isOwnCar ? 'none' : '0 8px 16px rgba(30, 41, 59, 0.25)',
-                                  transform: isOwnCar ? 'none' : 'translateY(-2px)'
+                                  boxShadow: isOwnCar ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
                                 },
-                                transition: 'all 0.3s ease',
+                                transition: 'all 0.2s ease-in-out',
                                 cursor: isOwnCar ? 'not-allowed' : 'pointer',
                               }}
                             >
@@ -803,109 +676,43 @@ export default function CarDetailsPage() {
                       <Typography
                         variant="h6"
                         sx={{
-                          mb: 3,
+                          mb: 2.5,
                           fontWeight: 700,
                           color: '#1e293b',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 1.5,
+                          gap: 1,
                           fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                          position: 'relative',
-                          '&:after': {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -8,
-                            left: 0,
-                            width: '40px',
-                            height: '3px',
-                            backgroundColor: '#475569',
-                            borderRadius: '2px'
-                          }
                         }}
                       >
                         <DirectionsCarIcon sx={{ color: '#475569' }} /> 
                         Vehicle Specifications
                       </Typography>
                       
-                      <Box sx={{ mb: 2.5 }}>
-                        <Paper 
-                          elevation={0} 
-                          sx={{ 
-                            p: 2, 
-                            borderRadius: 2,
-                            border: '1px solid rgba(226, 232, 240, 0.8)',
-                            background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            boxShadow: '0 2px 8px rgba(71, 85, 105, 0.05)',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
-                              transform: 'translateY(-2px)'
-                            }
-                          }}
-                        >
-                          <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            bgcolor: 'rgba(71, 85, 105, 0.1)', 
-                            borderRadius: '50%',
-                            p: 1,
-                            width: 40,
-                            height: 40
-                          }}>
-                            <DirectionsCarIcon sx={{ color: '#475569' }} />
-                          </Box>
-                          <Box>
-                            <Typography sx={{ fontWeight: 700, color: '#1e293b', fontSize: '1rem' }}>
-                              {car.brand} {car.carName}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748b', display: 'block', fontSize: '0.8rem', mt: 0.5 }}>
-                              {car.year} • {car.transmission} • {car.energy}
-                            </Typography>
-                          </Box>
-                        </Paper>
-                      </Box>
-                      
-                      <Grid container spacing={2.5}>
+                      <Grid container spacing={2}>
                         <Grid item xs={6}>
                           <Paper 
                             elevation={0}
                             sx={{ 
-                              p: 2.5, 
+                              p: 2, 
                               borderRadius: 2, 
                               height: '100%',
                               border: '1px solid #e2e8f0',
-                              transition: 'all 0.3s ease',
-                              background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+                              transition: 'all 0.2s ease',
                               '&:hover': {
-                                boxShadow: '0 8px 16px rgba(71, 85, 105, 0.12)',
+                                boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
                                 borderColor: '#cbd5e1',
-                                transform: 'translateY(-2px)'
                               }
                             }}
                           >
                             <Tooltip title="Passenger Capacity" arrow>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center',
-                                  bgcolor: 'rgba(71, 85, 105, 0.08)', 
-                                  borderRadius: '50%',
-                                  p: 1,
-                                  width: 36,
-                                  height: 36
-                                }}>
-                                  <EventSeatIcon sx={{ color: '#475569', fontSize: '1.2rem' }} />
-                                </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <EventSeatIcon sx={{ color: '#475569' }} />
                                 <Box>
-                                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#475569', letterSpacing: '-0.01em' }}>
+                                  <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
                                     {car.seats} Seats
                                   </Typography>
-                                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block', fontSize: '0.75rem', mt: 0.5 }}>
+                                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
                                     Passenger capacity
                                   </Typography>
                                 </Box>
@@ -918,38 +725,25 @@ export default function CarDetailsPage() {
                           <Paper 
                             elevation={0}
                             sx={{ 
-                              p: 2.5, 
+                              p: 2, 
                               borderRadius: 2, 
                               height: '100%',
                               border: '1px solid #e2e8f0',
-                              transition: 'all 0.3s ease',
-                              background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+                              transition: 'all 0.2s ease',
                               '&:hover': {
-                                boxShadow: '0 8px 16px rgba(71, 85, 105, 0.12)',
+                                boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
                                 borderColor: '#cbd5e1',
-                                transform: 'translateY(-2px)'
                               }
                             }}
                           >
                             <Tooltip title="Number of Doors" arrow>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center',
-                                  bgcolor: 'rgba(71, 85, 105, 0.08)', 
-                                  borderRadius: '50%',
-                                  p: 1,
-                                  width: 36,
-                                  height: 36
-                                }}>
-                                  <DoorFrontIcon sx={{ color: '#475569', fontSize: '1.2rem' }} />
-                                </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <DoorFrontIcon sx={{ color: '#475569' }} />
                                 <Box>
-                                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#475569', letterSpacing: '-0.01em' }}>
+                                  <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
                                     {car.doors} Doors
                                   </Typography>
-                                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block', fontSize: '0.75rem', mt: 0.5 }}>
+                                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
                                     Vehicle access
                                   </Typography>
                                 </Box>
@@ -962,38 +756,25 @@ export default function CarDetailsPage() {
                           <Paper 
                             elevation={0}
                             sx={{ 
-                              p: 2.5, 
+                              p: 2, 
                               borderRadius: 2, 
                               height: '100%',
                               border: '1px solid #e2e8f0',
-                              transition: 'all 0.3s ease',
-                              background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+                              transition: 'all 0.2s ease',
                               '&:hover': {
-                                boxShadow: '0 8px 16px rgba(71, 85, 105, 0.12)',
+                                boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
                                 borderColor: '#cbd5e1',
-                                transform: 'translateY(-2px)'
                               }
                             }}
                           >
                             <Tooltip title="Fuel Type" arrow>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center',
-                                  bgcolor: 'rgba(71, 85, 105, 0.08)', 
-                                  borderRadius: '50%',
-                                  p: 1,
-                                  width: 36,
-                                  height: 36
-                                }}>
-                                  {getFuelIcon(car.energy)}
-                                </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                {getFuelIcon(car.energy)}
                                 <Box>
-                                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#475569', letterSpacing: '-0.01em' }}>
+                                  <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
                                     {car.energy || 'Gasoline'}
                                   </Typography>
-                                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block', fontSize: '0.75rem', mt: 0.5 }}>
+                                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
                                     Fuel type
                                   </Typography>
                                 </Box>
@@ -1006,38 +787,25 @@ export default function CarDetailsPage() {
                           <Paper 
                             elevation={0}
                             sx={{ 
-                              p: 2.5, 
+                              p: 2, 
                               borderRadius: 2, 
                               height: '100%',
                               border: '1px solid #e2e8f0',
-                              transition: 'all 0.3s ease',
-                              background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+                              transition: 'all 0.2s ease',
                               '&:hover': {
-                                boxShadow: '0 8px 16px rgba(71, 85, 105, 0.12)',
+                                boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
                                 borderColor: '#cbd5e1',
-                                transform: 'translateY(-2px)'
                               }
                             }}
                           >
                             <Tooltip title="Transmission Type" arrow>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center',
-                                  bgcolor: 'rgba(71, 85, 105, 0.08)', 
-                                  borderRadius: '50%',
-                                  p: 1,
-                                  width: 36,
-                                  height: 36
-                                }}>
-                                  <SettingsIcon sx={{ color: '#475569', fontSize: '1.2rem' }} />
-                                </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <SettingsIcon sx={{ color: '#475569' }} />
                                 <Box>
-                                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#475569', letterSpacing: '-0.01em' }}>
+                                  <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
                                     {car.transmission || 'Automatic'}
                                   </Typography>
-                                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block', fontSize: '0.75rem', mt: 0.5 }}>
+                                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
                                     Transmission
                                   </Typography>
                                 </Box>
@@ -1133,89 +901,99 @@ export default function CarDetailsPage() {
                       <Paper 
                         elevation={0}
                         sx={{ 
-                          p: 3, 
-                          mt: 3, 
-                          borderRadius: 2, 
+                          p: 2.5, 
+                          borderRadius: 2,
                           border: '1px solid #e2e8f0',
-                          background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-                          boxShadow: '0 4px 16px rgba(71, 85, 105, 0.08)',
-                          transition: 'all 0.3s ease',
+                          transition: 'all 0.2s ease',
                           '&:hover': {
-                            boxShadow: '0 8px 24px rgba(71, 85, 105, 0.12)',
-                            transform: 'translateY(-2px)'
+                            boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
+                            borderColor: '#cbd5e1',
                           }
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                          <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            bgcolor: 'rgba(71, 85, 105, 0.1)', 
-                            borderRadius: '50%',
-                            p: 1,
-                            width: 40,
-                            height: 40
-                          }}>
-                            <PersonIcon sx={{ color: '#475569' }} />
-                          </Box>
+                          <PersonIcon sx={{ color: '#475569', mt: 0.5 }} />
                           <Box>
-                            <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
+                            <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569', mb: 1 }}>
                               Car Owner
                             </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Avatar 
-                                src={car.owner?.profileImage} 
-                                sx={{ 
-                                  width: 60, 
-                                  height: 60, 
-                                  bgcolor: '#475569',
-                                  border: '2px solid #fff',
-                                  boxShadow: '0 2px 10px rgba(71, 85, 105, 0.15)'
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                mt: 2,
+                                mb: 0,
+                              }}
+                              onClick={() => {
+                                if (!car.owner) return; // Don't open dialog if owner is undefined
+                                
+                                const ownerId = typeof car.owner === 'string' ? car.owner : (car.owner._id || '');
+                                const ownerName = typeof car.owner === 'string' ? 
+                                  (car.ownerName || 'Unknown Owner') : 
+                                  (car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : (car.ownerName || 'Unknown Owner'));
+                                
+                                handleOpenUserRatingDialog(ownerId, ownerName);
+                              }}
+                            >
+                              <Avatar
+                                src={typeof car.owner === 'string' || !car.owner ? null : car.owner.avatar}
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  bgcolor: 'primary.main',
+                                  color: 'primary.contrastText',
+                                  fontSize: '1rem'
                                 }}
-                              />
-                              <Box>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-                                  {car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : car.ownerName || 'Unknown Owner'}
-                                </Typography>
-                                {ownerRatingsLoading ? (
-                                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                                      <Skeleton variant="text" width={100} height={20} />
-                                      <Skeleton variant="text" width={50} height={20} sx={{ ml: 1 }} />
-                                  </Box>
-                                ) : ownerRatingsError ? (
-                                  <Typography variant="caption" color="error" sx={{ mt: 1 }}>
-                                      {ownerRatingsError}
-                                  </Typography>
-                                ) : (
-                                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                                      <Rating
-                                          value={ownerAverageRating}
-                                          precision={0.5}
-                                          readOnly
-                                          size="small"
-                                          sx={{ mr: 0.5 }}
-                                      />
-                                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>
-                                          {ownerAverageRating.toFixed(1)}
-                                      </Typography>
-                                      <Typography variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>
-                                          ({ownerTotalReviews} {ownerTotalReviews === 1 ? 'review' : 'reviews'})
-                                      </Typography>
-                                  </Box>
-                                )}
-                              </Box>
+                              >
+                                {typeof car.owner === 'string' ? car.ownerName?.[0] : 
+                                 car.owner?.firstName?.[0] || (car.ownerName ? car.ownerName[0] : 'U')}
+                              </Avatar>
+                              <Typography
+                                variant="subtitle1"
+                                className="owner-name"
+                                sx={{
+                                  fontWeight: 500,
+                                  transition: 'color 0.2s'
+                                }}
+                              >
+                                {typeof car.owner === 'string' ? car.ownerName : 
+                                 (car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : car.ownerName || 'Unknown Owner')}
+                              </Typography>
                             </Box>
+                            {ownerRatingsLoading ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                    <Skeleton variant="text" width={100} height={20} />
+                                    <Skeleton variant="text" width={50} height={20} sx={{ ml: 1 }} />
+                                </Box>
+                            ) : ownerRatingsError ? (
+                                <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+                                    {ownerRatingsError}
+                                </Typography>
+                            ) : (
+                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                    <Rating
+                                        value={ownerAverageRating}
+                                        precision={0.5}
+                                        readOnly
+                                        size="small"
+                                        sx={{ mr: 0.5 }}
+                                    />
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>
+                                        {ownerAverageRating.toFixed(1)}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>
+                                        ({ownerTotalReviews} {ownerTotalReviews === 1 ? 'review' : 'reviews'})
+                                    </Typography>
+                                </Box>
+                            )}
                           </Box>
                         </Box>
                       </Paper>
                     </CardContent>
                   </Grid>
                 </Grid>
-              </Box>
 
-              {/* Owner Feedbacks Section */}
-              <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+                {/* Owner Feedbacks Section */}
                 <Paper
                     elevation={0}
                     sx={{
@@ -1223,12 +1001,10 @@ export default function CarDetailsPage() {
                         borderRadius: 2,
                         mt: 3,
                         border: '1px solid #e2e8f0',
-                        background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-                        boxShadow: '0 4px 16px rgba(71, 85, 105, 0.08)',
-                        transition: 'all 0.3s ease',
+                        transition: 'all 0.2s ease',
                         '&:hover': {
-                            boxShadow: '0 8px 24px rgba(71, 85, 105, 0.12)',
-                            transform: 'translateY(-2px)'
+                            boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
+                            borderColor: '#cbd5e1',
                         }
                     }}
                 >
@@ -1243,19 +1019,7 @@ export default function CarDetailsPage() {
                             gap: 1,
                         }}
                     >
-                        <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        bgcolor: 'rgba(71, 85, 105, 0.1)', 
-                        borderRadius: '50%',
-                        p: 1,
-                        width: 40,
-                        height: 40
-                      }}>
-                        <PersonIcon sx={{ color: '#475569' }} />
-                      </Box>
-                      Car Owner Feedback
+                        <PersonIcon sx={{ color: '#475569' }} /> Owner Feedback
                     </Typography>
 
                     {ownerRatingsLoading ? (
@@ -1357,12 +1121,21 @@ export default function CarDetailsPage() {
                         </Grid>
                     )}
                 </Paper>
+
+                {/* Removed 'About This Vehicle' section */}
               </Box>
-              </React.Fragment>
             </Paper>
           </Fade>
         </Container>
       </Box>
+      
+      {/* UserRatingDialog is no longer needed as we display ratings directly */}
+      {/* <UserRatingDialog
+        open={userRatingDialogOpen}
+        onClose={handleCloseUserRatingDialog}
+        userId={selectedUserId}
+        userName={selectedUserName}
+      /> */}
     </>
   );
 }
