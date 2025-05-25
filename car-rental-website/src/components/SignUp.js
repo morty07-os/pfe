@@ -11,6 +11,7 @@ import {
   IconButton,
   InputAdornment,
   useTheme,
+  FormHelperText,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -18,6 +19,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
+import PhoneIcon from '@mui/icons-material/Phone';
 import WilayaDropdown from './WilayaDropdown';
 
 const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
@@ -36,10 +38,27 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [focused, setFocused] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  
+  // Validate Algerian phone number
+  const validateAlgerianPhone = (phoneNumber) => {
+    // Remove any spaces or special characters
+    const cleanedNumber = phoneNumber.replace(/\s+/g, '').replace(/[^\d]/g, '');
+    
+    // Check if it's a valid Algerian mobile number
+    // Should start with 0 followed by 5, 6, or 7 and have a total of 10 digits
+    const isValid = /^0[5-7]\d{8}$/.test(cleanedNumber);
+    
+    if (!isValid && cleanedNumber.length > 0) {
+      return 'Please enter a valid Algerian phone number (e.g., 05XXXXXXXX, 06XXXXXXXX, or 07XXXXXXXX)';
+    }
+    return '';
+  };
 
   // Handle input changes
   const handleChange = (e) => {
     const { name, value, files } = e.target;
+    
     if (files) {
       setFormData((prev) => ({
         ...prev,
@@ -50,6 +69,11 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
         ...prev,
         [name]: value,
       }));
+      
+      // Validate phone number if that's what changed
+      if (name === 'phone') {
+        setPhoneError(validateAlgerianPhone(value));
+      }
     }
   };
 
@@ -60,6 +84,28 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
     // Check if passwords match
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords don't match");
+      return;
+    }
+
+    // Validate age (must be over 18)
+    const birthDate = new Date(formData.birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    if (age < 18) {
+      alert("You must be at least 18 years old to register.");
+      return;
+    }
+    
+    // Validate phone number
+    const phoneValidationError = validateAlgerianPhone(formData.phone);
+    if (phoneValidationError) {
+      setPhoneError(phoneValidationError);
+      alert("Please enter a valid Algerian phone number.");
       return;
     }
 
@@ -242,6 +288,33 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
                 value={formData.phone}
                 onChange={handleChange}
                 variant="outlined"
+                placeholder="05XXXXXXXX"
+                error={!!phoneError}
+                helperText={phoneError || "Enter Algerian mobile number (05, 06, or 07)"}
+                onFocus={() => setFocused('phone')}
+                onBlur={() => setFocused('')}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneIcon
+                        sx={{
+                          color: focused === 'phone' ? '#475569' : '#94a3b8',
+                          transition: 'color 0.3s ease',
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': {
+                      borderColor: '#94a3b8',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#475569',
+                    },
+                  },
+                }}
               />
             </Box>
 

@@ -314,6 +314,9 @@ export default function AllOffersPage() {
   const filteredOffers = React.useMemo(() => {
     let tempOffers = [...offers];
 
+    // Filter out cars without an owner
+    tempOffers = tempOffers.filter(offer => offer.owner);
+
     // Apply category filter from URL query param first
     if (categoryFilter) {
       tempOffers = tempOffers.filter(offer =>

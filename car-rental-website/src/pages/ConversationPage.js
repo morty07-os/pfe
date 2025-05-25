@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {
   Box,
@@ -25,6 +25,7 @@ import Navbar from '../components/Navbar';
 
 const ConversationPage = () => {
   const { carId } = useParams();
+  const location = useLocation();
   const [car, setCar] = useState(null);
   const [owner, setOwner] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +34,7 @@ const ConversationPage = () => {
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef(null);
   const [conversationId, setConversationId] = useState('');
+  const [bookingDetails, setBookingDetails] = useState(null);
 
   const fetchMessages = React.useCallback(async (page = 1, limit = 10) => {
     if (!carId || !conversationId) {
@@ -109,6 +111,24 @@ const ConversationPage = () => {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages]);
+
+  useEffect(() => {
+    if (location.state) {
+      const { startDate, endDate, totalCost } = location.state;
+      if (startDate && endDate) {
+        const start = dayjs(startDate);
+        const end = dayjs(endDate);
+        const days = end.diff(start, 'day') + 1; // Include both start and end days
+        
+        setBookingDetails({
+          startDate: start,
+          endDate: end,
+          days,
+          totalCost
+        });
+      }
+    }
+  }, [location.state]);
 
   const handleGoBack = () => {
     navigate(-1);
@@ -435,6 +455,75 @@ const ConversationPage = () => {
                             </Box>
                           </Box>
                         </Box>
+                        
+                        {bookingDetails && (
+                          <Box sx={{ mt: 3 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1e293b', position: 'relative', display: 'inline-block' }}>
+                              Booking Details
+                              <Box sx={{ position: 'absolute', bottom: -4, left: 0, width: '40%', height: '2px', background: 'linear-gradient(90deg, #475569 0%, rgba(100, 116, 139, 0.3) 100%)', borderRadius: '2px' }} />
+                            </Typography>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              gap: 1.5,
+                              p: 2,
+                              bgcolor: 'rgba(241, 245, 249, 0.7)', 
+                              borderRadius: 2,
+                              border: '1px solid rgba(203, 213, 225, 0.4)',
+                              boxShadow: '0 2px 8px rgba(71, 85, 105, 0.06)'
+                            }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box sx={{ 
+                                  width: 40, 
+                                  height: 40, 
+                                  borderRadius: '50%', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center',
+                                  bgcolor: 'rgba(71, 85, 105, 0.1)'
+                                }}>
+                                  <CalendarMonthIcon sx={{ color: '#475569', fontSize: '1.3rem' }} />
+                                </Box>
+                                <Box>
+                                  <Typography sx={{ fontSize: '0.85rem', color: '#64748b', mb: 0.5 }}>
+                                    Rental Period
+                                  </Typography>
+                                  <Typography sx={{ fontWeight: 600, color: '#1e293b' }}>
+                                    {bookingDetails.startDate.format('DD MMM YYYY')} - {bookingDetails.endDate.format('DD MMM YYYY')}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: '0.85rem', color: '#64748b', mt: 0.5 }}>
+                                    <strong>{bookingDetails.days} {bookingDetails.days === 1 ? 'day' : 'days'}</strong>
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box sx={{ 
+                                  width: 40, 
+                                  height: 40, 
+                                  borderRadius: '50%', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center',
+                                  bgcolor: 'rgba(71, 85, 105, 0.1)'
+                                }}>
+                                  <AttachMoneyIcon sx={{ color: '#475569', fontSize: '1.3rem' }} />
+                                </Box>
+                                <Box>
+                                  <Typography sx={{ fontSize: '0.85rem', color: '#64748b', mb: 0.5 }}>
+                                    Total Cost
+                                  </Typography>
+                                  <Typography sx={{ fontWeight: 700, color: '#1e293b', fontSize: '1.1rem' }}>
+                                    DZD {bookingDetails.totalCost?.toLocaleString()}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: '0.85rem', color: '#64748b', mt: 0.5 }}>
+                                    DZD {car?.price?.toLocaleString()} × {bookingDetails.days} {bookingDetails.days === 1 ? 'day' : 'days'}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                          </Box>
+                        )}
                       </Box>
                     </Box>
                   </Paper>

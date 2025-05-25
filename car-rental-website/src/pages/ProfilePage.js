@@ -19,6 +19,8 @@ import {
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { PostCarDialog } from '../components/PostCarDialog';
+import ConversationDialog from '../components/ConversationDialog';
 
 // Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -82,6 +84,9 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [userCars, setUserCars] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
+  const [isPostCarDialogOpen, setIsPostCarDialogOpen] = useState(false); // New state for dialog
+  const [conversations, setConversations] = useState([]); // New state for conversations
+  const [selectedConversation, setSelectedConversation] = useState(null); // New state for selected conversation
   const navigate = useNavigate();
 
   const fetchProfile = async () => {
@@ -118,9 +123,29 @@ const ProfilePage = () => {
     }
   };
 
+  const fetchConversations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5001/api/messages/conversations', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setConversations(data);
+      } else {
+        console.error(data.error || 'Failed to fetch conversations');
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error.message);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
     fetchUserCars();
+    fetchConversations(); // Fetch conversations on component mount
   }, []);
 
   const handleLogout = async () => {
@@ -477,7 +502,7 @@ const ProfilePage = () => {
                         variant="contained" 
                         size="small"
                         startIcon={<AddCircleIcon />}
-                        onClick={() => navigate('/add-car')}
+                        onClick={() => setIsPostCarDialogOpen(true)} // Open dialog
                         sx={{ 
                           bgcolor: 'rgba(226, 232, 240, 0.15)', 
                           color: 'white',
@@ -503,7 +528,7 @@ const ProfilePage = () => {
                           <Button
                             variant="contained"
                             startIcon={<AddCircleIcon />}
-                            onClick={() => navigate('/add-car')}
+                            onClick={() => setIsPostCarDialogOpen(true)} // Open dialog
                             sx={{
                               bgcolor: '#334155',
                               '&:hover': { bgcolor: '#1e293b' },
@@ -606,7 +631,7 @@ const ProfilePage = () => {
                           <Button
                             variant="contained"
                             startIcon={<AddCircleIcon />}
-                            onClick={() => navigate('/add-car')}
+                            onClick={() => setIsPostCarDialogOpen(true)} // Open dialog
                             sx={{
                               alignSelf: 'flex-start',
                               mt: 2,
@@ -690,269 +715,436 @@ const ProfilePage = () => {
           {/* Other tab content would go here */}
           {activeTab === 1 && (
             <Box>
-              <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: '#0f172a', mb: 3 }}>
+              <Typography 
+                variant="h5" 
+                component="h2" 
+                sx={{ 
+                  fontWeight: 700, 
+                  color: '#334155',
+                  mb: 3,
+                  position: 'relative',
+                  display: 'inline-block',
+                  '&:after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: -8,
+                    left: 0,
+                    width: '60px',
+                    height: '4px',
+                    backgroundColor: '#475569',
+                    borderRadius: '2px'
+                  }
+                }}
+              >
                 My Vehicles
               </Typography>
-              {/* Vehicles content */}
-            </Box>
-          )}
-          
-          {activeTab === 2 && (
-            <Box>
-              <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: '#334155', mb: 3, position: 'relative', display: 'inline-block', '&:after': { content: '""', position: 'absolute', bottom: -8, left: 0, width: '60px', height: '4px', backgroundColor: '#475569', borderRadius: '2px' } }}>
-                Chats
-              </Typography>
               
-              {/* Chat Interface */}
               <Grid container spacing={3}>
-                {/* Chat List */}
-                <Grid item xs={12} md={4}>
-                  <Paper elevation={2} sx={{ height: '100%', borderRadius: 2, overflow: 'hidden' }}>
-                    <Box sx={{ p: 2, bgcolor: '#1e293b', color: 'white' }}>
-                      <Typography variant="h6">Recent Conversations</Typography>
-                    </Box>
-                    <Box sx={{ height: '500px', overflowY: 'auto' }}>
-                      {/* Sample conversation items */}
-                      <Box 
-                        sx={{ 
-                          p: 2, 
-                          borderBottom: '1px solid #e2e8f0', 
-                          cursor: 'pointer',
-                          bgcolor: '#f8fafc',
-                          '&:hover': { bgcolor: '#f1f5f9' }
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: '#475569' }}>JD</Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>John Doe</Typography>
-                              <Typography variant="caption" sx={{ color: '#64748b' }}>2h ago</Typography>
-                            </Box>
-                            <Typography variant="body2" noWrap sx={{ color: '#475569' }}>
-                              BMW X5 • Booking Confirmed
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                      
-                      <Box 
-                        sx={{ 
-                          p: 2, 
-                          borderBottom: '1px solid #e2e8f0', 
-                          cursor: 'pointer',
-                          '&:hover': { bgcolor: '#f1f5f9' }
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: '#64748b' }}>AS</Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Alice Smith</Typography>
-                              <Typography variant="caption" sx={{ color: '#64748b' }}>Yesterday</Typography>
-                            </Box>
-                            <Typography variant="body2" noWrap sx={{ color: '#475569' }}>
-                              Mercedes C-Class • Pending
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                      
-                      <Box 
-                        sx={{ 
-                          p: 2, 
-                          borderBottom: '1px solid #e2e8f0', 
-                          cursor: 'pointer',
-                          '&:hover': { bgcolor: '#f1f5f9' }
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: '#94a3b8' }}>RJ</Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Robert Johnson</Typography>
-                              <Typography variant="caption" sx={{ color: '#64748b' }}>3 days ago</Typography>
-                            </Box>
-                            <Typography variant="body2" noWrap sx={{ color: '#475569' }}>
-                              Audi A4 • Completed
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Box>
-                  </Paper>
-                </Grid>
-                
-                {/* Chat Messages */}
-                <Grid item xs={12} md={8}>
-                  <Paper 
-                    elevation={3} 
-                    sx={{ 
-                      p: 2, 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      height: '500px',
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      background: '#fff'
-                    }}
-                  >
-                    {/* Selected Chat Header */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pb: 2, borderBottom: '1px solid #e2e8f0' }}>
-                      <Avatar sx={{ bgcolor: '#475569' }}>JD</Avatar>
-                      <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>John Doe</Typography>
-                        <Typography variant="body2" sx={{ color: '#64748b' }}>BMW X5 • Booking Confirmed</Typography>
-                      </Box>
-                    </Box>
-                    
-                    {/* Messages Container */}
-                    <Box sx={{ flexGrow: 1, overflowY: 'auto', my: 2, px: 1 }}>
-                      {/* Sample messages */}
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'flex-start',
-                          mb: 1.5,
-                        }}
-                      >
-                        <Paper
-                          elevation={1}
-                          sx={{
-                            p: 1.5,
-                            borderRadius: '12px 12px 12px 0',
-                            bgcolor: '#e2e8f0',
-                            color: '#1e293b',
-                            maxWidth: '70%',
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          <Typography variant="body2">Hello! I see you are interested in booking my BMW X5.</Typography>
-                          <Typography 
-                              variant="caption" 
-                              display="block" 
-                              sx={{ 
-                                  mt: 0.5, 
-                                  textAlign: 'right', 
-                                  fontSize: '0.65rem',
-                                  color: '#64748b'
-                              }}
-                          >
-                              10:30 AM
-                          </Typography>
-                        </Paper>
-                      </Box>
-                      
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'flex-end',
-                          mb: 1.5,
-                        }}
-                      >
-                        <Paper
-                          elevation={1}
-                          sx={{
-                            p: 1.5,
-                            borderRadius: '12px 12px 0 12px',
-                            bgcolor: '#1e293b',
-                            color: 'white',
-                            maxWidth: '70%',
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          <Typography variant="body2">Yes, I would like to confirm the dates from July 15 to July 20.</Typography>
-                          <Typography 
-                              variant="caption" 
-                              display="block" 
-                              sx={{ 
-                                  mt: 0.5, 
-                                  textAlign: 'right', 
-                                  fontSize: '0.65rem',
-                                  color: '#cbd5e1'
-                              }}
-                          >
-                              10:32 AM
-                          </Typography>
-                        </Paper>
-                      </Box>
-                      
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'flex-start',
-                          mb: 1.5,
-                        }}
-                      >
-                        <Paper
-                          elevation={1}
-                          sx={{
-                            p: 1.5,
-                            borderRadius: '12px 12px 12px 0',
-                            bgcolor: '#e2e8f0',
-                            color: '#1e293b',
-                            maxWidth: '70%',
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          <Typography variant="body2">Perfect! Those dates are available. The total cost will be $750 for 5 days. Would you like to proceed with the booking?</Typography>
-                          <Typography 
-                              variant="caption" 
-                              display="block" 
-                              sx={{ 
-                                  mt: 0.5, 
-                                  textAlign: 'right', 
-                                  fontSize: '0.65rem',
-                                  color: '#64748b'
-                              }}
-                          >
-                              10:35 AM
-                          </Typography>
-                        </Paper>
-                      </Box>
-                    </Box>
-                    
-                    {/* Message Input */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', borderTop: '1px solid #e2e8f0', pt: 2 }}>
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        placeholder="Type your message..."
+                <Grid item xs={12}>
+                  <StyledCard>
+                    <CardHeader sx={{ 
+                      background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+                    }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <DirectionsCarIcon /> My Vehicles
+                      </Typography>
+                      <Button 
+                        variant="contained" 
                         size="small"
+                        startIcon={<AddCircleIcon />}
+                        onClick={() => setIsPostCarDialogOpen(true)} // Open dialog
                         sx={{ 
-                            mr: 1,
-                            '& .MuiOutlinedInput-root': {
-                                borderRadius: '20px',
-                                backgroundColor: '#f1f5f9',
-                                '& fieldset': {
-                                    borderColor: 'transparent',
-                                },
-                                '&:hover fieldset': {
-                                    borderColor: '#cbd5e1',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: '#475569',
-                                },
-                            },
-                        }}
-                      />
-                      <IconButton 
-                        sx={{ 
-                            bgcolor: '#1e293b', 
-                            color: 'white',
-                            '&:hover': { bgcolor: '#334155' },
+                          bgcolor: 'rgba(226, 232, 240, 0.15)', 
+                          color: 'white',
+                          '&:hover': { bgcolor: 'rgba(226, 232, 240, 0.25)' },
+                          textTransform: 'none',
+                          fontWeight: 600
                         }}
                       >
-                        <SendIcon />
-                      </IconButton>
-                    </Box>
-                  </Paper>
+                        Add Vehicle
+                      </Button>
+                    </CardHeader>
+                    
+                    <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      {userCars.length === 0 ? (
+                        <Box sx={{ textAlign: 'center', py: 4 }}>
+                          <DirectionsCarIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
+                          <Typography variant="h6" sx={{ color: '#64748b', fontWeight: 600, mb: 1 }}>
+                            No Vehicles Listed
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3 }}>
+                            List your vehicle and start earning today!
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            startIcon={<AddCircleIcon />}
+                            onClick={() => setIsPostCarDialogOpen(true)} // Open dialog
+                            sx={{
+                              bgcolor: '#334155',
+                              '&:hover': { bgcolor: '#1e293b' },
+                              borderRadius: 2,
+                              px: 3,
+                              py: 1,
+                              textTransform: 'none',
+                              fontWeight: 600
+                            }}
+                          >
+                            Add Your First Vehicle
+                          </Button>
+                        </Box>
+                      ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {userCars.map((car) => (
+                            <Paper
+                              key={car._id}
+                              elevation={0}
+                              sx={{
+                                p: 2,
+                                borderRadius: 2,
+                                border: '1px solid #e2e8f0',
+                                display: 'flex',
+                                gap: 2,
+                                transition: 'all 0.2s ease-in-out',
+                                '&:hover': {
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                  transform: 'translateY(-2px)',
+                                }
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: 80,
+                                  height: 80,
+                                  borderRadius: 1,
+                                  overflow: 'hidden',
+                                  flexShrink: 0
+                                }}
+                              >
+                                <img
+                                  src={car.images?.[0] ? `http://localhost:5001/${car.images[0]}` : '/placeholder.jpg'}
+                                  alt={car.carName}
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                  }}
+                                />
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#334155' }}>
+                                  {car.carName}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
+                                  <Chip
+                                    label={car.brand}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: '#e2e8f0',
+                                      color: '#475569',
+                                      fontWeight: 500,
+                                      fontSize: '0.7rem'
+                                    }}
+                                  />
+                                  <Chip
+                                    label={`€${car.price}/day`}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: '#f1f5f9',
+                                      color: '#64748b',
+                                      fontWeight: 500,
+                                      fontSize: '0.7rem'
+                                    }}
+                                  />
+                                </Box>
+                              </Box>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => navigate(`/car-details/${car._id}`)}
+                                sx={{
+                                  alignSelf: 'center',
+                                  borderColor: '#64748b',
+                                  color: '#64748b',
+                                  borderRadius: 1,
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  '&:hover': {
+                                    borderColor: '#475569',
+                                    bgcolor: 'rgba(100, 116, 139, 0.04)'
+                                  }
+                                }}
+                              >
+                                View
+                              </Button>
+                            </Paper>
+                          ))}
+                          <Button
+                            variant="contained"
+                            startIcon={<AddCircleIcon />}
+                            onClick={() => setIsPostCarDialogOpen(true)} // Open dialog
+                            sx={{
+                              alignSelf: 'flex-start',
+                              mt: 2,
+                              bgcolor: '#475569',
+                              '&:hover': { bgcolor: '#334155' },
+                              borderRadius: 2,
+                              px: 2,
+                              py: 0.75,
+                              textTransform: 'none',
+                              fontWeight: 600
+                            }}
+                          >
+                            Add Another Vehicle
+                          </Button>
+                        </Box>
+                      )}
+                    </CardContent>
+                  </StyledCard>
                 </Grid>
               </Grid>
             </Box>
           )}
+          
+          {activeTab === 2 && (
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: '#334155', mb: 3, position: 'relative', display: 'inline-block', '&:after': { content: '""', position: 'absolute', bottom: -8, left: 0, width: '60px', height: '4px', backgroundColor: '#475569', borderRadius: '2px' } }}>
+                Chats
+              </Typography>
+              
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: { xs: 'row', sm: 'row' }, 
+                flexWrap: 'nowrap',
+                gap: 3,
+                height: '100%',
+                overflow: 'hidden'
+              }}>
+                {/* Conversation List */}
+                <Box sx={{ 
+                  width: { xs: '40%', sm: '35%', md: '30%' },
+                  minWidth: { xs: '150px', sm: '250px' },
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  <StyledCard sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <CardHeader sx={{ 
+                      background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+                    }}>
+                      <Typography variant="h6" sx={{ 
+                        fontWeight: 600, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1,
+                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' }
+                      }}>
+                        <ChatIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem', md: '1.4rem' } }} /> 
+                        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Recent Conversations</Box>
+                        <Box sx={{ display: { xs: 'block', sm: 'none' } }}>Chats</Box>
+                      </Typography>
+                      <Button 
+                        variant="contained" 
+                        size="small"
+                        onClick={() => navigate('/messages')}
+                        sx={{ 
+                          bgcolor: 'rgba(226, 232, 240, 0.15)', 
+                          color: 'white',
+                          '&:hover': { bgcolor: 'rgba(226, 232, 240, 0.25)' },
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                          px: { xs: 1, sm: 2 }
+                        }}
+                      >
+                        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>View All</Box>
+                        <Box sx={{ display: { xs: 'block', sm: 'none' } }}>All</Box>
+                      </Button>
+                    </CardHeader>
+                    
+                    <CardContent sx={{ 
+                      p: { xs: 1, sm: 2, md: 3 }, 
+                      flexGrow: 1, 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      overflow: 'auto'
+                    }}>
+                      {conversations.length === 0 ? (
+                        <Box sx={{ textAlign: 'center', py: 4 }}>
+                          <ChatIcon sx={{ fontSize: { xs: 32, sm: 48 }, color: '#cbd5e1', mb: 2 }} />
+                          <Typography variant="h6" sx={{ 
+                            color: '#64748b', 
+                            fontWeight: 600, 
+                            mb: 1,
+                            fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' }
+                          }}>
+                            No Chats
+                          </Typography>
+                          <Typography variant="body2" sx={{ 
+                            color: '#94a3b8', 
+                            mb: 3,
+                            fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.875rem' },
+                            display: { xs: 'none', sm: 'block' }
+                          }}>
+                            Your conversations will appear here.
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            onClick={() => navigate('/offers')}
+                            sx={{
+                              borderColor: '#475569',
+                              color: '#475569',
+                              borderRadius: 2,
+                              px: { xs: 1, sm: 2, md: 3 },
+                              py: 1,
+                              textTransform: 'none',
+                              fontWeight: 600,
+                              fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                              '&:hover': {
+                                borderColor: '#334155',
+                                bgcolor: 'rgba(71, 85, 105, 0.04)'
+                              }
+                            }}
+                          >
+                            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Browse Vehicles</Box>
+                            <Box sx={{ display: { xs: 'block', sm: 'none' } }}>Browse</Box>
+                          </Button>
+                        </Box>
+                      ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto' }}>
+                          {conversations.map((conv) => (
+                            <Paper
+                              key={conv._id}
+                              elevation={0}
+                              onClick={() => setSelectedConversation(conv)}
+                              sx={{
+                                p: { xs: 1, sm: 1.5, md: 2 },
+                                borderRadius: 2,
+                                border: '1px solid #e2e8f0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: { xs: 1, sm: 1.5, md: 2 },
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease-in-out',
+                                backgroundColor: selectedConversation && selectedConversation._id === conv._id ? '#f1f5f9' : 'transparent',
+                                '&:hover': {
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                  transform: 'translateY(-2px)',
+                                  bgcolor: '#f8fafc'
+                                }
+                              }}
+                            >
+                              <Avatar sx={{ 
+                                bgcolor: '#475569',
+                                width: { xs: 30, sm: 35, md: 40 },
+                                height: { xs: 30, sm: 35, md: 40 },
+                                fontSize: { xs: '0.8rem', sm: '1rem', md: '1.2rem' }
+                              }}>
+                                {conv.otherUser?.firstName?.[0]?.toUpperCase() || 'U'}
+                              </Avatar>
+                              <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                                <Typography variant="subtitle1" sx={{ 
+                                  fontWeight: 700, 
+                                  color: '#334155',
+                                  fontSize: { xs: '0.75rem', sm: '0.85rem', md: '1rem' },
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}>
+                                  {conv.otherUser?.firstName} {conv.otherUser?.lastName}
+                                </Typography>
+                                <Typography variant="body2" sx={{ 
+                                  color: '#64748b',
+                                  fontSize: { xs: '0.65rem', sm: '0.75rem', md: '0.875rem' },
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}>
+                                  {conv.car?.carName || 'N/A'}
+                                </Typography>
+                                {conv.lastMessage && (
+                                  <Typography variant="caption" noWrap sx={{ 
+                                    color: '#94a3b8', 
+                                    mt: 0.5,
+                                    fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.75rem' },
+                                    display: { xs: 'none', sm: 'block' }
+                                  }}>
+                                    {conv.lastMessage.text}
+                                  </Typography>
+                                )}
+                              </Box>
+                              <Typography variant="caption" sx={{ 
+                                color: '#94a3b8', 
+                                flexShrink: 0,
+                                fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.75rem' },
+                                display: { xs: 'none', sm: 'block' }
+                              }}>
+                                {conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleDateString() : ''}
+                              </Typography>
+                            </Paper>
+                          ))}
+                        </Box>
+                      )}
+                    </CardContent>
+                  </StyledCard>
+                </Box>
+
+                {/* Chat Window (conditionally rendered) */}
+                <Box sx={{ 
+                  flexGrow: 1,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  {selectedConversation ? (
+                    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      <ConversationDialog
+                        userId={selectedConversation.otherUser._id}
+                        carId={selectedConversation.car._id}
+                        conversationId={selectedConversation._id}
+                      />
+                    </Box>
+                  ) : (
+                    <StyledCard sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      <CardContent sx={{ 
+                        flexGrow: 1, 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        py: 4 
+                      }}>
+                        <ChatIcon sx={{ fontSize: { xs: 32, sm: 48 }, color: '#cbd5e1', mb: 2 }} />
+                        <Typography variant="h6" sx={{ 
+                          color: '#64748b', 
+                          fontWeight: 600, 
+                          mb: 1,
+                          fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+                          textAlign: 'center'
+                        }}>
+                          Select a Conversation
+                        </Typography>
+                        <Typography variant="body2" sx={{ 
+                          color: '#94a3b8', 
+                          mb: 3, 
+                          textAlign: 'center',
+                          fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.875rem' },
+                          display: { xs: 'none', sm: 'block' }
+                        }}>
+                          Click on a conversation from the left panel to view messages.
+                        </Typography>
+                      </CardContent>
+                    </StyledCard>
+                  )}
+                </Box>
+              </Box>
+            </Box>
+          )}
         </Container>
       </Box>
+      <PostCarDialog 
+        open={isPostCarDialogOpen} 
+        onClose={() => setIsPostCarDialogOpen(false)} 
+      />
     </>
   );
 };

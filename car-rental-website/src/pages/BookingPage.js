@@ -44,6 +44,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import SettingsInputSvideoIcon from '@mui/icons-material/SettingsInputSvideo';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import PersonIcon from '@mui/icons-material/Person';
+import axios from 'axios'; // Import axios
 
 // Imports for react-slick carousel
 import Slider from "react-slick";
@@ -78,9 +79,34 @@ export default function BookingPage() {
     const fetchCarDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5001/api/cars/details/${carId}`);
-        if (!response.ok) throw new Error('Failed to fetch car details');
-        const data = await response.json();
+        const response = await axios.get(`http://localhost:5001/api/cars/details/${carId}`);
+        const data = response.data;
+        
+        let ownerId = null;
+        if (data.owner) {
+          ownerId = typeof data.owner === 'string' ? data.owner : data.owner._id;
+        }
+
+        if (ownerId) {
+          try {
+            const token = localStorage.getItem('token'); // Assuming token is needed for this endpoint
+            const ownerRatingsResponse = await axios.get(
+              `http://localhost:5001/api/ratings/average/user/${ownerId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            data.ownerAverageRating = ownerRatingsResponse.data.averageRating || 0;
+            data.ownerTotalReviews = ownerRatingsResponse.data.totalRatings || 0;
+          } catch (ratingsError) {
+            console.error('Error fetching owner ratings in BookingPage:', ratingsError);
+            // Continue without ratings if there's an error
+            data.ownerAverageRating = 0;
+            data.ownerTotalReviews = 0;
+          }
+        } else {
+          data.ownerAverageRating = 0;
+          data.ownerTotalReviews = 0;
+        }
+
         setCar(data);
         setError(null);
       } catch (err) {
@@ -140,13 +166,13 @@ export default function BookingPage() {
       return;
     }
     // Navigate to chat page, passing booking details
-    navigate(`/chat/${carId}`, { 
-      state: { 
-        car, 
-        startDate: startDate.toISOString(), 
-        endDate: endDate.toISOString(), 
-        totalCost 
-      } 
+    navigate(`/conversation/${carId}/${car.owner._id}`, {
+      state: {
+        car,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        totalCost
+      }
     });
   };
 
@@ -425,7 +451,7 @@ export default function BookingPage() {
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Rating
-                            value={car.ownerRating || 0}
+                            value={car.ownerAverageRating || 0}
                             precision={0.5}
                             readOnly
                             size="small"
@@ -435,7 +461,7 @@ export default function BookingPage() {
                             color: '#64748b',
                             fontWeight: 500
                           }}>
-                            {car.ownerRating ? `${car.ownerRating.toFixed(1)} (${car.ownerReviews || 0})` : 'No ratings yet'}
+                            {car.ownerAverageRating ? `${car.ownerAverageRating.toFixed(1)} (${car.ownerTotalReviews || 0})` : 'No ratings yet'}
                           </Typography>
                         </Box>
                       </Box>
