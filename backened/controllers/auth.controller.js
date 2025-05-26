@@ -12,8 +12,8 @@ const verificationCodes = {};
 const transporter = nodemailer.createTransport({
     service: 'gmail', // You can use other services or SMTP
     auth: {
-        user: 'mohamed19osmani@gmail.com', // Your email address
-        pass: 'amin 07osmani', // Your email password or app-specific password
+        user: 'example-example@gmail.com', // Your email address
+        pass: 'passwordexample', // Your email password or app-specific password
     },
 });
 
