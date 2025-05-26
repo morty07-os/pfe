@@ -234,6 +234,7 @@ export default function AllOffersPage() {
           priceMax: sidebarFilters.priceRange ? sidebarFilters.priceRange[1] : '',
           availableFrom: sidebarFilters.availableFrom || '',
           availableTo: sidebarFilters.availableTo || '',
+          search: search || '', // Add search parameter
         }).toString();
         const response = await fetch(`http://localhost:5001/api/cars/getcars?${queryParams}`);
         if (!response.ok) throw new Error('Failed to fetch offers');
@@ -310,7 +311,7 @@ export default function AllOffersPage() {
     return () => {
       window.removeEventListener('carRemoved', handleCarRemoved);
     };
-  }, [sidebarFilters]);
+  }, [sidebarFilters, search]);
 
   const filteredOffers = React.useMemo(() => {
     let tempOffers = [...offers];
@@ -325,13 +326,15 @@ export default function AllOffersPage() {
       );
     }
 
-    // Apply search term filter
+    // Apply search term filter (now handled by backend, but keep as fallback)
     if (search) {
       tempOffers = tempOffers.filter(offer =>
         offer.brand?.toLowerCase().includes(search.toLowerCase()) ||
-        offer.model?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.carName?.toLowerCase().includes(search.toLowerCase()) ||
         offer.description?.toLowerCase().includes(search.toLowerCase()) ||
-        offer.wilaya?.toLowerCase().includes(search.toLowerCase())
+        offer.wilaya?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.carType?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.engine?.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -345,8 +348,8 @@ export default function AllOffersPage() {
       (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
       (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
       (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1])) &&
-      (!sidebarFilters.availableFrom || dayjs(offer.availableFrom).isSameOrAfter(dayjs(sidebarFilters.availableFrom), 'day')) &&
-      (!sidebarFilters.availableTo || dayjs(offer.availableTo).isSameOrBefore(dayjs(sidebarFilters.availableTo), 'day'))
+      (!sidebarFilters.availableFrom || dayjs(offer.availabilityStart || offer.availableFrom).isSameOrAfter(dayjs(sidebarFilters.availableFrom), 'day')) &&
+      (!sidebarFilters.availableTo || dayjs(offer.availabilityEnd || offer.availableTo).isSameOrBefore(dayjs(sidebarFilters.availableTo), 'day'))
     );
 
     return tempOffers;
@@ -1139,7 +1142,7 @@ export default function AllOffersPage() {
                             <CardMedia
                               component="img"
                               image={offer.images?.[0] ? `http://localhost:5001/${offer.images[0]}` : '/placeholder.jpg'}
-                              alt={offer.title || 'Car image'}
+                              alt={offer.carName || offer.title || 'Car image'}
                               sx={{
                                 objectFit: 'cover',
                                 width: '100%',
@@ -1210,7 +1213,7 @@ export default function AllOffersPage() {
                                     }
                                   }}
                                 >
-                                  {offer.title || offer.carName || 'Car Listing'}
+                                  {offer.carName || offer.title || 'Car Listing'}
                                 </Typography>
                               </Box>
                               <Box sx={{
@@ -1599,7 +1602,7 @@ export default function AllOffersPage() {
                             }}>
                               <Chip
                                 icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
-                                label={`From: ${formatDateDMY(offer.availabilityStart)}`}
+                                label={`From: ${formatDateDMY(offer.availabilityStart || offer.availableFrom)}`}
                                 size="small"
                                 sx={{
                                   bgcolor: 'rgba(226, 232, 240, 0.5)',
@@ -1616,7 +1619,7 @@ export default function AllOffersPage() {
                               />
                               <Chip
                                 icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
-                                label={`To: ${formatDateDMY(offer.availabilityEnd)}`}
+                                label={`To: ${formatDateDMY(offer.availabilityEnd || offer.availableTo)}`}
                                 size="small"
                                 sx={{
                                   bgcolor: 'rgba(226, 232, 240, 0.5)',

@@ -92,10 +92,24 @@ router.get('/getcars', async (req, res) => {
             priceMin,
             priceMax,
             availableFrom,
-            availableTo
+            availableTo,
+            search // Add search parameter
         } = req.query;
 
         const query = { isDeleted: false };
+
+        // Handle text search across multiple fields
+        if (search) {
+            const searchRegex = new RegExp(search, 'i'); // Case-insensitive search
+            query.$or = [
+                { brand: searchRegex },
+                { carName: searchRegex },
+                { description: searchRegex },
+                { wilaya: searchRegex },
+                { carType: searchRegex },
+                { engine: searchRegex }
+            ];
+        }
 
         if (brand) query.brand = brand;
         if (energy) query.energy = energy;

@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { 
   Box, 
   Typography, 
@@ -32,6 +35,9 @@ import ElectricCarIcon from '@mui/icons-material/ElectricCar';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloseIcon from '@mui/icons-material/Close';
+
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 const brands = [
   'Toyota', 'Renault', 'Peugeot', 'Hyundai', 'Volkswagen', 'Kia', 'Dacia', 'Citroën', 'Fiat', 'Seat',
