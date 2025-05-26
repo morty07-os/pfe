@@ -2,107 +2,7 @@ import User from '../models/user.models.js';
 import bcrypt from 'bcryptjs';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
 
-// In-memory store for verification codes (for demonstration purposes)
-// In a production environment, use a database or a cache like Redis
-const verificationCodes = {};
-
-// Nodemailer transporter setup
-const transporter = nodemailer.createTransport({
-    service: 'gmail', // You can use other services or SMTP
-    auth: {
-        user: 'example-example@gmail.com', // Your email address
-        pass: 'passwordexample', // Your email password or app-specific password
-    },
-});
-
-// Handles sending verification code to email
-export const sendVerificationCode = async (req, res) => {
-    try {
-        const { email } = req.body;
-
-        if (!email) {
-            return res.status(400).json({ error: "Email is required" });
-        }
-
-        const user = await User.findOne({ email: email.toLowerCase() });
-        if (!user) {
-            return res.status(404).json({ error: "User with this email does not exist." });
-        }
-
-        const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
-        const expirationTime = Date.now() + 10 * 60 * 1000; // Code valid for 10 minutes
-
-        verificationCodes[email] = { code, expirationTime };
-        console.log(`Generated code for ${email}: ${code}`);
-
-        const mailOptions = {
-            from: 'mohamed19osmani@gmail.com',
-            to: email,
-            subject: 'Your Email Verification Code',
-            html: `
-                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <h2>Email Verification</h2>
-                    <p>Hello,</p>
-                    <p>Thank you for registering. Please use the following verification code to complete your signup:</p>
-                    <p style="font-size: 24px; font-weight: bold; color: #0056b3; background-color: #f0f0f0; padding: 10px; border-radius: 5px; display: inline-block;">${code}</p>
-                    <p>This code is valid for 10 minutes.</p>
-                    <p>If you did not request this, please ignore this email.</p>
-                    <p>Best regards,<br>Your Car Rental Team</p>
-                </div>
-            `,
-        };
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error("Error sending email:", error);
-                return res.status(500).json({ error: "Failed to send verification email." });
-            }
-            console.log('Email sent:', info.response);
-            res.status(200).json({ message: "Verification code sent successfully." });
-        });
-
-    } catch (error) {
-        console.error("Error in sendVerificationCode controller:", error.message);
-        res.status(500).json({ error: "Server error" });
-    }
-};
-
-// Handles verifying the email code
-export const verifyCode = async (req, res) => {
-    try {
-        const { email, code } = req.body;
-
-        if (!email || !code) {
-            return res.status(400).json({ error: "Email and code are required." });
-        }
-
-        const storedData = verificationCodes[email];
-
-        if (!storedData) {
-            return res.status(400).json({ error: "No verification code found for this email or it has expired." });
-        }
-
-        if (storedData.expirationTime < Date.now()) {
-            delete verificationCodes[email]; // Remove expired code
-            return res.status(400).json({ error: "Verification code has expired." });
-        }
-
-        if (storedData.code !== code) {
-            return res.status(400).json({ error: "Invalid verification code." });
-        }
-
-        // Code is valid, remove it from storage
-        delete verificationCodes[email];
-
-        res.status(200).json({ message: "Email verified successfully." });
-
-    } catch (error) {
-        console.error("Error in verifyCode controller:", error.message);
-        res.status(500).json({ error: "Server error" });
-    }
-};
 
 
 // Handles user signup
@@ -135,6 +35,7 @@ export const signup = async (req, res) => {
             console.log("Email or phone already in use");
             return res.status(400).json({ error: "Email or phone number already in use" });
         }
+
 
         if (password.length < 6) {
             console.log("Password too short");

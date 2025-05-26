@@ -40,9 +40,6 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   const [focused, setFocused] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [emailError, setEmailError] = useState('');
-  const [showEmailVerificationDialog, setShowEmailVerificationDialog] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
-  const [codeError, setCodeError] = useState('');
 
   // Validate Algerian phone number
   const validateAlgerianPhone = (phoneNumber) => {
@@ -91,65 +88,6 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
       if (name === 'email') {
         setEmailError(validateEmail(value));
       }
-    }
-  };
-
-  // Handle sending verification code
-  const handleSendVerificationCode = async () => {
-    if (emailError || !formData.email) {
-      alert('Please enter a valid email address to send the verification code.');
-      return;
-    }
-    try {
-      const response = await fetch('http://localhost:5001/api/auth/send-verification-code', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: formData.email }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert('Verification code sent to your email!');
-        setShowEmailVerificationDialog(true);
-      } else {
-        alert(result.error || 'Failed to send verification code.');
-      }
-    } catch (error) {
-      console.error('Error sending verification code:', error.message);
-      alert('An error occurred while sending the verification code.');
-    }
-  };
-
-  // Handle code verification
-  const handleVerifyCode = async () => {
-    if (!verificationCode) {
-      setCodeError('Please enter the verification code.');
-      return;
-    }
-    try {
-      const response = await fetch('http://localhost:5001/api/auth/verify-code', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: formData.email, code: verificationCode }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert('Email verified successfully!');
-        setShowEmailVerificationDialog(false);
-        handleSubmitFinal(); // Proceed with the final signup
-      } else {
-        setCodeError(result.error || 'Invalid verification code.');
-      }
-    } catch (error) {
-      console.error('Error verifying code:', error.message);
-      alert('An error occurred during code verification.');
     }
   };
 
@@ -238,8 +176,8 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
       return;
     }
 
-    // If all initial validations pass, send verification code
-    handleSendVerificationCode();
+    // If all initial validations pass, proceed with final signup
+    handleSubmitFinal();
   };
 
   return (
@@ -631,94 +569,6 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
         </form>
       </Dialog>
 
-      {/* Email Verification Dialog */}
-      <Dialog
-        open={showEmailVerificationDialog}
-        onClose={() => setShowEmailVerificationDialog(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: '0 12px 50px -12px rgba(0,0,0,0.25)',
-            overflow: 'hidden',
-          },
-        }}
-      >
-        <DialogTitle sx={{ background: theme.palette.primary.main, color: 'white', p: 2 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Verify Your Email
-            </Typography>
-            <IconButton onClick={() => setShowEmailVerificationDialog(false)} sx={{ color: 'white' }}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ p: 3 }}>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            A verification code has been sent to <strong>{formData.email}</strong>. Please enter the code below to continue.
-          </Typography>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Verification Code"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={verificationCode}
-            onChange={(e) => {
-              setVerificationCode(e.target.value);
-              setCodeError(''); // Clear error on change
-            }}
-            error={!!codeError}
-            helperText={codeError}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: '#94a3b8',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#475569',
-                },
-              },
-            }}
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0, flexDirection: 'column', gap: 1 }}>
-          <Button
-            onClick={handleVerifyCode}
-            variant="contained"
-            fullWidth
-            sx={{
-              bgcolor: '#475569',
-              color: 'white',
-              py: 1.5,
-              fontSize: '1rem',
-              textTransform: 'none',
-              '&:hover': {
-                bgcolor: '#334155',
-              },
-            }}
-          >
-            Verify Code
-          </Button>
-          <Button
-            onClick={handleSendVerificationCode}
-            fullWidth
-            sx={{
-              color: '#475569',
-              textTransform: 'none',
-              '&:hover': {
-                backgroundColor: 'transparent',
-                color: '#334155',
-              },
-            }}
-          >
-            Resend Code
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };

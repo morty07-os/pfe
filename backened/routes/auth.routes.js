@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { login, signup, logout, getMe, refreshToken, sendVerificationCode, verifyCode } from "../controllers/auth.controller.js";
+import { login, signup, logout, getMe, refreshToken } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 
@@ -51,8 +51,6 @@ router.post("/signup",
 router.post("/login", login);
 router.post("/logout", logout);
 router.post("/refresh-token", refreshToken);
-router.post("/send-verification-code", sendVerificationCode);
-router.post("/verify-code", verifyCode);
 
 // Car routes
 router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload
