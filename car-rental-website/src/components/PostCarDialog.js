@@ -317,7 +317,8 @@ const brands = [
   'Changan', 'SsangYong', 'Isuzu', 'Daewoo', 'Other'
 ];
 const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
-const transmissions = ['Manual', 'Automatic'];
+  const transmissions = ['Manual', 'Automatic'];
+const carTypes = ['SUV', 'VAN', 'STATIONWAGON', 'CITADINE', 'SEDAN'];
 
 const carFeatures = [
   { 
@@ -453,6 +454,7 @@ function PostCarDialog({ open, onClose }) {
     carName: '',
     brand: '',
     wilaya: '', // Added wilaya field
+    carType: '', // Added carType field
     description: '',
     price: '',
     energy: '',
@@ -891,6 +893,33 @@ function PostCarDialog({ open, onClose }) {
                   {wilayas.map(w => <MenuItem key={w} value={w}>{w}</MenuItem>)}
                 </TextField>
               </Box>
+              {/* Car Type */}
+              <TextField
+                required
+                select
+                fullWidth
+                label="Car Type"
+                name="carType"
+                value={formData.carType}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <svg width="20" height="20" fill="none" style={{marginRight: 4}}><rect width="20" height="20" rx="10" fill="#e2e8f0"/><path d="M6 15v-2a2 2 0 012-2h4a2 2 0 012 2v2" stroke="#64748b" strokeWidth="1.6" strokeLinecap="round"/><rect x="4.5" y="10" width="11" height="2.5" rx="1.25" fill="#e2e8f0" stroke="#64748b" strokeWidth="1.2"/></svg>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 1px 4px rgba(30,41,59,0.03)',
+                    '&:hover': { bgcolor: '#e2e8f0' },
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #64748b44', borderColor: '#475569' }
+                  }
+                }}
+                InputLabelProps={{ sx: { fontWeight: 600, color: '#334155', letterSpacing: 0.3 } }}
+              >
+                {carTypes.map(type => <MenuItem key={type} value={type}>{type}</MenuItem>)}
+              </TextField>
               {/* Pickup Location */}
               <TextField
                 fullWidth

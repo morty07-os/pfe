@@ -30,6 +30,8 @@ router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req,
         console.log("Uploaded files:", req.files); // Log uploaded files
 
         const { body, files } = req;
+        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
+
         if (!files || files.length === 0) {
             return res.status(400).json({ error: 'No images uploaded' });
         }
@@ -45,7 +47,20 @@ router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req,
         }
 
         const car = new Car({
-            ...body,
+            carName,
+            brand,
+            wilaya,
+            description,
+            energy,
+            seats,
+            doors,
+            transmission,
+            mileage,
+            engine,
+            availabilityStart,
+            availabilityEnd,
+            price,
+            carType,
             images: imagePaths,
             owner: req.user.userId,
             ownerName: {
@@ -70,6 +85,7 @@ router.get('/getcars', async (req, res) => {
             energy,
             transmission,
             wilaya,
+            carType,
             location,
             seats,
             doors,
@@ -85,6 +101,7 @@ router.get('/getcars', async (req, res) => {
         if (energy) query.energy = energy;
         if (transmission) query.transmission = transmission;
         if (wilaya) query.wilaya = wilaya;
+        if (carType) query.carType = carType;
         if (location) query.location = location;
         if (seats) query.seats = parseInt(seats);
         if (doors) query.doors = parseInt(doors);
@@ -168,4 +185,4 @@ router.get('/details/:id', ProtectedRoute({ required: false }), async (req, res)
     }
 });
 
-export default router; 
+export default router;

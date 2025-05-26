@@ -10,7 +10,7 @@ import {
   Autocomplete
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -144,8 +144,8 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Box sx={{ flex: 1.5 }}>
-              <DateTimePicker
-                label="Start Date & Time"
+              <DatePicker
+                label="Start Date"
                 value={startDate}
                 onChange={(newValue) => setStartDate(newValue)}
                 minDate={dayjs()}
@@ -154,8 +154,8 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
             </Box>
 
             <Box sx={{ flex: 1.5 }}>
-              <DateTimePicker
-                label="End Date & Time"
+              <DatePicker
+                label="End Date"
                 value={endDate}
                 onChange={(newValue) => setEndDate(newValue)}
                 minDate={startDate} // Keeps visual cue, but button logic is main guard

@@ -227,6 +227,7 @@ export default function AllOffersPage() {
           energy: sidebarFilters.energy || '',
           transmission: sidebarFilters.transmission || '',
           wilaya: sidebarFilters.wilaya || '',
+          carType: sidebarFilters.carType || '', // Added carType filter
           seats: sidebarFilters.seats || '',
           doors: sidebarFilters.doors || '',
           priceMin: sidebarFilters.priceRange ? sidebarFilters.priceRange[0] : '',
@@ -340,6 +341,7 @@ export default function AllOffersPage() {
       (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
       (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
       (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) &&
+      (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) && // Added carType filter
       (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
       (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
       (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1])) &&
@@ -365,6 +367,7 @@ export default function AllOffersPage() {
       energy: 'Energy',
       transmission: 'Transmission',
       wilaya: 'Location',
+      carType: 'Car Type', // Added carType label
       seats: 'Seats',
       doors: 'Doors',
       priceRange: 'Price',
@@ -393,6 +396,8 @@ export default function AllOffersPage() {
         return <SettingsIcon fontSize="small" />;
       case 'wilaya':
         return <LocationOnIcon fontSize="small" />;
+      case 'carType':
+        return <DirectionsCarIcon fontSize="small" />; // Icon for car type
       case 'seats':
         return <AirlineSeatReclineNormalIcon fontSize="small" />;
       case 'doors':
@@ -1498,6 +1503,29 @@ export default function AllOffersPage() {
                                       }
                                     }}
                                     title={offer.location.name || offer.location.address}
+                                  />
+                                )}
+                                {offer.carType && (
+                                  <Chip
+                                    icon={<DirectionsCarIcon sx={{ color: '#475569', fontSize: '0.8rem' }} />}
+                                    label={offer.carType}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: 'white',
+                                      color: '#334155',
+                                      fontWeight: 600,
+                                      fontSize: '0.7rem',
+                                      borderRadius: 0.75,
+                                      border: '1px solid rgba(203, 213, 225, 0.3)',
+                                      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
+                                      height: 24,
+                                      '& .MuiChip-label': { px: 0.6 },
+                                      '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
+                                      '&:hover': {
+                                        boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                                        bgcolor: '#f8fafc'
+                                      }
+                                    }}
                                   />
                                 )}
                                 <Chip

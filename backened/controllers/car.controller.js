@@ -13,6 +13,8 @@ export const createCar = async (req, res) => {
         console.log("Uploaded files:", req.files); // Log uploaded files
 
         const { body, files } = req;
+        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
+
         if (!files || files.length === 0) {
             return res.status(400).json({ error: 'No images uploaded' });
         }
@@ -46,7 +48,20 @@ export const createCar = async (req, res) => {
         }
 
         const newCar = new Car({
-            ...body,
+            carName,
+            brand,
+            wilaya,
+            description,
+            energy,
+            seats,
+            doors,
+            transmission,
+            mileage,
+            engine,
+            availabilityStart,
+            availabilityEnd,
+            price,
+            carType,
             location,
             images,
             owner: req.user.userId,

@@ -42,6 +42,7 @@ const brands = [
 ];
 const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
 const transmissions = ['Manual', 'Automatic'];
+const carTypes = ['SUV', 'VAN', 'STATIONWAGON', 'CITADINE', 'SEDAN']; // Added carTypes
 const wilayas = [
   "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
 ];
@@ -142,6 +143,9 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       case 'doorsRange':
         newFilters.doorsRange = [2, 5];
         break;
+      case 'carType': // Added carType reset
+        newFilters.carType = '';
+        break;
       default:
         delete newFilters[filterName];
     }
@@ -164,6 +168,9 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         return pendingFilters[key] && 
                (pendingFilters[key][0] !== 2 || pendingFilters[key][1] !== 5);
       }
+      if (key === 'carType') { // Added carType filter count
+        return pendingFilters[key] && pendingFilters[key] !== '';
+      }
       return pendingFilters[key] && pendingFilters[key] !== '';
     }).length;
   };
@@ -178,6 +185,8 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       return `${value[0]} - ${value[1]} doors`;
     } else if (key === 'availableFrom' || key === 'availableTo') {
       return new Date(value).toLocaleDateString();
+    } else if (key === 'carType') { // Added carType display value
+      return value;
     }
     return value;
   };
@@ -189,6 +198,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       energy: 'Energy',
       transmission: 'Transmission',
       wilaya: 'Location',
+      carType: 'Car Type', // Added carType label
       seatsRange: 'Seats',
       doorsRange: 'Doors',
       priceRange: 'Price',
@@ -218,6 +228,8 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       case 'availableFrom':
       case 'availableTo':
         return <CalendarMonthIcon fontSize="small" />;
+      case 'carType': // Added carType icon
+        return <DirectionsCarIcon fontSize="small" />;
       default:
         return null;
     }
@@ -751,6 +763,82 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 <IconButton 
                   size="small" 
                   onClick={() => handleRemoveFilter('wilaya')}
+                  sx={{ 
+                    position: 'absolute', 
+                    right: -8, 
+                    top: -8, 
+                    bgcolor: '#f1f5f9',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    color: '#64748b',
+                    p: 0.5,
+                    '&:hover': {
+                      bgcolor: '#fee2e2',
+                      color: '#ef4444'
+                    }
+                  }}
+                >
+                  <RestartAltIcon fontSize="small" />
+                </IconButton>
+              </Fade>
+            )}
+          </Box>
+        </FilterSection>
+        
+        {/* Car Type Section */}
+        <FilterSection 
+          title="Car Type" 
+          icon={<DirectionsCarIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
+        >
+          <Box sx={{ position: 'relative' }}>
+            <ToggleButtonGroup
+              value={pendingFilters.carType || ''}
+              exclusive
+              onChange={(e, value) => handleChange({ target: { name: 'carType', value } })}
+              aria-label="car type"
+              size="small"
+              fullWidth
+              sx={{ 
+                display: 'flex', // Changed to flex
+                flexWrap: 'wrap', // Added flexWrap
+                gap: 1,
+                '& .MuiToggleButtonGroup-grouped': {
+                  flexGrow: 1, // Allow items to grow
+                  flexBasis: '48%', // Approximate half width for two columns, adjust as needed
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  border: '1px solid #e2e8f0',
+                  color: '#64748b',
+                  py: 0.75,
+                  '&.Mui-selected': {
+                    bgcolor: '#455a64',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: '#37474f',
+                    }
+                  },
+                  '&:hover': {
+                    bgcolor: 'rgba(203, 213, 225, 0.2)',
+                  }
+                }
+              }}
+            >
+              {carTypes.map((type) => (
+                <ToggleButton key={type} value={type}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <DirectionsCarIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
+                    {type}
+                  </Box>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            
+            {pendingFilters.carType && (
+              <Fade in={true}>
+                <IconButton 
+                  size="small" 
+                  onClick={() => handleRemoveFilter('carType')}
                   sx={{ 
                     position: 'absolute', 
                     right: -8, 

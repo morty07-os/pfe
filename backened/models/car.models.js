@@ -50,6 +50,11 @@ const carSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        carType: {
+            type: String,
+            enum: ["SUV", "VAN", "STATIONWAGON", "CITADINE", "SEDAN"],
+            required: true,
+        },
         availabilityStart: {
             type: Date,
             required: true,

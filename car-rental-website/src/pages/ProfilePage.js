@@ -10,10 +10,8 @@ import {
   Email as EmailIcon, Person as PersonIcon, CalendarToday as CalendarIcon,
   DirectionsCar as DirectionsCarIcon, History as HistoryIcon, 
   AddCircle as AddCircleIcon, Verified as VerifiedIcon, 
-  Settings as SettingsIcon,
   Notifications as NotificationsIcon, Star as StarIcon,
-  Dashboard as DashboardIcon,
-  Favorite as FavoriteIcon, EventAvailable as EventAvailableIcon,
+  Dashboard as DashboardIcon, EventAvailable as EventAvailableIcon,
   Chat as ChatIcon, Send as SendIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
@@ -392,8 +390,6 @@ const ProfilePage = () => {
               <StyledTab icon={<DashboardIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Dashboard" />
               <StyledTab icon={<DirectionsCarIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="My Vehicles" />
               <StyledTab icon={<ChatIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Chats" />
-              <StyledTab icon={<FavoriteIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Favorites" />
-              <StyledTab icon={<SettingsIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Settings" />
             </Tabs>
           </Box>
           
@@ -513,7 +509,7 @@ const ProfilePage = () => {
                       >
                         Add Vehicle
                       </Button>
-                    </CardHeader>
+                    </CardHeader> 
                     
                     <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       {userCars.length === 0 ? (
