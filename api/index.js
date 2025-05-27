@@ -21,11 +21,48 @@ const PORT = process.env.PORT || 5001;
 // Connect to MongoDB
 connectMONGODB();
 
+// Define allowed origins for CORS
+const allowedOrigins = [
+    'http://localhost:3000', // For local frontend development
+    'https://pfe-delta.vercel.app', // Vercel production frontend
+    /^\.*pfe-.*-morty07-os-projects\.vercel\.app$/, // Vercel preview deployments
+    /^https?:\/\/pfe-.*\.vercel\.app$/, // Any Vercel preview URL
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []), // Additional frontend URLs from environment variable
+];
+
 // Middleware
-app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Adjust as needed for your frontend
-    credentials: true
-}));
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Check if the origin matches any of the allowed origins or patterns
+        const isAllowed = allowedOrigins.some(pattern => {
+            if (typeof pattern === 'string') {
+                return pattern === origin;
+            } else if (pattern instanceof RegExp) {
+                return pattern.test(origin);
+            }
+            return false;
+        });
+        
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            console.log('Not allowed by CORS:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range']
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(express.json()); // To parse JSON payloads
 app.use(cookieParser());
 
