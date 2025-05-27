@@ -24,7 +24,13 @@ import feedbackRoutes from "./routes/feedback.routes.js"; // Import feedback rou
 dotenv.config();
 
 const app = express();
-const PORT = 5001;
+const PORT = process.env.PORT || 5001;
+
+// Define allowed origins for CORS
+const allowedOrigins = [
+    'http://localhost:3000', // For local frontend development
+    process.env.FRONTEND_URL, // Frontend URL from environment variable (e.g., Vercel deployment)
+];
 
 // Create HTTP server
 const httpServer = createServer(app);
@@ -32,23 +38,27 @@ const httpServer = createServer(app);
 // Initialize socket.io with the HTTP server
 const io = new Server(httpServer, {
     cors: {
-        origin: "http://localhost:3000", // Allow frontend origin
+        origin: allowedOrigins, // Allow frontend origin from environment variable
         methods: ["GET", "POST"], // Allow specific methods
         credentials: true // Allow cookies to be sent
     },
 });
-
-
-
 
 // Apply security headers using Helmet
 app.use(helmet());
 
 // Enable CORS for the frontend
 app.use(cors({
-    origin: "http://localhost:3000", // Ensure this matches the frontend's URL
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific HTTP methods
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Allow specific HTTP methods
     credentials: true, // Allow cookies to be sent
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
 }));
 
 // Rate limiting middleware to prevent abuse
@@ -94,6 +104,11 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/ratings", ratingRoutes); // Mount rating routes
 app.use("/api/feedbacks", feedbackRoutes); // Mount feedback routes
 
+
+// Add a simple root route for health check or basic message
+app.get('/', (req, res) => {
+    res.status(200).send('Car Rental Backend API is running!');
+});
 
 // Centralized error handling middleware
 app.use(errorHandler);
