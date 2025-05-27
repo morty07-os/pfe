@@ -29,7 +29,7 @@ const PORT = process.env.PORT || 5001;
 // Define allowed origins for CORS
 const allowedOrigins = [
     'http://localhost:3000', // For local frontend development
-    process.env.FRONTEND_URL, // Frontend URL from environment variable (e.g., Vercel deployment)
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []), // Frontend URL from environment variable (e.g., Vercel deployment)
 ];
 
 // Create HTTP server
