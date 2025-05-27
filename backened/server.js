@@ -29,7 +29,8 @@ const PORT = process.env.PORT || 5001;
 // Define allowed origins for CORS
 const allowedOrigins = [
     'http://localhost:3000', // For local frontend development
-    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []), // Frontend URL from environment variable (e.g., Vercel deployment)
+    'https://pfe-delta.vercel.app', // Vercel frontend
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []), // Additional frontend URLs from environment variable
 ];
 
 // Create HTTP server
@@ -48,18 +49,29 @@ const io = new Server(httpServer, {
 app.use(helmet());
 
 // Enable CORS for the frontend
-app.use(cors({
+const corsOptions = {
     origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Check if the origin is in the allowed origins
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.log('Not allowed by CORS:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Allow specific HTTP methods
-    credentials: true, // Allow cookies to be sent
-    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
-}));
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range']
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Rate limiting middleware to prevent abuse
 const limiter = rateLimit({
