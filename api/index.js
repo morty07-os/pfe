@@ -1,61 +1,49 @@
-import './App.css';
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import QuickSearch from './components/QuickSearch';
-import CarTypesCarousel from './components/CarTypesCarousel';
-import MapSection from './components/MapSection';
+import express from 'express';
+import dotenv from 'dotenv';
+import connectMONGODB from './backened/db/connectMONGODB.js';
+import authRoutes from './backened/routes/auth.routes.js';
+import carRoutes from './backened/routes/car.routes.js';
+import bookingRoutes from './backened/routes/booking.routes.js';
+import messageRoutes from './backened/routes/message.routes.js';
+import ratingRoutes from './backened/routes/rating.routes.js';
+import feedbackRoutes from './backened/routes/feedback.routes.js';
+import errorHandler from './backened/midleware/errorHandler.js';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-import AllOffersPage from './pages/AllOffersPage';
-import OfferDetailsPage from './pages/OfferDetailsPage';
-import ProfilePage from './pages/ProfilePage';
-import CarDetailsPage from './pages/CarDetailsPage';
-import BookingPage from './pages/BookingPage';
-import ConversationPage from './pages/ConversationPage';
-import ConversationListPage from './pages/ConversationListPage';
-import CategoriesPage from './pages/CategoriesPage';
-import DealsPage from './pages/DealsPage';
-import AboutPage from './pages/AboutPage';
-import FaqPage from './pages/FaqPage';
-import ContactPage from './pages/ContactPage';
-import ReviewsPage from './pages/ReviewsPage';
-import AddCarPage from './pages/AddCarPage';
+dotenv.config();
 
-function App() {
-  return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <BrowserRouter>
-        <div className="App">
-          <Routes>
-            <Route path="/" element={
-              <>
-                <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
-                <QuickSearch />
-                <CarTypesCarousel />
-                <MapSection />
-              </>
-            } />
+const app = express();
+const PORT = process.env.PORT || 5001;
 
-            <Route path="/offers" element={<AllOffersPage />} />
-            <Route path="/offer/:offerId" element={<OfferDetailsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/car-details/:carId" element={<CarDetailsPage />} />
-            <Route path="/booking/:carId" element={<BookingPage />} />
-            <Route path="/conversation/:carId/:ownerId" element={<ConversationPage />} />
-            <Route path="/messages" element={<ConversationListPage />} />
-            <Route path="/categories" element={<CategoriesPage />} />
-            <Route path="/deals" element={<DealsPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/faq" element={<FaqPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/reviews" element={<ReviewsPage />} />
-            <Route path="/add-car" element={<AddCarPage />} />
-          </Routes>
-        </div>
-      </BrowserRouter>
-    </LocalizationProvider>
-  );
-}
+// Connect to MongoDB
+connectMONGODB();
 
-export default App;
+// Middleware
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Adjust as needed for your frontend
+    credentials: true
+}));
+app.use(express.json()); // To parse JSON payloads
+app.use(cookieParser());
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/cars', carRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/ratings', ratingRoutes);
+app.use('/api/feedback', feedbackRoutes);
+
+// Serve static files for uploads
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Error handling middleware
+app.use(errorHandler);
+
+// Export the app for Vercel
+export default app;
