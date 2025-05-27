@@ -29,7 +29,9 @@ const PORT = process.env.PORT || 5001;
 // Define allowed origins for CORS
 const allowedOrigins = [
     'http://localhost:3000', // For local frontend development
-    'https://pfe-delta.vercel.app', // Vercel frontend
+    'https://pfe-delta.vercel.app', // Vercel production frontend
+    /^\.*pfe-.*-morty07-os-projects\.vercel\.app$/, // Vercel preview deployments
+    /^https?:\/\/pfe-.*\.vercel\.app$/, // Any Vercel preview URL
     ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []), // Additional frontend URLs from environment variable
 ];
 
@@ -54,8 +56,17 @@ const corsOptions = {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        // Check if the origin is in the allowed origins
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        // Check if the origin matches any of the allowed origins or patterns
+        const isAllowed = allowedOrigins.some(pattern => {
+            if (typeof pattern === 'string') {
+                return pattern === origin;
+            } else if (pattern instanceof RegExp) {
+                return pattern.test(origin);
+            }
+            return false;
+        });
+        
+        if (isAllowed) {
             callback(null, true);
         } else {
             console.log('Not allowed by CORS:', origin);
