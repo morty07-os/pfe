@@ -204,20 +204,30 @@ export default function AllOffersPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cars/user-cars`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await fetch(`${apiUrl}/api/cars/user-cars`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch user cars');
+      }
+
       const data = await response.json();
-      if (response.ok) setUserCars(data);
-      else console.error(data.error || 'Failed to fetch user cars');
+      setUserCars(data);
     } catch (error) {
       console.error('Error fetching user cars:', error.message);
+      if (error.message.includes('token')) {
+        localStorage.removeItem('token');
+        navigate('/');
+      }
     }
   };
-
-  // Extract category from query parameters
-  const queryParams = React.useMemo(() => new URLSearchParams(locationObj.search), [locationObj.search]);
-  const categoryFilter = queryParams.get('category');
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -227,91 +237,54 @@ export default function AllOffersPage() {
           energy: sidebarFilters.energy || '',
           transmission: sidebarFilters.transmission || '',
           wilaya: sidebarFilters.wilaya || '',
-          carType: sidebarFilters.carType || '', // Added carType filter
+          carType: sidebarFilters.carType || '',
           seats: sidebarFilters.seats || '',
           doors: sidebarFilters.doors || '',
           priceMin: sidebarFilters.priceRange ? sidebarFilters.priceRange[0] : '',
           priceMax: sidebarFilters.priceRange ? sidebarFilters.priceRange[1] : '',
           availableFrom: sidebarFilters.availableFrom || '',
           availableTo: sidebarFilters.availableTo || '',
-          search: search || '', // Add search parameter
+          search: search || '',
         }).toString();
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cars/getcars?${queryParams}`);
-        if (!response.ok) throw new Error('Failed to fetch offers');
+
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+        const response = await fetch(`${apiUrl}/api/cars/getcars?${queryParams}`, {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch offers');
+        }
+
         const data = await response.json();
         console.log('Fetched car data:', data);
 
         const enhancedData = data.map(car => {
-          const wilaya = car.wilaya || 'Alger'; // Default to Alger if no wilaya specified
-
-          // Get coordinates for the wilaya
+          const wilaya = car.wilaya || 'Alger';
           const wilayaCoords = algeriaWilayaCoordinates[wilaya] || algeriaWilayaCoordinates['Alger'];
-
-          // Check if we have popular locations for this wilaya
-          let locationData;
-          if (popularLocations[wilaya]) {
-            // Pick a random popular location from this wilaya
-            const randomIndex = Math.floor(Math.random() * popularLocations[wilaya].length);
-            locationData = popularLocations[wilaya][randomIndex];
-          } else {
-            // Create a generic location based on wilaya coordinates
-            // Add small random offset to avoid all cars in same wilaya having identical coordinates
-            const latOffset = (Math.random() - 0.5) * 0.05;
-            const lngOffset = (Math.random() - 0.5) * 0.05;
-            locationData = {
-              name: `${wilaya} Center`,
-              address: `${wilaya}, Algeria`,
-              lat: wilayaCoords.lat + latOffset,
-              lng: wilayaCoords.lng + lngOffset
-            };
-          }
-
-          // Add random features if not present
-          const features = car.features || {
-            airConditioning: Math.random() > 0.4,
-            bluetooth: Math.random() > 0.5,
-            cruiseControl: Math.random() > 0.6,
-            parkingSensors: Math.random() > 0.5,
-            reverseCam: Math.random() > 0.6,
-            usb: Math.random() > 0.3,
-            navigation: Math.random() > 0.7,
-            sunroof: Math.random() > 0.8,
-            leatherSeats: Math.random() > 0.6,
-            heatedSeats: Math.random() > 0.7,
-            keylessEntry: Math.random() > 0.6,
-            alloyWheels: Math.random() > 0.5
-          };
-
           return {
             ...car,
-            features,
-            location: car.location || locationData,
-            // Assuming car data has a 'category' field, if not, this needs to be derived
-            // category: car.category || 'Unknown' // Example, adjust as per your data structure
+            coordinates: wilayaCoords,
+            popularLocations: popularLocations[wilaya] || []
           };
         });
 
         setOffers(enhancedData);
-        console.log('Enhanced car data with features and locations:', enhancedData);
       } catch (error) {
         console.error('Error fetching offers:', error.message);
       }
     };
+
     fetchOffers();
-
-    // Add event listener for car removal
-    const handleCarRemoved = (event) => {
-      console.log('Car removed event received:', event.detail.carId);
-      fetchOffers(); // Re-fetch offers when a car is removed
-    };
-
-    window.addEventListener('carRemoved', handleCarRemoved);
-
-    // Cleanup event listener on component unmount
-    return () => {
-      window.removeEventListener('carRemoved', handleCarRemoved);
-    };
   }, [sidebarFilters, search]);
+
+  // Extract category from query parameters
+  const queryParams = React.useMemo(() => new URLSearchParams(locationObj.search), [locationObj.search]);
+  const categoryFilter = queryParams.get('category');
 
   const filteredOffers = React.useMemo(() => {
     let tempOffers = [...offers];

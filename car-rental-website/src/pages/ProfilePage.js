@@ -92,14 +92,28 @@ const ProfilePage = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error("No token found. Please log in.");
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await fetch(`${apiUrl}/api/auth/me`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch profile');
+      }
+
       const data = await response.json();
-      if (response.ok) setProfile(data);
-      else console.error(data.error || 'Failed to fetch profile');
+      setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error.message);
+      if (error.message.includes('token')) {
+        localStorage.removeItem('token');
+        navigate('/');
+      }
     } finally {
       setLoading(false);
     }
@@ -110,14 +124,28 @@ const ProfilePage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cars/user-cars`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await fetch(`${apiUrl}/api/cars/user-cars`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch user cars');
+      }
+
       const data = await response.json();
-      if (response.ok) setUserCars(data);
-      else console.error(data.error || 'Failed to fetch user cars');
+      setUserCars(data);
     } catch (error) {
       console.error('Error fetching user cars:', error.message);
+      if (error.message.includes('token')) {
+        localStorage.removeItem('token');
+        navigate('/');
+      }
     }
   };
 
@@ -126,17 +154,28 @@ const ProfilePage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/messages/conversations`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await fetch(`${apiUrl}/api/messages/conversations`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
-      const data = await response.json();
-      if (response.ok) {
-        setConversations(data);
-      } else {
-        console.error(data.error || 'Failed to fetch conversations');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch conversations');
       }
+
+      const data = await response.json();
+      setConversations(data);
     } catch (error) {
       console.error('Error fetching conversations:', error.message);
+      if (error.message.includes('token')) {
+        localStorage.removeItem('token');
+        navigate('/');
+      }
     }
   };
 
@@ -148,10 +187,20 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch(`${process.env.REACT_APP_API_URL}/api/auth/logout`, {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await fetch(`${apiUrl}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Logout failed');
+      }
+
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
       navigate('/');
