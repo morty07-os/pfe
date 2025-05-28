@@ -85,7 +85,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Serve static files from the uploads directory
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), { setHeaders: (res) => res.set('Cross-Origin-Resource-Policy', 'cross-origin') }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+    setHeaders: (res) => {
+        res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.set('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
+        res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    }
+}));
 
 // Function to remove the username index if it exists
 const removeUsernameIndex = async () => {
