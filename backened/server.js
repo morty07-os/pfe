@@ -132,3 +132,4 @@ httpServer.listen(PORT, async () => {
     await connectMongoDB();
     await removeUsernameIndex(); // Ensure the username index is removed
 });
+ 
