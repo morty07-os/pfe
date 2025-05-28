@@ -30,7 +30,8 @@ const PORT = process.env.PORT || 5001;
 const allowedOrigins = [
     'http://localhost:3000',
     'https://pfe-delta.vercel.app',
-    'https://pfe-morty07-os-projects.vercel.app'
+    'https://pfe-morty07-os-projects.vercel.app',
+    'https://pfe-uhbw.vercel.app'
 ];
 
 // Create HTTP server
@@ -39,7 +40,7 @@ const httpServer = createServer(app);
 // Initialize socket.io with the HTTP server
 const io = new Server(httpServer, {
     cors: {
-        origin: 'https://pfe-delta.vercel.app',
+        origin: allowedOrigins,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         credentials: true,
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
@@ -55,7 +56,7 @@ app.use(helmet({
 
 // Enable CORS for the frontend
 app.use(cors({
-    origin: ['https://pfe-delta.vercel.app', 'http://localhost:3000'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
@@ -64,7 +65,7 @@ app.use(cors({
 
 // Handle preflight requests
 app.options('*', cors({
-    origin: ['https://pfe-delta.vercel.app', 'http://localhost:3000'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
@@ -86,9 +87,9 @@ app.use(cookieParser());
 
 // Serve static files from the uploads directory
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
-    setHeaders: (res) => {
+    setHeaders: (res, path) => {
         res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-        res.set('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
+        res.set('Access-Control-Allow-Origin', allowedOrigins.join(', '));
         res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     }
