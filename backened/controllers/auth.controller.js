@@ -121,6 +121,16 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
+        // Check if user is verified
+        if (!user.isVerified) {
+            console.log('User not verified:', email);
+            return res.status(403).json({ 
+                error: 'Email not verified', 
+                needsVerification: true,
+                email: user.email
+            });
+        }
+
         // Generate token and set it in the cookie
         const token = generateTokenAndSetCookie(user._id, res);
         
@@ -139,6 +149,7 @@ export const login = async (req, res) => {
             email: user.email,
             phone: user.phone,
             residence: user.residence,
+            isVerified: user.isVerified,
             createdAt: user.createdAt
         };
 
@@ -165,34 +176,44 @@ export const verifyEmail = async (req, res) => {
             return res.status(400).json({ error: "Email and verification code are required" });
         }
 
+        console.log(`Verification attempt for email: ${email} with code: ${verificationCode}`);
+
         const user = await User.findOne({ email: email.toLowerCase() });
 
         if (!user) {
+            console.log(`User not found for email: ${email}`);
             return res.status(404).json({ error: "User not found" });
         }
 
         if (user.isVerified) {
+            console.log(`Email already verified for user: ${user._id}`);
             return res.status(400).json({ error: "Email already verified" });
         }
 
         if (!user.verificationToken || !user.verificationTokenExpires) {
+            console.log(`No verification token found for user: ${user._id}`);
             return res.status(400).json({ error: "No verification code found or it has expired. Please request a new one." });
         }
 
         if (user.verificationTokenExpires < Date.now()) {
+            console.log(`Verification token expired for user: ${user._id}`);
             return res.status(400).json({ error: "Verification code has expired. Please request a new one." });
         }
 
         const isCodeValid = await bcrypt.compare(verificationCode, user.verificationToken);
 
         if (!isCodeValid) {
+            console.log(`Invalid verification code for user: ${user._id}`);
             return res.status(400).json({ error: "Invalid verification code" });
         }
 
+        // Update user verification status
         user.isVerified = true;
         user.verificationToken = undefined;
         user.verificationTokenExpires = undefined;
+        
         await user.save();
+        console.log(`User ${user._id} verified successfully`);
 
         // Generate token and set it in the cookie after successful verification
         const token = generateTokenAndSetCookie(user._id, res);
@@ -202,16 +223,22 @@ export const verifyEmail = async (req, res) => {
             return res.status(500).json({ error: 'Failed to generate authentication token after verification' });
         }
 
+        // Return complete user data (without sensitive information)
+        const userResponse = {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            residence: user.residence,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt
+        };
+
         res.status(200).json({
-            message: "Email verified successfully. You can now log in.",
+            message: "Email verified successfully. You are now logged in.",
             token,
-            user: {
-                _id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                isVerified: user.isVerified,
-            },
+            user: userResponse
         });
     } catch (error) {
         console.error("Error in verifyEmail controller:", error.message);
@@ -228,13 +255,17 @@ export const resendVerificationCode = async (req, res) => {
             return res.status(400).json({ error: "Email is required" });
         }
 
+        console.log(`Resending verification code for email: ${email}`);
+
         const user = await User.findOne({ email: email.toLowerCase() });
 
         if (!user) {
+            console.log(`User not found for email: ${email}`);
             return res.status(404).json({ error: "User not found" });
         }
 
         if (user.isVerified) {
+            console.log(`Email already verified for user: ${user._id}`);
             return res.status(400).json({ error: "Email is already verified." });
         }
 
@@ -248,9 +279,16 @@ export const resendVerificationCode = async (req, res) => {
         user.verificationToken = hashedNewVerificationCode;
         user.verificationTokenExpires = newVerificationCodeExpires;
         await user.save();
+        console.log(`New verification code generated for user: ${user._id}`);
 
         // Send the new verification email
-        await sendVerificationEmail(user.email, newVerificationCode);
+        try {
+            await sendVerificationEmail(user.email, newVerificationCode);
+            console.log(`Verification email sent to: ${user.email}`);
+        } catch (emailError) {
+            console.error(`Error sending verification email: ${emailError.message}`);
+            return res.status(500).json({ error: "Failed to send verification email. Please try again later." });
+        }
 
         res.status(200).json({ message: "New verification code sent to your email." });
     } catch (error) {

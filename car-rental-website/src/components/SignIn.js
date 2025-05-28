@@ -19,6 +19,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import { useNavigate } from 'react-router-dom';
 import ForgotPasswordDialog from './ForgotPasswordDialog';
+import { endpoints, fetchOptions } from '../utils/apiConfig';
 
 const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
   const theme = useTheme();
@@ -45,26 +46,36 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
     setMessage('');
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
+      console.log('Attempting login with:', formData.email);
+      const response = await fetch(endpoints.login, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: fetchOptions.headers,
         credentials: 'include',
         body: JSON.stringify(formData),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Sign in failed');
+        // Special handling for unverified emails
+        if (response.status === 403 && result.needsVerification) {
+          console.log("Email not verified, redirecting to verification page");
+          onClose();
+          navigate('/verify-email', { state: { email: result.email } });
+          return;
+        }
+        
+        throw new Error(result.error || 'Sign in failed');
       }
 
-      const result = await response.json();
+      console.log("Login successful:", result);
       setMessage('Sign in successful');
+      
+      // Store user data in localStorage
       localStorage.setItem('token', result.token);
       localStorage.setItem('userId', result.user._id);
+      localStorage.setItem('userEmail', result.user.email);
+      
       onClose();
       
       const userName = result.user?.firstName || 'User';

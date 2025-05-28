@@ -29,10 +29,10 @@ export const generateTokenAndSetCookie = (userId, res) => {
         const cookieOptions = {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             httpOnly: true,
-            sameSite: 'none',
-            secure: true,
-            path: '/',
-            domain: process.env.NODE_ENV === 'production' ? '.render.com' : undefined
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/'
+            // Removed domain restriction which was causing issues
         };
 
         res.cookie('jwt', token, cookieOptions);

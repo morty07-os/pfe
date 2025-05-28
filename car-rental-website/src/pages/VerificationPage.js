@@ -48,21 +48,31 @@ const VerificationPage = () => {
     setMessage({ type: '', text: '' });
 
     try {
+      console.log(`Attempting to verify email: ${email} with code: ${verificationCode}`);
+      
       const response = await fetch(`${apiUrl}/api/auth/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important for cookies
         body: JSON.stringify({ email, verificationCode }),
       });
 
       const result = await response.json();
+      console.log('Verification response:', result);
 
       if (response.ok) {
-        localStorage.setItem('token', result.token); // Store token after verification
+        // Store user data in localStorage
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('userId', result.user._id);
+        localStorage.setItem('userEmail', result.user.email);
+        
         setMessage({ type: 'success', text: result.message });
+        
         // Dispatch custom event to notify other components about login state change
         window.dispatchEvent(new Event('loginStateChanged'));
+        
         setTimeout(() => {
           navigate('/'); // Redirect to home page or dashboard
         }, 2000);
@@ -83,6 +93,8 @@ const VerificationPage = () => {
     setResendCooldown(60); // Start 60-second cooldown
 
     try {
+      console.log(`Attempting to resend verification code to: ${email}`);
+      
       const response = await fetch(`${apiUrl}/api/auth/resend-verification-code`, {
         method: 'POST',
         headers: {
@@ -92,6 +104,7 @@ const VerificationPage = () => {
       });
 
       const result = await response.json();
+      console.log('Resend verification code response:', result);
 
       if (response.ok) {
         setMessage({ type: 'success', text: result.message });
