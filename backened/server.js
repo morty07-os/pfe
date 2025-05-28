@@ -111,17 +111,14 @@ const removeUsernameIndex = async () => {
 // Mount authentication routes
 app.use("/api/auth", authRoutes);
 
-// Mount car routes
+// Mount other routes
 app.use("/api/cars", carRoutes);
-
-// Mount booking routes
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/messages", messageRoutes);
-app.use("/api/ratings", ratingRoutes); // Mount rating routes
-app.use("/api/feedbacks", feedbackRoutes); // Mount feedback routes
+app.use("/api/ratings", ratingRoutes);
+app.use("/api/feedbacks", feedbackRoutes);
 
-
-// Add a simple root route for health check or basic message
+// Add a simple root route for health check
 app.get('/', (req, res) => {
     res.status(200).send('Car Rental Backend API is running!');
 });

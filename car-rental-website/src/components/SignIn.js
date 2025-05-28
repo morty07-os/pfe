@@ -56,26 +56,26 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
         body: JSON.stringify(formData),
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        setMessage('Sign in successful');
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('userId', result.user._id);
-        onClose();
-        
-        const userName = result.user?.firstName || 'User';
-        if (onSuccess) {
-          onSuccess(userName);
-        }
-        
-        window.dispatchEvent(new Event('loginStateChanged'));
-      } else {
-        setMessage(result.error || 'Sign in failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Sign in failed');
       }
+
+      const result = await response.json();
+      setMessage('Sign in successful');
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('userId', result.user._id);
+      onClose();
+      
+      const userName = result.user?.firstName || 'User';
+      if (onSuccess) {
+        onSuccess(userName);
+      }
+      
+      window.dispatchEvent(new Event('loginStateChanged'));
     } catch (error) {
-      setMessage('Sign in failed');
-      console.error("Error during sign in:", error.message);
+      setMessage(error.message || 'Sign in failed');
+      console.error("Error during sign in:", error);
     }
   };
 
