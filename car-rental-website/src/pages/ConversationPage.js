@@ -23,6 +23,8 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import dayjs from 'dayjs';
 import Navbar from '../components/Navbar';
 
+const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+
 const ConversationPage = () => {
   const { carId } = useParams();
   const location = useLocation();
@@ -43,7 +45,7 @@ const ConversationPage = () => {
     }
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/messages/${carId}?conversationId=${conversationId}&page=${page}&limit=${limit}`, {
+      const response = await axios.get(`${apiUrl}/api/messages/${carId}?conversationId=${conversationId}&page=${page}&limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -64,7 +66,7 @@ const ConversationPage = () => {
           setLoading(false);
           return;
         }
-        const carResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/cars/details/${carId}`, {
+        const carResponse = await axios.get(`${apiUrl}/api/cars/details/${carId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -137,7 +139,7 @@ const ConversationPage = () => {
   const handleSendChat = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/messages/save`, {
+      const response = await axios.post(`${apiUrl}/api/messages/save`, {
         carId: carId,
         receiver: owner._id,
         text: chatInput,

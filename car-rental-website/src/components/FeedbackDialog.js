@@ -21,6 +21,8 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import PersonIcon from '@mui/icons-material/Person';
 import axios from 'axios';
 
+const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+
 const labels = {
   1: 'Poor',
   2: 'Fair',
@@ -86,7 +88,7 @@ const FeedbackDialog = ({ open, onClose, carId, userId, isCarOwner, carName, own
       // If car owner is rating the renter
       if (isCarOwner) {
         await axios.post(
-          `${process.env.REACT_APP_API_URL}/api/ratings`,
+          `${apiUrl}/api/ratings`,
           {
             raterId: raterId, // The owner giving the rating
             ratedUserId: userId, // The renter being rated
@@ -106,7 +108,7 @@ const FeedbackDialog = ({ open, onClose, carId, userId, isCarOwner, carName, own
         // Submit car rating if provided
         if (carRating > 0) {
           await axios.post(
-            `${process.env.REACT_APP_API_URL}/api/ratings`, // Corrected endpoint
+            `${apiUrl}/api/ratings`, // Corrected endpoint
             {
               raterId: raterId, // The renter giving the rating
               carId: carId, // The car being rated
@@ -125,7 +127,7 @@ const FeedbackDialog = ({ open, onClose, carId, userId, isCarOwner, carName, own
         // Submit owner rating if provided
         if (userRating > 0) {
           await axios.post(
-            `${process.env.REACT_APP_API_URL}/api/ratings`, // Corrected endpoint
+            `${apiUrl}/api/ratings`, // Corrected endpoint
             {
               raterId: raterId, // The renter giving the rating
               ratedUserId: userId, // The owner being rated

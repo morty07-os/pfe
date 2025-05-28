@@ -51,6 +51,8 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 
+const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+
 export default function BookingPage() {
   const { carId } = useParams();
   const navigate = useNavigate();
@@ -79,7 +81,7 @@ export default function BookingPage() {
     const fetchCarDetails = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/cars/details/${carId}`);
+        const response = await axios.get(`${apiUrl}/api/cars/details/${carId}`);
         const data = response.data;
         
         let ownerId = null;
@@ -91,7 +93,7 @@ export default function BookingPage() {
           try {
             const token = localStorage.getItem('token'); // Assuming token is needed for this endpoint
             const ownerRatingsResponse = await axios.get(
-              `${process.env.REACT_APP_API_URL}/api/ratings/average/user/${ownerId}`,
+              `${apiUrl}/api/ratings/average/user/${ownerId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             data.ownerAverageRating = ownerRatingsResponse.data.averageRating || 0;
@@ -179,7 +181,7 @@ export default function BookingPage() {
   // Prepare images for the carousel
   let processedImages = [];
   if (car) {
-    const imageBaseUrl = process.env.REACT_APP_API_URL;
+    const imageBaseUrl = apiUrl;
     if (car.images && Array.isArray(car.images) && car.images.length > 0) {
       processedImages = car.images.map(imgPath => 
         imgPath.startsWith('http') ? imgPath : `${imageBaseUrl}${imgPath.replace(/^\.\//, '')}`

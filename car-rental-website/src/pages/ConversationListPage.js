@@ -32,6 +32,8 @@ import {
   DirectionsCar as DirectionsCarIcon
 } from '@mui/icons-material';
 
+const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+
 const StyledListItem = styled(ListItem)(({ theme, unread }) => ({
   borderRadius: '12px',
   marginBottom: theme.spacing(1),
@@ -99,7 +101,7 @@ const ConversationListPage = () => {
           setLoading(false);
           return;
         }
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/messages/conversations`, {
+        const response = await axios.get(`${apiUrl}/api/messages/conversations`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

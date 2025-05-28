@@ -30,6 +30,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import StarIcon from '@mui/icons-material/Star';
 import FeedbackDialog from './FeedbackDialog';
 
+const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+
 const ConversationDialog = ({ userId, carId, conversationId }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -66,7 +68,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
       try {
         const token = localStorage.getItem('token');
         const carResponse = await axios.get(
-          `http://localhost:5001/api/cars/details/${carId}`,
+          `${apiUrl}/api/cars/details/${carId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -112,8 +114,8 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
         }
         
         const endpoint = conversationId 
-          ? `http://localhost:5001/api/messages/${carId}?conversationId=${conversationId}` 
-          : `http://localhost:5001/api/messages/user/${userId}`;
+          ? `${apiUrl}/api/messages/${carId}?conversationId=${conversationId}` 
+          : `${apiUrl}/api/messages/user/${userId}`;
         
         const response = await axios.get(
           endpoint,
@@ -138,7 +140,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
             else if (carMessages[0].carId && typeof carMessages[0].carId === 'string') {
               try {
                 const carDetailResponse = await axios.get(
-                  `http://localhost:5001/api/cars/details/${carMessages[0].carId}`,
+                  `${apiUrl}/api/cars/details/${carMessages[0].carId}`,
                   {
                     headers: {
                       Authorization: `Bearer ${token}`,
@@ -224,7 +226,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
           if (firstMessage.carId && typeof firstMessage.carId === 'string') {
             try {
               const carResponse = await axios.get(
-                `http://localhost:5001/api/cars/details/${firstMessage.carId}`,
+                `${apiUrl}/api/cars/details/${firstMessage.carId}`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -252,7 +254,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
         if (carId && !carName) {
           try {
             const carResponse = await axios.get(
-              `http://localhost:5001/api/cars/details/${carId}`,
+              `${apiUrl}/api/cars/details/${carId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -316,7 +318,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(
-          `http://localhost:5001/api/feedback/check?carId=${carId}&userId=${currentUserId}`,
+          `${apiUrl}/api/feedback/check?carId=${carId}&userId=${currentUserId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -395,7 +397,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
       
       try {
         const carCheckResponse = await axios.get(
-          `http://localhost:5001/api/cars/details/${carId}`,
+          `${apiUrl}/api/cars/details/${carId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -446,7 +448,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
       if (bothConfirmed) {
         try {
           const deleteResponse = await axios.delete(
-            `http://localhost:5001/api/cars/delete/${carId}`,
+            `${apiUrl}/api/cars/delete/${carId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -460,7 +462,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
           
           try {
             const conversationsResponse = await axios.get(
-              `http://localhost:5001/api/messages/car-conversations/${carId}`,
+              `${apiUrl}/api/messages/car-conversations/${carId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -477,7 +479,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
               for (const conv of otherConversations) {
                 try {
                   await axios.post(
-                    'http://localhost:5001/api/messages/save',
+                    `${apiUrl}/api/messages/save`,
                     {
                       carId: carId,
                       receiver: conv.otherUserId,
@@ -548,7 +550,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
       }
       
       const response = await axios.post(
-        'http://localhost:5001/api/messages/save',
+        `${apiUrl}/api/messages/save`,
         formData,
         {
           headers: {
@@ -827,7 +829,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
                           <img 
                             src={message.image.startsWith('data:') 
                               ? message.image 
-                              : `http://localhost:5001/${message.image}`
+                              : `${apiUrl}/${message.image}`
                             } 
                             alt="Message attachment" 
                             style={{ 
