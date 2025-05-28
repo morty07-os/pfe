@@ -68,7 +68,13 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
 
   const handleSubmitFinal = async () => {
     const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => formDataToSend.append(key, formData[key]));
+    Object.keys(formData).forEach((key) => {
+      if (key === 'email') {
+        formDataToSend.append(key, formData[key].toLowerCase());
+      } else {
+        formDataToSend.append(key, formData[key]);
+      }
+    });
 
     try {
       const response = await fetch(`${apiUrl}/api/auth/signup`, {
@@ -79,6 +85,10 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
       const result = await response.json();
 
       if (response.ok) {
+        // Clear any previous user info from localStorage
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
         onClose();
         navigate('/verify-email', { state: { email: result.email } });
       } else {

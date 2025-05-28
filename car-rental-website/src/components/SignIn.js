@@ -46,12 +46,16 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
     setMessage('');
 
     try {
-      console.log('Attempting login with:', formData.email);
+      const loginData = {
+        email: formData.email.toLowerCase(),
+        password: formData.password
+      };
+      console.log('Attempting login with:', loginData.email);
       const response = await fetch(endpoints.login, {
         method: 'POST',
         headers: fetchOptions.headers,
         credentials: 'include',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(loginData),
       });
 
       const result = await response.json();
@@ -64,25 +68,24 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
           navigate('/verify-email', { state: { email: result.email } });
           return;
         }
-        
         throw new Error(result.error || 'Sign in failed');
       }
 
       console.log("Login successful:", result);
       setMessage('Sign in successful');
-      
+      // Clear any previous user info from localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userEmail');
       // Store user data in localStorage
       localStorage.setItem('token', result.token);
       localStorage.setItem('userId', result.user._id);
       localStorage.setItem('userEmail', result.user.email);
-      
       onClose();
-      
       const userName = result.user?.firstName || 'User';
       if (onSuccess) {
         onSuccess(userName);
       }
-      
       window.dispatchEvent(new Event('loginStateChanged'));
     } catch (error) {
       setMessage(error.message || 'Sign in failed');

@@ -90,8 +90,13 @@ const ProfilePage = () => {
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("No token found. Please log in.");
-
+      if (!token) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
+        navigate('/');
+        return;
+      }
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/auth/me`, {
         headers: { 
@@ -100,12 +105,14 @@ const ProfilePage = () => {
         },
         credentials: 'include'
       });
-
       if (!response.ok) {
         const errorData = await response.json();
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
+        navigate('/');
         throw new Error(errorData.error || 'Failed to fetch profile');
       }
-
       const data = await response.json();
       setProfile(data);
     } catch (error) {
@@ -191,6 +198,7 @@ const ProfilePage = () => {
 
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
+      localStorage.removeItem('userEmail');
       navigate('/');
     } catch (err) {
       console.error("Logout error:", err.message);
