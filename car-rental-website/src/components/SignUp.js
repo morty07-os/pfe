@@ -12,6 +12,8 @@ import {
   InputAdornment,
   useTheme,
   FormHelperText,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import CloseIcon from '@mui/icons-material/Close';
@@ -42,6 +44,11 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   const [focused, setFocused] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   const validateAlgerianPhone = (phoneNumber) => {
     const cleanedNumber = phoneNumber.replace(/\s+/g, '').replace(/[^\d]/g, '');
@@ -76,18 +83,27 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
         body: formDataToSend,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Registration failed');
+      }
 
       // If signup is successful, redirect to verification page
       onClose(); // Close signup dialog
-      navigate('/verify-email', { state: { email: result.email } }); // Pass email as state
+      navigate('/verify-email', { 
+        state: { 
+          email: result.email,
+          message: 'Please check your email for the verification code.'
+        } 
+      });
     } catch (error) {
       console.error("Error during registration:", error);
-      alert('An error occurred during registration. Please try again.');
+      setSnackbar({
+        open: true,
+        message: error.message || 'An error occurred during registration. Please try again.',
+        severity: 'error'
+      });
     }
   };
 
@@ -186,6 +202,20 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
           </DialogActions>
         </DialogContent>
       </form>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };
