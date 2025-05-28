@@ -4,7 +4,7 @@
   "main": "backened/server.js",
   "scripts": {
     "dev": "nodemon backened/server.js",
-    "start": "nodemon backened/server.js"
+    "start": "node backened/server.js"
   },
   "keywords": [],
   "author": "",

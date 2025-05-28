@@ -99,7 +99,7 @@ const ConversationListPage = () => {
           setLoading(false);
           return;
         }
-        const response = await axios.get('http://localhost:5001/api/messages/conversations', {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/messages/conversations`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

@@ -79,7 +79,7 @@ export default function BookingPage() {
     const fetchCarDetails = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5001/api/cars/details/${carId}`);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/cars/details/${carId}`);
         const data = response.data;
         
         let ownerId = null;
@@ -91,7 +91,7 @@ export default function BookingPage() {
           try {
             const token = localStorage.getItem('token'); // Assuming token is needed for this endpoint
             const ownerRatingsResponse = await axios.get(
-              `http://localhost:5001/api/ratings/average/user/${ownerId}`,
+              `${process.env.REACT_APP_API_URL}/api/ratings/average/user/${ownerId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             data.ownerAverageRating = ownerRatingsResponse.data.averageRating || 0;
@@ -135,7 +135,7 @@ export default function BookingPage() {
       const carAvailabilityEnd = dayjs(car.availabilityEnd);
 
       if (startDate.isBefore(carAvailabilityStart) || endDate.isAfter(carAvailabilityEnd)) {
-        setDateError('Selected dates are outside the car’s availability range.');
+        setDateError("Selected dates are outside the car's availability range.");
         setTotalCost(0);
         return;
       }
@@ -179,7 +179,7 @@ export default function BookingPage() {
   // Prepare images for the carousel
   let processedImages = [];
   if (car) {
-    const imageBaseUrl = 'http://localhost:5001/';
+    const imageBaseUrl = process.env.REACT_APP_API_URL;
     if (car.images && Array.isArray(car.images) && car.images.length > 0) {
       processedImages = car.images.map(imgPath => 
         imgPath.startsWith('http') ? imgPath : `${imageBaseUrl}${imgPath.replace(/^\.\//, '')}`

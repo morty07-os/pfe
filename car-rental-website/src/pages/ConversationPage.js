@@ -43,7 +43,7 @@ const ConversationPage = () => {
     }
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5001/api/messages/${carId}?conversationId=${conversationId}&page=${page}&limit=${limit}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/messages/${carId}?conversationId=${conversationId}&page=${page}&limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -64,7 +64,7 @@ const ConversationPage = () => {
           setLoading(false);
           return;
         }
-        const carResponse = await axios.get(`http://localhost:5001/api/cars/details/${carId}`, {
+        const carResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/cars/details/${carId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -137,7 +137,7 @@ const ConversationPage = () => {
   const handleSendChat = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:5001/api/messages/save', {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/messages/save`, {
         carId: carId,
         receiver: owner._id,
         text: chatInput,

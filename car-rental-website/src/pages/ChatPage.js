@@ -185,7 +185,7 @@ export default function ChatPage() {
               <Grid item xs={12} sm={3} md={2}>
                 <CardMedia
                   component="img"
-                  image={`http://localhost:5001/${car.images?.[0]}`}
+                  image={`${process.env.REACT_APP_API_URL}/${car.images?.[0]}`}
                   alt={car.carName}
                   sx={{ borderRadius: 1.5, height: 100, objectFit: 'cover', width: '100%' }}
                 />

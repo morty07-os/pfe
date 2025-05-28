@@ -92,7 +92,7 @@ const AddCarPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/cars/addcar', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cars/addcar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

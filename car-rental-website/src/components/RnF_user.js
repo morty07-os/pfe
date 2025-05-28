@@ -41,7 +41,7 @@ const RnF_user = ({ open, onClose, userId, userName }) => {
         
         // Fetch user profile information
         const userResponse = await axios.get(
-          `http://localhost:5001/api/users/${userId}`,
+          `${process.env.REACT_APP_API_URL}/api/users/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -53,7 +53,7 @@ const RnF_user = ({ open, onClose, userId, userName }) => {
         setUserInfo(userResponse.data);
         // Fetch user ratings
         const ratingsResponse = await axios.get(
-          `http://localhost:5001/api/ratings/user/${userId}`, // Corrected endpoint
+          `${process.env.REACT_APP_API_URL}/api/ratings/user/${userId}`, // Corrected endpoint
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -64,7 +64,7 @@ const RnF_user = ({ open, onClose, userId, userName }) => {
 
         // Fetch average rating for the user
         const averageRatingResponse = await axios.get(
-            `http://localhost:5001/api/ratings/average/user/${userId}`, // Corrected endpoint
+            `${process.env.REACT_APP_API_URL}/api/ratings/average/user/${userId}`, // Corrected endpoint
             {
                 headers: {
                     Authorization: `Bearer ${token}`,

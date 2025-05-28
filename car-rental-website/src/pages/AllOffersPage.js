@@ -204,7 +204,7 @@ export default function AllOffersPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5001/api/cars/user-cars', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cars/user-cars`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -236,7 +236,7 @@ export default function AllOffersPage() {
           availableTo: sidebarFilters.availableTo || '',
           search: search || '', // Add search parameter
         }).toString();
-        const response = await fetch(`http://localhost:5001/api/cars/getcars?${queryParams}`);
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cars/getcars?${queryParams}`);
         if (!response.ok) throw new Error('Failed to fetch offers');
         const data = await response.json();
         console.log('Fetched car data:', data);
@@ -1141,7 +1141,7 @@ export default function AllOffersPage() {
                           }}>
                             <CardMedia
                               component="img"
-                              image={offer.images?.[0] ? `http://localhost:5001/${offer.images[0]}` : '/placeholder.jpg'}
+                              image={offer.images?.[0] ? `${process.env.REACT_APP_API_URL}/${offer.images[0]}` : '/placeholder.jpg'}
                               alt={offer.carName || offer.title || 'Car image'}
                               sx={{
                                 objectFit: 'cover',

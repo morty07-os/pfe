@@ -30,6 +30,7 @@ const PORT = process.env.PORT || 5001;
 const allowedOrigins = [
     'http://localhost:3000', // For local frontend development
     'https://pfe-delta.vercel.app', // Vercel production frontend
+    'https://pfe-morty07-os-projects.vercel.app', // Specific Vercel production frontend from error
     /^\.*pfe-.*-morty07-os-projects\.vercel\.app$/, // Vercel preview deployments
     /^https?:\/\/pfe-.*\.vercel\.app$/, // Any Vercel preview URL
     ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []), // Additional frontend URLs from environment variable

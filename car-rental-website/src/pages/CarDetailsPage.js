@@ -110,7 +110,7 @@ export default function CarDetailsPage() {
         if (!token) return;
         
         // Fetch user data from API
-        fetch('http://localhost:5001/api/auth/me', {
+        fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then(response => response.json())
@@ -132,7 +132,7 @@ export default function CarDetailsPage() {
     const fetchCarDetails = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5001/api/cars/details/${carId}`);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/cars/details/${carId}`);
         const data = response.data;
         setCar(data);
         
@@ -149,13 +149,13 @@ export default function CarDetailsPage() {
           try {
             const token = localStorage.getItem('token');
             const ownerRatingsResponse = await axios.get(
-              `http://localhost:5001/api/ratings/user/${ownerId}`,
+              `${process.env.REACT_APP_API_URL}/api/ratings/user/${ownerId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             setOwnerFeedbacks(ownerRatingsResponse.data || []);
 
             const ownerAverageRatingResponse = await axios.get(
-              `http://localhost:5001/api/ratings/average/user/${ownerId}`,
+              `${process.env.REACT_APP_API_URL}/api/ratings/average/user/${ownerId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             setOwnerAverageRating(ownerAverageRatingResponse.data.averageRating || 0);
@@ -478,7 +478,7 @@ export default function CarDetailsPage() {
                     <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
                       <CardMedia
                         component="img"
-                        image={`http://localhost:5001/${car.images?.[selectedImageIndex] || car.images?.[0]}`}
+                        image={`${process.env.REACT_APP_API_URL}/${car.images?.[selectedImageIndex] || car.images?.[0]}`}
                         alt={car.carName}
                         sx={{
                           borderRadius: 2,
@@ -566,7 +566,7 @@ export default function CarDetailsPage() {
                           >
                             <CardMedia
                               component="img"
-                              image={`http://localhost:5001/${img}`}
+                              image={`${process.env.REACT_APP_API_URL}/${img}`}
                               alt={`Car image ${index + 1}`}
                               sx={{
                                 width: 70,

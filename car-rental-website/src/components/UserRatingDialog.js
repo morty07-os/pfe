@@ -38,7 +38,7 @@ const UserRatingDialog = ({ open, onClose, userId, userName }) => {
         setLoading(true);
         const token = localStorage.getItem('token');
         const response = await axios.get(
-          `http://localhost:5001/api/feedback/user/${userId}`,
+          `${process.env.REACT_APP_API_URL}/api/feedback/user/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

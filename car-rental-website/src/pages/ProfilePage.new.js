@@ -87,7 +87,7 @@ const ProfilePage = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error("No token found. Please log in.");
 
-      const response = await fetch('http://localhost:5001/api/auth/me', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -105,7 +105,7 @@ const ProfilePage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5001/api/cars/user-cars', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cars/user-cars`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -123,7 +123,7 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:5001/api/auth/logout', {
+      await fetch(`${process.env.REACT_APP_API_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -543,7 +543,7 @@ const ProfilePage = () => {
                                 }}
                               >
                                 <img
-                                  src={car.images?.[0] ? `http://localhost:5001/${car.images[0]}` : '/placeholder.jpg'}
+                                  src={car.images?.[0] ? `${process.env.REACT_APP_API_URL}/${car.images[0]}` : '/placeholder.jpg'}
                                   alt={car.carName}
                                   style={{
                                     width: '100%',

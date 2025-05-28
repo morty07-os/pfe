@@ -70,7 +70,7 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
     Object.keys(formData).forEach((key) => formDataToSend.append(key, formData[key]));
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/signup', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/signup`, {
         method: 'POST',
         body: formDataToSend,
       });

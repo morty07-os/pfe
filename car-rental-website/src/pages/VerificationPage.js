@@ -46,7 +46,7 @@ const VerificationPage = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/verify-email', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ const VerificationPage = () => {
     setResendCooldown(60); // Start 60-second cooldown
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/resend-verification-code', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/resend-verification-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
