@@ -6,12 +6,10 @@ import {
     updateRating,
     deleteRating,
     getAverageRatingByCarId,
-    getRatingsByRatedUserId, // Import new function
-    getAverageRatingByRatedUserId, // Import new function
-    getUserRatings,
-    getAverageRating
+    getRatingsByRatedUserId,
+    getAverageRatingByRatedUserId
 } from '../controllers/rating.controller.js';
-import { ProtectedRoute } from '../midleware/ProtectedRoute.js'; // Corrected import
+import { ProtectedRoute } from '../midleware/ProtectedRoute.js';
 
 const router = express.Router();
 
@@ -30,19 +28,16 @@ router.use((req, res, next) => {
     next();
 });
 
-// Public routes (e.g., getting ratings for a car or user)
+// Public routes
 router.get('/car/:carId', getRatingsByCarId);
-router.get('/average/car/:carId', getAverageRatingByCarId); // Corrected path for average car rating
-router.get('/user/:userId', getRatingsByRatedUserId); // New route for user ratings
-router.get('/average/user/:userId', getAverageRatingByRatedUserId); // New route for average user rating
-router.get('/', getRatings); // Get all ratings (might be admin-only later)
+router.get('/average/car/:carId', getAverageRatingByCarId);
+router.get('/user/:userId', getRatingsByRatedUserId);
+router.get('/average/user/:userId', getAverageRatingByRatedUserId);
+router.get('/', getRatings);
 
-// Protected routes (e.g., creating, updating, deleting a rating)
+// Protected routes
 router.post('/', ProtectedRoute(), createRating);
 router.put('/:id', ProtectedRoute(), updateRating);
 router.delete('/:id', ProtectedRoute(), deleteRating);
-
-router.get('/user/:userId', getUserRatings);
-router.get('/average/user/:userId', getAverageRating);
 
 export default router;
