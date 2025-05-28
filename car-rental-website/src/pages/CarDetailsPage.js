@@ -44,6 +44,8 @@ import Navbar from '../components/Navbar';
 import axios from 'axios'; // Import axios
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote'; // Import FormatQuoteIcon
 
+const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+
 export default function CarDetailsPage() {
   const { carId } = useParams();
   const [car, setCar] = useState(null);
@@ -110,7 +112,7 @@ export default function CarDetailsPage() {
         if (!token) return;
         
         // Fetch user data from API
-        fetch(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
+        fetch(`${apiUrl}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then(response => response.json())
@@ -132,7 +134,7 @@ export default function CarDetailsPage() {
     const fetchCarDetails = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/cars/details/${carId}`);
+        const response = await axios.get(`${apiUrl}/api/cars/details/${carId}`);
         const data = response.data;
         setCar(data);
         
@@ -149,13 +151,13 @@ export default function CarDetailsPage() {
           try {
             const token = localStorage.getItem('token');
             const ownerRatingsResponse = await axios.get(
-              `${process.env.REACT_APP_API_URL}/api/ratings/user/${ownerId}`,
+              `${apiUrl}/api/ratings/user/${ownerId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             setOwnerFeedbacks(ownerRatingsResponse.data || []);
 
             const ownerAverageRatingResponse = await axios.get(
-              `${process.env.REACT_APP_API_URL}/api/ratings/average/user/${ownerId}`,
+              `${apiUrl}/api/ratings/average/user/${ownerId}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             setOwnerAverageRating(ownerAverageRatingResponse.data.averageRating || 0);
@@ -478,7 +480,7 @@ export default function CarDetailsPage() {
                     <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
                       <CardMedia
                         component="img"
-                        image={`${process.env.REACT_APP_API_URL}/${car.images?.[selectedImageIndex] || car.images?.[0]}`}
+                        image={`${apiUrl}/${car.images?.[selectedImageIndex] || car.images?.[0]}`}
                         alt={car.carName}
                         sx={{
                           borderRadius: 2,
@@ -566,7 +568,7 @@ export default function CarDetailsPage() {
                           >
                             <CardMedia
                               component="img"
-                              image={`${process.env.REACT_APP_API_URL}/${img}`}
+                              image={`${apiUrl}/${img}`}
                               alt={`Car image ${index + 1}`}
                               sx={{
                                 width: 70,
