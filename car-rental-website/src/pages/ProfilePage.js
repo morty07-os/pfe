@@ -94,16 +94,18 @@ const ProfilePage = () => {
 
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/auth/me`, {
+        method: 'GET',
         headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include'
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch profile');
+        throw new Error(errorData.error || 'Failed to fetch profile');
       }
 
       const data = await response.json();
@@ -126,16 +128,18 @@ const ProfilePage = () => {
 
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/cars/user-cars`, {
+        method: 'GET',
         headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include'
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch user cars');
+        throw new Error(errorData.error || 'Failed to fetch user cars');
       }
 
       const data = await response.json();
@@ -156,16 +160,18 @@ const ProfilePage = () => {
 
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/messages/conversations`, {
+        method: 'GET',
         headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include'
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch conversations');
+        throw new Error(errorData.error || 'Failed to fetch conversations');
       }
 
       const data = await response.json();
