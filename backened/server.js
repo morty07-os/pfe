@@ -56,10 +56,9 @@ app.use(helmet({
 // Enable CORS for the frontend
 app.use(cors({
     origin: ['https://pfe-delta.vercel.app', 'http://localhost:3000'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    exposedHeaders: ['Content-Range', 'X-Content-Range', 'Set-Cookie']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
 // Handle preflight requests
@@ -91,6 +90,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
         res.set('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
         res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.set('Cache-Control', 'public, max-age=31536000');
     }
 }));
 
