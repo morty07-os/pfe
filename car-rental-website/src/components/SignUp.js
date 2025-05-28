@@ -87,12 +87,12 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
 
       if (!response.ok) {
         // Handle specific error cases
-        if (response.status === 409) {
-          throw new Error('An account with this email already exists.');
+        if (response.status === 500) {
+          throw new Error('Server error. Please try again later.');
         } else if (response.status === 400) {
           throw new Error(result.error || 'Invalid input data. Please check your information.');
-        } else if (response.status === 500) {
-          throw new Error('Server error. Please try again later.');
+        } else if (response.status === 409) {
+          throw new Error('An account with this email already exists.');
         } else {
           throw new Error(result.error || 'Registration failed. Please try again.');
         }
@@ -119,11 +119,34 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate passwords match
+    // Validate required fields
+    const requiredFields = ['firstName', 'lastName', 'birthDate', 'phone', 'residence', 'email', 'password', 'confirmPassword'];
+    const missingFields = requiredFields.filter(field => !formData[field]);
+    
+    if (missingFields.length > 0) {
+      setSnackbar({
+        open: true,
+        message: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        severity: 'error'
+      });
+      return;
+    }
+
+    // Validate password match
     if (formData.password !== formData.confirmPassword) {
       setSnackbar({
         open: true,
         message: "Passwords don't match",
+        severity: 'error'
+      });
+      return;
+    }
+
+    // Validate password strength
+    if (formData.password.length < 8) {
+      setSnackbar({
+        open: true,
+        message: "Password must be at least 8 characters long",
         severity: 'error'
       });
       return;
@@ -168,24 +191,11 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
       return;
     }
 
-    // Validate required fields
-    const requiredFields = ['firstName', 'lastName', 'birthDate', 'phone', 'residence', 'email', 'password'];
-    const missingFields = requiredFields.filter(field => !formData[field]);
-    
-    if (missingFields.length > 0) {
-      setSnackbar({
-        open: true,
-        message: `Please fill in all required fields: ${missingFields.join(', ')}`,
-        severity: 'error'
-      });
-      return;
-    }
-
     // Validate driving license images
     if (!formData.licenceFront || !formData.licenceBack) {
       setSnackbar({
         open: true,
-        message: "Please upload both front and back images of your driving license.",
+        message: "Please upload both sides of your driving license.",
         severity: 'error'
       });
       return;

@@ -8,16 +8,20 @@ const sendVerificationEmail = async (email, verificationCode) => {
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             host: 'smtp.gmail.com',
-            port: 587,
-            secure: false, // true for 465, false for other ports
+            port: 465, // Use port 465 for SSL
+            secure: true, // Use SSL
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_APP_PASSWORD, // Use app password instead of regular password
+                pass: process.env.EMAIL_APP_PASSWORD,
             },
             tls: {
-                rejectUnauthorized: false // Only use this in development
+                // Do not fail on invalid certs
+                rejectUnauthorized: false
             }
         });
+
+        // Verify connection configuration
+        await transporter.verify();
 
         const mailOptions = {
             from: `"Car Rental Service" <${process.env.EMAIL_USER}>`,
