@@ -42,6 +42,8 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   const [emailError, setEmailError] = useState('');
   const [message, setMessage] = useState('');
 
+  const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+
   const validateAlgerianPhone = (phoneNumber) => {
     const cleanedNumber = phoneNumber.replace(/\s+/g, '').replace(/[^\d]/g, '');
     const isValid = /^0[5-7]\d{8}$/.test(cleanedNumber);
@@ -65,7 +67,6 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   };
 
   const handleSubmitFinal = async () => {
-    const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => formDataToSend.append(key, formData[key]));
 

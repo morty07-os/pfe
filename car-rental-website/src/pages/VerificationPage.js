@@ -12,6 +12,8 @@ import {
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 
+const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+
 const VerificationPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,7 +48,7 @@ const VerificationPage = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/verify-email', {
+      const response = await fetch(`${apiUrl}/api/auth/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +83,7 @@ const VerificationPage = () => {
     setResendCooldown(60); // Start 60-second cooldown
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/resend-verification-code', {
+      const response = await fetch(`${apiUrl}/api/auth/resend-verification-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
