@@ -1,26 +1,52 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
+// Load environment variables
 dotenv.config({ path: './backened/.env' });
+
+// Validate required environment variables
+const requiredEnvVars = ['EMAIL_USER', 'EMAIL_APP_PASSWORD'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+    console.error('Missing required environment variables:', missingEnvVars);
+    throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+}
 
 const sendVerificationEmail = async (email, verificationCode) => {
     try {
+        // Log email configuration (without sensitive data)
+        console.log('Email configuration:', {
+            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            user: process.env.EMAIL_USER ? 'configured' : 'missing',
+            pass: process.env.EMAIL_APP_PASSWORD ? 'configured' : 'missing'
+        });
+
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             host: 'smtp.gmail.com',
             port: 465,
-            secure: true, // Use SSL
+            secure: true,
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_APP_PASSWORD,
+                pass: process.env.EMAIL_APP_PASSWORD
             },
             tls: {
-                rejectUnauthorized: false // Only use this in development
+                rejectUnauthorized: false
             }
         });
 
         // Verify connection configuration
-        await transporter.verify();
+        try {
+            await transporter.verify();
+            console.log('SMTP connection verified successfully');
+        } catch (verifyError) {
+            console.error('SMTP connection verification failed:', verifyError);
+            throw new Error('Failed to verify SMTP connection: ' + verifyError.message);
+        }
 
         const mailOptions = {
             from: `"Car Rental Service" <${process.env.EMAIL_USER}>`,
@@ -48,7 +74,13 @@ const sendVerificationEmail = async (email, verificationCode) => {
         return true;
     } catch (error) {
         console.error('Error sending verification email:', error);
-        throw new Error('Failed to send verification email: ' + error.message);
+        if (error.code === 'EAUTH') {
+            throw new Error('Email authentication failed. Please check your email credentials.');
+        } else if (error.code === 'ESOCKET') {
+            throw new Error('Network error while sending email. Please check your internet connection.');
+        } else {
+            throw new Error('Failed to send verification email: ' + error.message);
+        }
     }
 };
 
