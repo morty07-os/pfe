@@ -28,7 +28,7 @@ const VerificationPage = () => {
     if (location.state && location.state.email) {
       setEmail(location.state.email);
       if (location.state.message) {
-        setMessage({ type: 'info', text: location.state.message });
+        setMessage({ type: 'success', text: location.state.message });
       }
     } else {
       navigate('/signup');
@@ -50,7 +50,7 @@ const VerificationPage = () => {
     if (verificationAttempts >= 3) {
       setMessage({ 
         type: 'error', 
-        text: 'Too many failed attempts. Please request a new code.' 
+        text: 'Too many failed attempts. Please request a new verification code.' 
       });
       return;
     }
@@ -72,7 +72,7 @@ const VerificationPage = () => {
 
       if (response.ok) {
         localStorage.setItem('token', result.token);
-        setMessage({ type: 'success', text: result.message || 'Email verified successfully!' });
+        setMessage({ type: 'success', text: result.message });
         window.dispatchEvent(new Event('loginStateChanged'));
         setTimeout(() => {
           navigate('/');
@@ -81,7 +81,7 @@ const VerificationPage = () => {
         setVerificationAttempts(prev => prev + 1);
         setMessage({ 
           type: 'error', 
-          text: result.error || 'Invalid verification code. Please try again.' 
+          text: result.error || 'Verification failed. Please check your code and try again.' 
         });
       }
     } catch (error) {
@@ -116,52 +116,31 @@ const VerificationPage = () => {
       const result = await response.json();
 
       if (response.ok) {
-        setMessage({ 
-          type: 'success', 
-          text: 'A new verification code has been sent to your email.' 
-        });
+        setMessage({ type: 'success', text: result.message });
       } else {
-        setMessage({ 
-          type: 'error', 
-          text: result.error || 'Failed to resend verification code.' 
-        });
+        setMessage({ type: 'error', text: result.error || 'Failed to resend code' });
       }
     } catch (error) {
       console.error('Error resending verification code:', error);
-      setMessage({ 
-        type: 'error', 
-        text: 'An error occurred while resending the code.' 
-      });
+      setMessage({ type: 'error', text: 'An error occurred while resending the code.' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="xs" sx={{ mt: 8, p: 3 }}>
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          p: 4, 
-          borderRadius: 3, 
-          bgcolor: 'background.paper',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
-        }}
-      >
+    <Container maxWidth="xs" sx={{ mt: 8, mb: 4 }}>
+      <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <Button
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate('/signup')}
-            sx={{ 
-              alignSelf: 'flex-start',
-              color: '#64748b',
-              '&:hover': { bgcolor: '#f1f5f9' }
-            }}
+            sx={{ alignSelf: 'flex-start', mb: 2 }}
           >
             Back to Sign Up
           </Button>
 
-          <EmailIcon sx={{ fontSize: 60, color: '#475569' }} />
+          <EmailIcon sx={{ fontSize: 60, color: '#1e40af' }} />
           <Typography variant="h5" component="h1" sx={{ fontWeight: 600, color: '#1e293b' }}>
             Verify Your Email
           </Typography>
@@ -175,11 +154,8 @@ const VerificationPage = () => {
           {message.text && (
             <Alert 
               severity={message.type} 
-              sx={{ 
-                width: '100%',
-                mt: 2,
-                '& .MuiAlert-message': { width: '100%' }
-              }}
+              sx={{ width: '100%', mt: 2 }}
+              onClose={() => setMessage({ type: '', text: '' })}
             >
               {message.text}
             </Alert>
@@ -201,12 +177,13 @@ const VerificationPage = () => {
                 pattern: '[0-9]*',
                 inputMode: 'numeric'
               }}
-              error={verificationAttempts > 0}
-              helperText={verificationAttempts > 0 ? `${3 - verificationAttempts} attempts remaining` : ''}
+              disabled={loading || verificationAttempts >= 3}
+              error={verificationAttempts >= 3}
+              helperText={verificationAttempts >= 3 ? 'Too many failed attempts. Please request a new code.' : ''}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   '&:hover fieldset': { borderColor: '#94a3b8' },
-                  '&.Mui-focused fieldset': { borderColor: '#475569' },
+                  '&.Mui-focused fieldset': { borderColor: '#1e40af' },
                 },
               }}
             />
@@ -214,17 +191,17 @@ const VerificationPage = () => {
               type="submit"
               fullWidth
               variant="contained"
-              disabled={loading || verificationCode.length !== 6 || verificationAttempts >= 3}
+              disabled={loading || verificationAttempts >= 3 || !verificationCode}
               sx={{
                 mt: 3,
                 mb: 2,
-                bgcolor: '#475569',
+                bgcolor: '#1e40af',
                 color: 'white',
                 py: 1.5,
                 fontSize: '1rem',
                 textTransform: 'none',
-                '&:hover': { bgcolor: '#334155' },
-                '&.Mui-disabled': { bgcolor: '#94a3b8' }
+                '&:hover': { bgcolor: '#1e3a8a' },
+                '&:disabled': { bgcolor: '#94a3b8' },
               }}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify Account'}
@@ -233,26 +210,28 @@ const VerificationPage = () => {
               fullWidth
               variant="outlined"
               onClick={handleResendCode}
-              disabled={loading || resendCooldown > 0}
+              disabled={loading || resendCooldown > 0 || verificationAttempts >= 3}
               sx={{
-                color: '#475569',
-                borderColor: '#475569',
+                color: '#1e40af',
+                borderColor: '#1e40af',
                 py: 1.5,
                 fontSize: '1rem',
                 textTransform: 'none',
                 '&:hover': {
-                  bgcolor: 'rgba(71, 85, 105, 0.04)',
-                  borderColor: '#334155',
+                  bgcolor: 'rgba(30, 64, 175, 0.04)',
+                  borderColor: '#1e3a8a',
                 },
-                '&.Mui-disabled': {
+                '&:disabled': {
                   color: '#94a3b8',
-                  borderColor: '#cbd5e1'
-                }
+                  borderColor: '#94a3b8',
+                },
               }}
             >
               {resendCooldown > 0 
                 ? `Resend Code (${resendCooldown}s)` 
-                : 'Resend Code'}
+                : verificationAttempts >= 3 
+                  ? 'Request New Code' 
+                  : 'Resend Code'}
             </Button>
           </Box>
         </Box>

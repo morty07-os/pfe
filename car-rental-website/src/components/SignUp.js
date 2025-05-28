@@ -12,8 +12,6 @@ import {
   InputAdornment,
   useTheme,
   FormHelperText,
-  Snackbar,
-  Alert,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import CloseIcon from '@mui/icons-material/Close';
@@ -44,11 +42,6 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   const [focused, setFocused] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [emailError, setEmailError] = useState('');
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success'
-  });
 
   const validateAlgerianPhone = (phoneNumber) => {
     const cleanedNumber = phoneNumber.replace(/\s+/g, '').replace(/[^\d]/g, '');
@@ -86,16 +79,7 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
       const result = await response.json();
 
       if (!response.ok) {
-        // Handle specific error cases
-        if (response.status === 500) {
-          throw new Error('Server error. Please try again later.');
-        } else if (response.status === 400) {
-          throw new Error(result.error || 'Invalid input data. Please check your information.');
-        } else if (response.status === 409) {
-          throw new Error('An account with this email already exists.');
-        } else {
-          throw new Error(result.error || 'Registration failed. Please try again.');
-        }
+        throw new Error(result.error || 'Registration failed');
       }
 
       // If signup is successful, redirect to verification page
@@ -103,101 +87,43 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
       navigate('/verify-email', { 
         state: { 
           email: result.email,
-          message: 'Please check your email for the verification code.'
+          message: 'Registration successful! Please check your email for the verification code.'
         } 
       });
     } catch (error) {
       console.error("Error during registration:", error);
-      setSnackbar({
-        open: true,
-        message: error.message || 'An error occurred during registration. Please try again.',
-        severity: 'error'
-      });
+      alert(error.message || 'An error occurred during registration. Please try again.');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate required fields
-    const requiredFields = ['firstName', 'lastName', 'birthDate', 'phone', 'residence', 'email', 'password', 'confirmPassword'];
-    const missingFields = requiredFields.filter(field => !formData[field]);
-    
-    if (missingFields.length > 0) {
-      setSnackbar({
-        open: true,
-        message: `Please fill in all required fields: ${missingFields.join(', ')}`,
-        severity: 'error'
-      });
-      return;
-    }
-
-    // Validate password match
     if (formData.password !== formData.confirmPassword) {
-      setSnackbar({
-        open: true,
-        message: "Passwords don't match",
-        severity: 'error'
-      });
+      alert("Passwords don't match");
       return;
     }
 
-    // Validate password strength
-    if (formData.password.length < 8) {
-      setSnackbar({
-        open: true,
-        message: "Password must be at least 8 characters long",
-        severity: 'error'
-      });
-      return;
-    }
-
-    // Validate age
     const birthDate = new Date(formData.birthDate);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     if (age < 18) {
-      setSnackbar({
-        open: true,
-        message: "You must be at least 18 years old to register.",
-        severity: 'error'
-      });
+      alert("You must be at least 18 years old to register.");
       return;
     }
 
-    // Validate phone number
     const phoneValidationError = validateAlgerianPhone(formData.phone);
     if (phoneValidationError) {
       setPhoneError(phoneValidationError);
-      setSnackbar({
-        open: true,
-        message: "Please enter a valid Algerian phone number.",
-        severity: 'error'
-      });
+      alert("Please enter a valid Algerian phone number.");
       return;
     }
 
-    // Validate email
     const emailValidationError = validateEmail(formData.email);
     if (emailValidationError) {
       setEmailError(emailValidationError);
-      setSnackbar({
-        open: true,
-        message: "Please enter a valid email address.",
-        severity: 'error'
-      });
-      return;
-    }
-
-    // Validate driving license images
-    if (!formData.licenceFront || !formData.licenceBack) {
-      setSnackbar({
-        open: true,
-        message: "Please upload both sides of your driving license.",
-        severity: 'error'
-      });
+      alert("Please enter a valid email address.");
       return;
     }
 
@@ -265,20 +191,6 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
           </DialogActions>
         </DialogContent>
       </form>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Dialog>
   );
 };
