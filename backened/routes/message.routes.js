@@ -7,8 +7,8 @@ import {
   getConversations, 
   getMessagesForUser,
   getCarConversations 
-} from "../controllers/message.controller.js";
-import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
+} from "../controllers/message.controller.js"; 
+import { ProtectedRoute } from "../midleware/ProtectedRoute.js"; 
 
 const router = express.Router();
 
