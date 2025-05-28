@@ -19,7 +19,7 @@ const sendVerificationEmail = async (email, verificationCode) => {
         console.log('- PORT:', process.env.EMAIL_PORT);
         console.log('- SECURE:', process.env.EMAIL_SECURE);
         console.log('- USER:', process.env.EMAIL_USER);
-        console.log('- PASS:', process.env.EMAIL_PASS ? '******' : 'Not set');
+        console.log('- PASS:', process.env.EMAIL_PASS ? '******' : 'Not set'); 
         
         const transporter = nodemailer.createTransport({
             host: process.env.EMAIL_HOST,
