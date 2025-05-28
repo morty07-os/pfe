@@ -154,7 +154,7 @@ const ProfilePage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/messages/conversations`, {
         headers: { 
           'Authorization': `Bearer ${token}`,

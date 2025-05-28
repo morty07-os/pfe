@@ -26,8 +26,20 @@ export const ProtectedRoute = (options = { required: true }) => (req, res, next)
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // Attach user info to the request (e.g., { userId: '...' })
-        next();
+        
+        // Verify that the user still exists
+        User.findById(decoded.userId)
+            .then(user => {
+                if (!user) {
+                    return res.status(401).json({ error: "User no longer exists" });
+                }
+                req.user = decoded; // Attach user info to the request
+                next();
+            })
+            .catch(error => {
+                console.error("Error finding user:", error);
+                return res.status(401).json({ error: "Error verifying user" });
+            });
     } catch (error) {
         // If token verification fails
         if (options.required) {

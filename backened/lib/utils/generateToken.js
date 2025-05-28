@@ -31,8 +31,7 @@ export const generateTokenAndSetCookie = (userId, res) => {
             httpOnly: true,
             sameSite: 'none',
             secure: true,
-            path: '/',
-            domain: process.env.NODE_ENV === 'production' ? '.render.com' : undefined
+            path: '/'
         };
 
         res.cookie('jwt', token, cookieOptions);
