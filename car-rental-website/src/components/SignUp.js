@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
@@ -11,7 +10,6 @@ import {
   IconButton,
   InputAdornment,
   useTheme,
-  FormHelperText,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import CloseIcon from '@mui/icons-material/Close';
@@ -42,6 +40,7 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   const [focused, setFocused] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [message, setMessage] = useState('');
 
   const validateAlgerianPhone = (phoneNumber) => {
     const cleanedNumber = phoneNumber.replace(/\s+/g, '').replace(/[^\d]/g, '');
@@ -79,22 +78,22 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
       const result = await response.json();
 
       if (response.ok) {
-        // If signup is successful, redirect to verification page
-        onClose(); // Close signup dialog
-        navigate('/verify-email', { state: { email: result.email } }); // Pass email as state
+        onClose();
+        navigate('/verify-email', { state: { email: result.email } });
       } else {
-        alert(result.error || 'Registration failed');
+        setMessage(result.error || 'Registration failed');
       }
     } catch (error) {
+      setMessage('An error occurred during registration');
       console.error("Error during registration:", error.message);
-      alert('An error occurred during registration');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage('');
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match");
+      setMessage("Passwords don't match");
       return;
     }
 
@@ -104,21 +103,21 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
     const m = today.getMonth() - birthDate.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     if (age < 18) {
-      alert("You must be at least 18 years old to register.");
+      setMessage("You must be at least 18 years old to register.");
       return;
     }
 
     const phoneValidationError = validateAlgerianPhone(formData.phone);
     if (phoneValidationError) {
       setPhoneError(phoneValidationError);
-      alert("Please enter a valid Algerian phone number.");
+      setMessage("Please enter a valid Algerian phone number.");
       return;
     }
 
     const emailValidationError = validateEmail(formData.email);
     if (emailValidationError) {
       setEmailError(emailValidationError);
-      alert("Please enter a valid email address.");
+      setMessage("Please enter a valid email address.");
       return;
     }
 
@@ -131,7 +130,13 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3, boxShadow: '0 12px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden' } }}
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: '0 12px 50px -12px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+        }
+      }}
     >
       <Box sx={{ position: 'relative', background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)', p: 3, color: 'white' }}>
         <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>Create Account</Typography>
@@ -175,13 +180,18 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
             <TextField required fullWidth label="Password" name="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={handleChange} variant="outlined" onFocus={() => setFocused('password')} onBlur={() => setFocused('')} InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon sx={{ color: focused === 'password' ? '#475569' : '#94a3b8', transition: 'color 0.3s ease' }} /></InputAdornment>, endAdornment: <InputAdornment position="end"><IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: showPassword ? '#475569' : '#94a3b8' }}>{showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}</IconButton></InputAdornment> }} sx={{ '& .MuiOutlinedInput-root': { '&:hover fieldset': { borderColor: '#94a3b8' }, '&.Mui-focused fieldset': { borderColor: '#475569' } } }} />
             <TextField required fullWidth label="Confirm Password" name="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword} onChange={handleChange} variant="outlined" onFocus={() => setFocused('confirmPassword')} onBlur={() => setFocused('')} InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon sx={{ color: focused === 'confirmPassword' ? '#475569' : '#94a3b8', transition: 'color 0.3s ease' }} /></InputAdornment> }} sx={{ '& .MuiOutlinedInput-root': { '&:hover fieldset': { borderColor: '#94a3b8' }, '&.Mui-focused fieldset': { borderColor: '#475569' } } }} />
           </Box>
+          {message && (
+            <Typography variant="body2" sx={{ color: '#dc2626', mt: 2, fontWeight: 500 }}>
+              {message}
+            </Typography>
+          )}
           <DialogActions sx={{ p: 0, pt: 2, flexDirection: 'column', gap: 2 }}>
             <Button type="submit" variant="contained" fullWidth sx={{ bgcolor: '#475569', color: 'white', py: 1.5, fontSize: '1rem', textTransform: 'none', '&:hover': { bgcolor: '#334155' } }}>
               Create Account
             </Button>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="body2" sx={{ color: '#64748b' }}>Already have an account?</Typography>
-              <Button onClick={() => onSwitchToSignIn()} sx={{ color: '#475569', textTransform: 'none', '&:hover': { backgroundColor: 'transparent', color: '#334155' } }}>Sign In</Button>
+              <Button onClick={onSwitchToSignIn} sx={{ color: '#475569', textTransform: 'none', '&:hover': { backgroundColor: 'transparent', color: '#334155' } }}>Sign In</Button>
             </Box>
           </DialogActions>
         </DialogContent>
