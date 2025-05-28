@@ -8,11 +8,9 @@ import {
   Container,
   Alert,
   CircularProgress,
-  Paper,
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const VerificationPage = () => {
   const location = useLocation();
@@ -22,16 +20,13 @@ const VerificationPage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [verificationAttempts, setVerificationAttempts] = useState(0);
 
   useEffect(() => {
     if (location.state && location.state.email) {
       setEmail(location.state.email);
-      if (location.state.message) {
-        setMessage({ type: 'success', text: location.state.message });
-      }
     } else {
-      navigate('/signup');
+      // If no email is passed, redirect to signup or home
+      navigate('/signup'); // Or to a general login/signup page
     }
   }, [location.state, navigate]);
 
@@ -47,20 +42,11 @@ const VerificationPage = () => {
 
   const handleVerify = async (e) => {
     e.preventDefault();
-    if (verificationAttempts >= 3) {
-      setMessage({ 
-        type: 'error', 
-        text: 'Too many failed attempts. Please request a new verification code.' 
-      });
-      return;
-    }
-
     setLoading(true);
     setMessage({ type: '', text: '' });
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
-      const response = await fetch(`${apiUrl}/api/auth/verify-email`, {
+      const response = await fetch('http://localhost:5001/api/auth/verify-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,41 +57,31 @@ const VerificationPage = () => {
       const result = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', result.token);
+        localStorage.setItem('token', result.token); // Store token after verification
         setMessage({ type: 'success', text: result.message });
+        // Dispatch custom event to notify other components about login state change
         window.dispatchEvent(new Event('loginStateChanged'));
         setTimeout(() => {
-          navigate('/');
+          navigate('/'); // Redirect to home page or dashboard
         }, 2000);
       } else {
-        setVerificationAttempts(prev => prev + 1);
-        setMessage({ 
-          type: 'error', 
-          text: result.error || 'Verification failed. Please check your code and try again.' 
-        });
+        setMessage({ type: 'error', text: result.error || 'Verification failed' });
       }
     } catch (error) {
       console.error('Error during email verification:', error);
-      setMessage({ 
-        type: 'error', 
-        text: 'An error occurred during verification. Please try again.' 
-      });
+      setMessage({ type: 'error', text: 'An error occurred during verification.' });
     } finally {
       setLoading(false);
     }
   };
 
   const handleResendCode = async () => {
-    if (resendCooldown > 0) return;
-
     setLoading(true);
     setMessage({ type: '', text: '' });
-    setResendCooldown(60);
-    setVerificationAttempts(0);
+    setResendCooldown(60); // Start 60-second cooldown
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
-      const response = await fetch(`${apiUrl}/api/auth/resend-verification-code`, {
+      const response = await fetch('http://localhost:5001/api/auth/resend-verification-code', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,113 +105,83 @@ const VerificationPage = () => {
   };
 
   return (
-    <Container maxWidth="xs" sx={{ mt: 8, mb: 4 }}>
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+    <Container maxWidth="xs" sx={{ mt: 8, p: 3, borderRadius: 2, boxShadow: 3, bgcolor: 'background.paper' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+        <EmailIcon sx={{ fontSize: 60, color: '#475569' }} />
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 600, color: '#1e293b' }}>
+          Verify Your Email
+        </Typography>
+        <Typography variant="body2" color="text.secondary" align="center">
+          A 6-digit verification code has been sent to <br />
+          <Typography component="span" sx={{ fontWeight: 'bold', color: '#475569' }}>{email}</Typography>.
+          Please enter it below to verify your account.
+        </Typography>
+
+        {message.text && (
+          <Alert severity={message.type} sx={{ width: '100%' }}>
+            {message.text}
+          </Alert>
+        )}
+
+        <Box component="form" onSubmit={handleVerify} sx={{ width: '100%', mt: 1 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="verificationCode"
+            label="Verification Code"
+            name="verificationCode"
+            autoComplete="off"
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value)}
+            inputProps={{ maxLength: 6 }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '&:hover fieldset': { borderColor: '#94a3b8' },
+                '&.Mui-focused fieldset': { borderColor: '#475569' },
+              },
+            }}
+          />
           <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/signup')}
-            sx={{ alignSelf: 'flex-start', mb: 2 }}
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{
+              mt: 3,
+              mb: 2,
+              bgcolor: '#475569',
+              color: 'white',
+              py: 1.5,
+              fontSize: '1rem',
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#334155' },
+            }}
+            disabled={loading}
           >
-            Back to Sign Up
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify Account'}
           </Button>
-
-          <EmailIcon sx={{ fontSize: 60, color: '#1e40af' }} />
-          <Typography variant="h5" component="h1" sx={{ fontWeight: 600, color: '#1e293b' }}>
-            Verify Your Email
-          </Typography>
-          <Typography variant="body2" color="text.secondary" align="center">
-            A 6-digit verification code has been sent to <br />
-            <Typography component="span" sx={{ fontWeight: 'bold', color: '#475569' }}>
-              {email}
-            </Typography>
-          </Typography>
-
-          {message.text && (
-            <Alert 
-              severity={message.type} 
-              sx={{ width: '100%', mt: 2 }}
-              onClose={() => setMessage({ type: '', text: '' })}
-            >
-              {message.text}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleVerify} sx={{ width: '100%', mt: 2 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="verificationCode"
-              label="Verification Code"
-              name="verificationCode"
-              autoComplete="off"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              inputProps={{ 
-                maxLength: 6,
-                pattern: '[0-9]*',
-                inputMode: 'numeric'
-              }}
-              disabled={loading || verificationAttempts >= 3}
-              error={verificationAttempts >= 3}
-              helperText={verificationAttempts >= 3 ? 'Too many failed attempts. Please request a new code.' : ''}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&:hover fieldset': { borderColor: '#94a3b8' },
-                  '&.Mui-focused fieldset': { borderColor: '#1e40af' },
-                },
-              }}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading || verificationAttempts >= 3 || !verificationCode}
-              sx={{
-                mt: 3,
-                mb: 2,
-                bgcolor: '#1e40af',
-                color: 'white',
-                py: 1.5,
-                fontSize: '1rem',
-                textTransform: 'none',
-                '&:hover': { bgcolor: '#1e3a8a' },
-                '&:disabled': { bgcolor: '#94a3b8' },
-              }}
-            >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify Account'}
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={handleResendCode}
-              disabled={loading || resendCooldown > 0 || verificationAttempts >= 3}
-              sx={{
-                color: '#1e40af',
-                borderColor: '#1e40af',
-                py: 1.5,
-                fontSize: '1rem',
-                textTransform: 'none',
-                '&:hover': {
-                  bgcolor: 'rgba(30, 64, 175, 0.04)',
-                  borderColor: '#1e3a8a',
-                },
-                '&:disabled': {
-                  color: '#94a3b8',
-                  borderColor: '#94a3b8',
-                },
-              }}
-            >
-              {resendCooldown > 0 
-                ? `Resend Code (${resendCooldown}s)` 
-                : verificationAttempts >= 3 
-                  ? 'Request New Code' 
-                  : 'Resend Code'}
-            </Button>
-          </Box>
+          <Button
+            fullWidth
+            variant="outlined"
+            sx={{
+              mt: 1,
+              color: '#475569',
+              borderColor: '#475569',
+              py: 1.5,
+              fontSize: '1rem',
+              textTransform: 'none',
+              '&:hover': {
+                bgcolor: 'rgba(71, 85, 105, 0.04)',
+                borderColor: '#334155',
+              },
+            }}
+            onClick={handleResendCode}
+            disabled={loading || resendCooldown > 0}
+          >
+            {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
+          </Button>
         </Box>
-      </Paper>
+      </Box>
     </Container>
   );
 };

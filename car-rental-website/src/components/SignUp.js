@@ -70,29 +70,23 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
     Object.keys(formData).forEach((key) => formDataToSend.append(key, formData[key]));
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
-      const response = await fetch(`${apiUrl}/api/auth/signup`, {
+      const response = await fetch('http://localhost:5001/api/auth/signup', {
         method: 'POST',
         body: formDataToSend,
       });
 
       const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Registration failed');
+      if (response.ok) {
+        // If signup is successful, redirect to verification page
+        onClose(); // Close signup dialog
+        navigate('/verify-email', { state: { email: result.email } }); // Pass email as state
+      } else {
+        alert(result.error || 'Registration failed');
       }
-
-      // If signup is successful, redirect to verification page
-      onClose(); // Close signup dialog
-      navigate('/verify-email', { 
-        state: { 
-          email: result.email,
-          message: 'Registration successful! Please check your email for the verification code.'
-        } 
-      });
     } catch (error) {
-      console.error("Error during registration:", error);
-      alert(error.message || 'An error occurred during registration. Please try again.');
+      console.error("Error during registration:", error.message);
+      alert('An error occurred during registration');
     }
   };
 
