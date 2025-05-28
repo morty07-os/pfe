@@ -204,8 +204,13 @@ export default function AllOffersPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cars/user-cars`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await fetch(`${apiUrl}/api/cars/user-cars`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
+        credentials: 'include'
       });
       const data = await response.json();
       if (response.ok) setUserCars(data);
@@ -227,16 +232,17 @@ export default function AllOffersPage() {
           energy: sidebarFilters.energy || '',
           transmission: sidebarFilters.transmission || '',
           wilaya: sidebarFilters.wilaya || '',
-          carType: sidebarFilters.carType || '', // Added carType filter
+          carType: sidebarFilters.carType || '',
           seats: sidebarFilters.seats || '',
           doors: sidebarFilters.doors || '',
           priceMin: sidebarFilters.priceRange ? sidebarFilters.priceRange[0] : '',
           priceMax: sidebarFilters.priceRange ? sidebarFilters.priceRange[1] : '',
           availableFrom: sidebarFilters.availableFrom || '',
           availableTo: sidebarFilters.availableTo || '',
-          search: search || '', // Add search parameter
+          search: search || '',
         }).toString();
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/cars/getcars?${queryParams}`);
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+        const response = await fetch(`${apiUrl}/api/cars/getcars?${queryParams}`);
         if (!response.ok) throw new Error('Failed to fetch offers');
         const data = await response.json();
         console.log('Fetched car data:', data);
