@@ -12,21 +12,6 @@ import {
 
 const router = express.Router();
 
-// Enable CORS for all routes
-router.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    
-    // Handle preflight requests
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-    
-    next();
-});
-
 // POST /api/bookings/request - Create a new booking request (initiates chat)
 router.post('/request', ProtectedRoute, createBookingRequest);
 
@@ -47,5 +32,6 @@ router.get('/user/my-bookings', ProtectedRoute, getUserBookings);
 
 // GET /api/bookings/owner - Get all bookings for cars owned by the logged-in user
 router.get('/owner/my-listings-bookings', ProtectedRoute, getOwnerBookings);
+
 
 export default router;

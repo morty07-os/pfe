@@ -97,22 +97,14 @@ const ConversationListPage = () => {
         const token = localStorage.getItem('token');
         if (!token) {
           setLoading(false);
-          navigate('/');
           return;
         }
-
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
-        const response = await axios.get(`${apiUrl}/api/messages/conversations`, {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/messages/conversations`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          },
-          withCredentials: true
+          }
         });
-
-        if (!response.data || !Array.isArray(response.data)) {
-          throw new Error('Invalid response format');
-        }
 
         // Group messages by conversationId to ensure each car has its own conversation
         const groupedConversations = response.data.reduce((acc, conv) => {
@@ -134,17 +126,13 @@ const ConversationListPage = () => {
         setConversations(groupedConversations);
       } catch (error) {
         console.error("Error fetching conversations:", error);
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          navigate('/');
-        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchConversations();
-  }, [navigate]);
+  }, []);
 
   const [selectedCarId, setSelectedCarId] = useState(null);
   const [selectedConversationId, setSelectedConversationId] = useState(null);

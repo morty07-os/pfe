@@ -35,25 +35,10 @@ const upload = multer({
   },
 });
 
-// Enable CORS for all routes
-router.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    
-    // Handle preflight requests
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-    
-    next();
-});
-
 router.get("/conversations", ProtectedRoute(), getConversations);
 router.post("/save", ProtectedRoute(), upload.single("image"), saveMessage);
-router.get("/:conversationId", ProtectedRoute(), getMessages);
+router.get("/car-conversations/:carId", ProtectedRoute(), getCarConversations);
+router.get("/:carId", ProtectedRoute({ required: false }), getMessages);
 router.get("/user/:userId", ProtectedRoute(), getMessagesForUser);
-router.get("/car/:carId", ProtectedRoute(), getCarConversations);
 
 export default router;

@@ -55,10 +55,10 @@ router.post("/verify-email", verifyEmail);
 router.post("/resend-verification-code", resendVerificationCode);
 
 // Car routes
-router.post("/addcars", ProtectedRoute(), upload.array("images", 5), createCar); // Add a new car with image upload
-router.get("/listcars", ProtectedRoute(), getCars); // Get a list of cars
-router.put("/updatecars/:id", ProtectedRoute(), updateCar); // Update car details
-router.delete("/deletecars/:id", ProtectedRoute(), deleteCar); // Delete a car
+router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload
+router.get("/listcars", ProtectedRoute, getCars); // Get a list of cars
+router.put("/updatecars/:id", ProtectedRoute, updateCar); // Update car details
+router.delete("/deletecars/:id", ProtectedRoute, deleteCar); // Delete a car
 
 
 

@@ -6,36 +6,21 @@ import {
     updateRating,
     deleteRating,
     getAverageRatingByCarId,
-    getRatingsByRatedUserId,
-    getAverageRatingByRatedUserId
+    getRatingsByRatedUserId, // Import new function
+    getAverageRatingByRatedUserId // Import new function
 } from '../controllers/rating.controller.js';
-import { ProtectedRoute } from '../midleware/ProtectedRoute.js';
+import { ProtectedRoute } from '../midleware/ProtectedRoute.js'; // Corrected import
 
 const router = express.Router();
 
-// Enable CORS for all routes
-router.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    
-    // Handle preflight requests
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-    
-    next();
-});
-
-// Public routes
+// Public routes (e.g., getting ratings for a car or user)
 router.get('/car/:carId', getRatingsByCarId);
-router.get('/average/car/:carId', getAverageRatingByCarId);
-router.get('/user/:userId', getRatingsByRatedUserId);
-router.get('/average/user/:userId', getAverageRatingByRatedUserId);
-router.get('/', getRatings);
+router.get('/average/car/:carId', getAverageRatingByCarId); // Corrected path for average car rating
+router.get('/user/:userId', getRatingsByRatedUserId); // New route for user ratings
+router.get('/average/user/:userId', getAverageRatingByRatedUserId); // New route for average user rating
+router.get('/', getRatings); // Get all ratings (might be admin-only later)
 
-// Protected routes
+// Protected routes (e.g., creating, updating, deleting a rating)
 router.post('/', ProtectedRoute(), createRating);
 router.put('/:id', ProtectedRoute(), updateRating);
 router.delete('/:id', ProtectedRoute(), deleteRating);
