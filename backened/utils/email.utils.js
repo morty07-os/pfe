@@ -3,20 +3,20 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: './backened/.env' });
 
-const sendVerificationEmail = async (email, verificationCode) => {
+export const sendVerificationEmail = async (email, verificationCode) => {
     try {
         // Create reusable transporter object using SMTP transport
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             host: 'smtp.gmail.com',
             port: 587,
-            secure: false, // true for 465, false for other ports
+            secure: false,
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS, // Use app password for Gmail
+                pass: process.env.EMAIL_PASSWORD // Use app password for Gmail
             },
             tls: {
-                rejectUnauthorized: false // Only use this in development
+                rejectUnauthorized: false // Only for development
             }
         });
 
@@ -24,35 +24,32 @@ const sendVerificationEmail = async (email, verificationCode) => {
         await transporter.verify();
         console.log('SMTP connection verified successfully');
 
+        // Email content
         const mailOptions = {
-            from: `"Car Rental Website" <${process.env.EMAIL_USER}>`,
+            from: `"Car Rental Service" <${process.env.EMAIL_USER}>`,
             to: email,
-            subject: 'Car Rental Website - Email Verification',
+            subject: 'Verify Your Email Address',
             html: `
-                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <h2 style="color: #1e40af; margin-bottom: 20px;">Email Verification</h2>
-                        <p style="font-size: 16px;">Thank you for signing up for the Car Rental Website!</p>
-                        <p style="font-size: 16px;">Please use the following 6-digit code to verify your email address:</p>
-                        <div style="background-color: #e2e8f0; padding: 15px; border-radius: 6px; text-align: center; margin: 20px 0;">
-                            <h3 style="color: #1e40af; margin: 0; letter-spacing: 2px; font-size: 24px;">${verificationCode}</h3>
-                        </div>
-                        <p style="font-size: 14px; color: #64748b;">This code is valid for 10 minutes.</p>
-                        <p style="font-size: 14px; color: #64748b;">If you did not sign up for this service, please ignore this email.</p>
-                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-                        <p style="font-size: 14px; color: #64748b;">Best regards,<br>The Car Rental Team</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+                    <h2 style="color: #333; text-align: center;">Email Verification</h2>
+                    <p style="color: #666; font-size: 16px;">Thank you for registering with our car rental service. To complete your registration, please use the following verification code:</p>
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;">
+                        <h1 style="color: #007bff; margin: 0; font-size: 32px; letter-spacing: 5px;">${verificationCode}</h1>
                     </div>
+                    <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes.</p>
+                    <p style="color: #666; font-size: 14px;">If you didn't request this verification, please ignore this email.</p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                    <p style="color: #999; font-size: 12px; text-align: center;">This is an automated message, please do not reply.</p>
                 </div>
-            `,
+            `
         };
 
+        // Send mail with defined transport object
         const info = await transporter.sendMail(mailOptions);
-        console.log('Verification email sent successfully:', info.messageId);
+        console.log('Verification email sent:', info.messageId);
         return true;
     } catch (error) {
         console.error('Error sending verification email:', error);
         throw new Error(`Failed to send verification email: ${error.message}`);
     }
 };
-
-export default sendVerificationEmail;

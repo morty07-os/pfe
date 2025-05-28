@@ -15,8 +15,8 @@ export const signup = async (req, res) => {
         const { firstName, lastName, birthDate, phone, residence, email, password } = req.body;
 
         // Validate required fields
-        if (!email) {
-            return res.status(400).json({ error: "Email is required" });
+        if (!email || !password || !firstName || !lastName || !birthDate || !phone || !residence) {
+            return res.status(400).json({ error: "All fields are required" });
         }
 
         if (!req.files || !req.files.licenceFront || !req.files.licenceBack) {
@@ -50,7 +50,11 @@ export const signup = async (req, res) => {
         // Set expiration time for the verification code (e.g., 10 minutes)
         const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); 
 
-        // Create a new user with the plain password
+        // Hash the password before creating the user
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create a new user with the hashed password
         const newUser = new User({
             firstName,
             lastName,
@@ -58,27 +62,36 @@ export const signup = async (req, res) => {
             phone,
             residence,
             email: email.toLowerCase(),
-            password, // Pass the plain password here
+            password: hashedPassword,
             licenceFront,
             licenceBack,
             verificationToken: hashedVerificationCode,
             verificationTokenExpires: verificationCodeExpires,
-            isVerified: false, // User is not verified until email verification
+            isVerified: false,
         });
 
         await newUser.save();
-        console.log("User saved successfully:", newUser);
+        console.log("User saved successfully:", newUser._id);
 
         // Send verification email
-        await sendVerificationEmail(newUser.email, verificationCode);
+        try {
+            await sendVerificationEmail(newUser.email, verificationCode);
+            console.log("Verification email sent successfully");
+        } catch (emailError) {
+            console.error("Error sending verification email:", emailError);
+            // Don't fail the signup if email fails, just log it
+        }
 
         res.status(201).json({
             message: "User registered successfully. Please check your email for verification.",
-            email: newUser.email, // Send email back to frontend for redirection to verification page
+            email: newUser.email,
         });
     } catch (error) {
-        console.error("Error in signup controller:", error.message);
-        res.status(500).json({ error: "Server error" });
+        console.error("Error in signup controller:", error);
+        res.status(500).json({ 
+            error: "Server error",
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
