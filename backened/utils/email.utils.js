@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: './backened/.env' });
 
 // Validate required environment variables
-const requiredEnvVars = ['EMAIL_USER', 'EMAIL_APP_PASSWORD'];
+const requiredEnvVars = ['EMAIL_USER', 'EMAIL_PASS'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
@@ -22,7 +22,7 @@ const sendVerificationEmail = async (email, verificationCode) => {
             port: 465,
             secure: true,
             user: process.env.EMAIL_USER ? 'configured' : 'missing',
-            pass: process.env.EMAIL_APP_PASSWORD ? 'configured' : 'missing'
+            pass: process.env.EMAIL_PASS ? 'configured' : 'missing'
         });
 
         const transporter = nodemailer.createTransport({
@@ -32,7 +32,7 @@ const sendVerificationEmail = async (email, verificationCode) => {
             secure: true,
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_APP_PASSWORD
+                pass: process.env.EMAIL_PASS
             },
             tls: {
                 rejectUnauthorized: false
