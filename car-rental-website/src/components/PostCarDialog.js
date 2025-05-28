@@ -657,7 +657,9 @@ function PostCarDialog({ open, onClose }) {
         }
       });
 
-      const response = await fetch('http://localhost:5001/api/cars/addcars', {
+      // Use environment variable for API URL
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await fetch(`${apiUrl}/api/cars/addcars`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
