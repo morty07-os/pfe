@@ -66,11 +66,12 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
   };
 
   const handleSubmitFinal = async () => {
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => formDataToSend.append(key, formData[key]));
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/signup', {
+      const response = await fetch(`${apiUrl}/api/auth/signup`, {
         method: 'POST',
         body: formDataToSend,
       });
