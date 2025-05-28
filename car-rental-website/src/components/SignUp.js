@@ -86,7 +86,16 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Registration failed');
+        // Handle specific error cases
+        if (response.status === 409) {
+          throw new Error('An account with this email already exists.');
+        } else if (response.status === 400) {
+          throw new Error(result.error || 'Invalid input data. Please check your information.');
+        } else if (response.status === 500) {
+          throw new Error('Server error. Please try again later.');
+        } else {
+          throw new Error(result.error || 'Registration failed. Please try again.');
+        }
       }
 
       // If signup is successful, redirect to verification page
@@ -109,32 +118,76 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match");
+      setSnackbar({
+        open: true,
+        message: "Passwords don't match",
+        severity: 'error'
+      });
       return;
     }
 
+    // Validate age
     const birthDate = new Date(formData.birthDate);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     if (age < 18) {
-      alert("You must be at least 18 years old to register.");
+      setSnackbar({
+        open: true,
+        message: "You must be at least 18 years old to register.",
+        severity: 'error'
+      });
       return;
     }
 
+    // Validate phone number
     const phoneValidationError = validateAlgerianPhone(formData.phone);
     if (phoneValidationError) {
       setPhoneError(phoneValidationError);
-      alert("Please enter a valid Algerian phone number.");
+      setSnackbar({
+        open: true,
+        message: "Please enter a valid Algerian phone number.",
+        severity: 'error'
+      });
       return;
     }
 
+    // Validate email
     const emailValidationError = validateEmail(formData.email);
     if (emailValidationError) {
       setEmailError(emailValidationError);
-      alert("Please enter a valid email address.");
+      setSnackbar({
+        open: true,
+        message: "Please enter a valid email address.",
+        severity: 'error'
+      });
+      return;
+    }
+
+    // Validate required fields
+    const requiredFields = ['firstName', 'lastName', 'birthDate', 'phone', 'residence', 'email', 'password'];
+    const missingFields = requiredFields.filter(field => !formData[field]);
+    
+    if (missingFields.length > 0) {
+      setSnackbar({
+        open: true,
+        message: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        severity: 'error'
+      });
+      return;
+    }
+
+    // Validate driving license images
+    if (!formData.licenceFront || !formData.licenceBack) {
+      setSnackbar({
+        open: true,
+        message: "Please upload both front and back images of your driving license.",
+        severity: 'error'
+      });
       return;
     }
 
