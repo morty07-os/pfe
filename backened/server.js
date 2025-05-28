@@ -42,14 +42,18 @@ const httpServer = createServer(app);
 // Initialize socket.io with the HTTP server
 const io = new Server(httpServer, {
     cors: {
-        origin: allowedOrigins, // Allow frontend origin from environment variable
-        methods: ["GET", "POST"], // Allow specific methods
-        credentials: true // Allow cookies to be sent
+        origin: allowedOrigins,
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        credentials: true,
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
     },
 });
 
 // Apply security headers using Helmet
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: { policy: "unsafe-none" }
+}));
 
 // Enable CORS for the frontend
 const corsOptions = {
