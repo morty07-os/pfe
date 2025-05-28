@@ -1,8 +1,23 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables
-dotenv.config({ path: './backened/.env' });
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from the correct path
+const envPath = path.resolve(__dirname, '../.env');
+console.log('Loading environment variables from:', envPath);
+dotenv.config({ path: envPath });
+
+// Log all environment variables (excluding sensitive data)
+console.log('Environment variables loaded:', {
+    EMAIL_USER: process.env.EMAIL_USER ? 'configured' : 'missing',
+    EMAIL_PASS: process.env.EMAIL_PASS ? 'configured' : 'missing',
+    NODE_ENV: process.env.NODE_ENV || 'not set'
+});
 
 // Validate required environment variables
 const requiredEnvVars = ['EMAIL_USER', 'EMAIL_PASS'];
