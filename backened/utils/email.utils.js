@@ -1,67 +1,23 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-// Get the directory name
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Load environment variables from the correct path
-const envPath = path.resolve(__dirname, '../.env');
-console.log('Loading environment variables from:', envPath);
-dotenv.config({ path: envPath });
-
-// Log all environment variables (excluding sensitive data)
-console.log('Environment variables loaded:', {
-    EMAIL_USER: process.env.EMAIL_USER ? 'configured' : 'missing',
-    EMAIL_PASS: process.env.EMAIL_PASS ? 'configured' : 'missing',
-    NODE_ENV: process.env.NODE_ENV || 'not set'
-});
-
-// Validate required environment variables
-const requiredEnvVars = ['EMAIL_USER', 'EMAIL_PASS'];
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-if (missingEnvVars.length > 0) {
-    console.error('Missing required environment variables:', missingEnvVars);
-    throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
-}
+dotenv.config({ path: './backened/.env' });
 
 const sendVerificationEmail = async (email, verificationCode) => {
     try {
-        // Log email configuration (without sensitive data)
-        console.log('Email configuration:', {
-            service: 'gmail',
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            user: process.env.EMAIL_USER ? 'configured' : 'missing',
-            pass: process.env.EMAIL_PASS ? 'configured' : 'missing'
-        });
-
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
+            port: 587,
+            secure: false, // true for 465, false for other ports
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
+                pass: process.env.EMAIL_APP_PASSWORD, // Use app password instead of regular password
             },
             tls: {
-                rejectUnauthorized: false
+                rejectUnauthorized: false // Only use this in development
             }
         });
-
-        // Verify connection configuration
-        try {
-            await transporter.verify();
-            console.log('SMTP connection verified successfully');
-        } catch (verifyError) {
-            console.error('SMTP connection verification failed:', verifyError);
-            throw new Error('Failed to verify SMTP connection: ' + verifyError.message);
-        }
 
         const mailOptions = {
             from: `"Car Rental Service" <${process.env.EMAIL_USER}>`,
@@ -89,13 +45,7 @@ const sendVerificationEmail = async (email, verificationCode) => {
         return true;
     } catch (error) {
         console.error('Error sending verification email:', error);
-        if (error.code === 'EAUTH') {
-            throw new Error('Email authentication failed. Please check your email credentials.');
-        } else if (error.code === 'ESOCKET') {
-            throw new Error('Network error while sending email. Please check your internet connection.');
-        } else {
-            throw new Error('Failed to send verification email: ' + error.message);
-        }
+        throw new Error('Failed to send verification email: ' + error.message);
     }
 };
 
