@@ -4,10 +4,9 @@ import {
     getFeedbacks,
     getFeedbackById,
     updateFeedback,
-    deleteFeedback,
-    getUserFeedback
+    deleteFeedback
 } from '../controllers/feedback.controller.js';
-import { ProtectedRoute } from '../midleware/ProtectedRoute.js'; // Corrected import
+import { ProtectedRoute } from '../midleware/ProtectedRoute.js';
 
 const router = express.Router();
 
@@ -26,14 +25,13 @@ router.use((req, res, next) => {
     next();
 });
 
-// Public routes (e.g., getting all feedbacks, or a specific one)
+// Public routes
 router.get('/', getFeedbacks);
 router.get('/:id', getFeedbackById);
 
-// Protected routes (e.g., creating, updating, deleting feedback)
+// Protected routes
 router.post('/', ProtectedRoute(), createFeedback);
 router.put('/:id', ProtectedRoute(), updateFeedback);
 router.delete('/:id', ProtectedRoute(), deleteFeedback);
-router.get('/user/:userId', getUserFeedback);
 
 export default router;
