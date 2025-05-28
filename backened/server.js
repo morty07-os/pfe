@@ -28,12 +28,9 @@ const PORT = process.env.PORT || 5001;
 
 // Define allowed origins for CORS
 const allowedOrigins = [
-    'http://localhost:3000', // For local frontend development
-    'https://pfe-delta.vercel.app', // Vercel production frontend
-    'https://pfe-morty07-os-projects.vercel.app', // Specific Vercel production frontend from error
-    /^\.*pfe-.*-morty07-os-projects\.vercel\.app$/, // Vercel preview deployments
-    /^https?:\/\/pfe-.*\.vercel\.app$/, // Any Vercel preview URL
-    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []), // Additional frontend URLs from environment variable
+    'http://localhost:3000',
+    'https://pfe-delta.vercel.app',
+    'https://pfe-morty07-os-projects.vercel.app'
 ];
 
 // Create HTTP server
@@ -42,52 +39,46 @@ const httpServer = createServer(app);
 // Initialize socket.io with the HTTP server
 const io = new Server(httpServer, {
     cors: {
-        origin: allowedOrigins,
+        origin: true, // Allow all origins temporarily for debugging
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         credentials: true,
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
     },
 });
 
-// Apply security headers using Helmet
+// Apply security headers using Helmet with more permissive settings
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginOpenerPolicy: { policy: "unsafe-none" }
+    crossOriginOpenerPolicy: { policy: "unsafe-none" },
+    crossOriginEmbedderPolicy: false
 }));
 
-// Enable CORS for the frontend
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        // Check if the origin matches any of the allowed origins or patterns
-        const isAllowed = allowedOrigins.some(pattern => {
-            if (typeof pattern === 'string') {
-                return pattern === origin;
-            } else if (pattern instanceof RegExp) {
-                return pattern.test(origin);
-            }
-            return false;
-        });
-        
-        if (isAllowed) {
-            callback(null, true);
-        } else {
-            console.log('Not allowed by CORS:', origin);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+// Enable CORS for the frontend with more permissive settings
+app.use(cors({
+    origin: true, // Allow all origins temporarily for debugging
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['Content-Range', 'X-Content-Range']
-};
+}));
 
-app.use(cors(corsOptions));
+// Add CORS headers middleware
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
+});
 
 // Handle preflight requests
-app.options('*', cors(corsOptions));
+app.options('*', (req, res) => {
+    res.header('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.sendStatus(200);
+});
 
 // Rate limiting middleware to prevent abuse
 const limiter = rateLimit({
