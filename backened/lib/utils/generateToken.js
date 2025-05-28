@@ -29,9 +29,10 @@ export const generateTokenAndSetCookie = (userId, res) => {
         const cookieOptions = {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            secure: true,
             path: '/',
+            domain: process.env.NODE_ENV === 'production' ? '.render.com' : undefined
         };
 
         res.cookie('jwt', token, cookieOptions);

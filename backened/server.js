@@ -55,16 +55,16 @@ app.use(helmet({
 
 // Enable CORS for the frontend
 app.use(cors({
-    origin: 'https://pfe-delta.vercel.app',
+    origin: ['https://pfe-delta.vercel.app', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    exposedHeaders: ['Content-Range', 'X-Content-Range']
+    exposedHeaders: ['Content-Range', 'X-Content-Range', 'Set-Cookie']
 }));
 
 // Handle preflight requests
 app.options('*', cors({
-    origin: 'https://pfe-delta.vercel.app',
+    origin: ['https://pfe-delta.vercel.app', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']

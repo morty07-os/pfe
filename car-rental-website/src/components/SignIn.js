@@ -48,7 +48,11 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
 
