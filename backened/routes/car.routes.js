@@ -17,6 +17,21 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// Enable CORS for all routes
+router.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
+    next();
+});
+
 // Car routes
 router.post("/add", ProtectedRoute(), upload.array("images", 5), createCar); // Add a new car with image upload
 router.get("/list", getCars); // Get a list of cars
