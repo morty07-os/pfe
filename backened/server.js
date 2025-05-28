@@ -39,7 +39,7 @@ const httpServer = createServer(app);
 // Initialize socket.io with the HTTP server
 const io = new Server(httpServer, {
     cors: {
-        origin: true, // Allow all origins temporarily for debugging
+        origin: 'https://pfe-delta.vercel.app',
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         credentials: true,
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
@@ -53,32 +53,22 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
-// Enable CORS for the frontend with more permissive settings
+// Enable CORS for the frontend
 app.use(cors({
-    origin: true, // Allow all origins temporarily for debugging
+    origin: 'https://pfe-delta.vercel.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
 
-// Add CORS headers middleware
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    next();
-});
-
 // Handle preflight requests
-app.options('*', (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.sendStatus(200);
-});
+app.options('*', cors({
+    origin: 'https://pfe-delta.vercel.app',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 
 // Rate limiting middleware to prevent abuse
 const limiter = rateLimit({
