@@ -101,7 +101,7 @@ const AddCarPage = () => {
         imageUrls.push(url);
       }
     }
-    // Replace images in FormData
+    // Remove the old images from FormData (if any)
     data.delete('images');
     imageUrls.forEach(url => data.append('images', url));
 

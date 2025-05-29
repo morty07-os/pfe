@@ -665,9 +665,9 @@ function PostCarDialog({ open, onClose }) {
           imageUrls.push(url);
         }
       }
-      // Replace images in formDataToSend
-      formData.delete('images');
-      imageUrls.forEach(url => formData.append('images', url));
+      // Remove the old images from FormData (if any)
+      data.delete('images');
+      imageUrls.forEach(url => data.append('images', url));
 
       // Use environment variable for API URL
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
@@ -676,7 +676,7 @@ function PostCarDialog({ open, onClose }) {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formData,
+        body: data,
       });
 
       if (!response.ok) {
