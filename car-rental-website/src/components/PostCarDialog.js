@@ -444,6 +444,17 @@ const carFeatures = [
   }
 ];
 
+// Add this helper function at the top (after imports):
+async function uploadToCloudinary(file) {
+  const url = `https://api.cloudinary.com/v1_1/dtob4ibrg/image/upload`;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', 'unsigned_preset'); // You must create this preset in your Cloudinary dashboard
+  const response = await fetch(url, { method: 'POST', body: formData });
+  const data = await response.json();
+  return data.secure_url;
+}
+
 function PostCarDialog({ open, onClose }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -646,16 +657,17 @@ function PostCarDialog({ open, onClose }) {
         }
       }
 
-      // Append images
-      formData.images.forEach((image) => data.append('images', image));
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach((key) => {
-        if (key === 'images') {
-          formData[key].forEach((image) => formDataToSend.append('images', image));
-        } else {
-          formDataToSend.append(key, formData[key]);
+      // Upload images to Cloudinary and collect URLs
+      let imageUrls = [];
+      if (formData.images && formData.images.length > 0) {
+        for (const image of formData.images) {
+          const url = await uploadToCloudinary(image);
+          imageUrls.push(url);
         }
-      });
+      }
+      // Replace images in formDataToSend
+      formData.delete('images');
+      imageUrls.forEach(url => formData.append('images', url));
 
       // Use environment variable for API URL
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
@@ -664,7 +676,7 @@ function PostCarDialog({ open, onClose }) {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formDataToSend,
+        body: formData,
       });
 
       if (!response.ok) {

@@ -1,6 +1,14 @@
 import Car from '../models/car.models.js';
 import User from '../models/user.models.js';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; 
+import cloudinary from 'cloudinary';
+import fs from 'fs';
+
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dtob4ibrg',
+  api_key: process.env.CLOUDINARY_API_KEY || '837972942685863',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'dVaH5ZDobVz2-R9NNZuIKXYCidY',
+});
 
 // Function to create a new car
 export const createCar = async (req, res) => {
@@ -19,7 +27,17 @@ export const createCar = async (req, res) => {
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        const images = files.map((file) => `uploads/${file.filename}`);
+        // Upload images to Cloudinary
+        const images = [];
+        for (const file of files) {
+            const result = await cloudinary.v2.uploader.upload(file.path, {
+                folder: 'car_rental_cars',
+                resource_type: 'image',
+            });
+            images.push(result.secure_url);
+            // Remove local file after upload
+            fs.unlinkSync(file.path);
+        }
 
         // Parse location if it's a string
         let locationData = body.location;

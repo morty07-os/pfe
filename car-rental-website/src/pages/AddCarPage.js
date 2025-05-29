@@ -20,6 +20,16 @@ const carCategories = [
   'Other'
 ];
 
+async function uploadToCloudinary(file) {
+  const url = `https://api.cloudinary.com/v1_1/dtob4ibrg/image/upload`;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', 'unsigned_preset'); // You must create this preset in your Cloudinary dashboard
+  const response = await fetch(url, { method: 'POST', body: formData });
+  const data = await response.json();
+  return data.secure_url;
+}
+
 const AddCarPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -82,9 +92,18 @@ const AddCarPage = () => {
     Object.keys(formData).forEach(key => {
       data.append(key, formData[key]);
     });
-    images.forEach(image => {
-      data.append('images', image);
-    });
+
+    // Upload images to Cloudinary and collect URLs
+    let imageUrls = [];
+    if (images && images.length > 0) {
+      for (const image of images) {
+        const url = await uploadToCloudinary(image);
+        imageUrls.push(url);
+      }
+    }
+    // Replace images in FormData
+    data.delete('images');
+    imageUrls.forEach(url => data.append('images', url));
 
     // Add Wilaya and Commune from a location selector if you have one
     // data.append('wilaya', selectedWilaya);

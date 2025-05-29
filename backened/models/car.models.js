@@ -72,13 +72,13 @@ const carSchema = new mongoose.Schema(
             default: false,
         },
         images: {
-            type: [String], // Array of image paths
+            type: [String], // Array of image URLs
             required: true,
             validate: {
                 validator: function (images) {
-                    return images.length >= 1 && images.length <= 5 && images.every((img) => img.startsWith('uploads/'));
+                    return images.length >= 1 && images.length <= 5 && images.every((img) => typeof img === 'string' && (img.startsWith('http://') || img.startsWith('https://')));
                 },
-                message: 'You must upload between 1 and 5 images, and all image paths must start with "uploads/".',
+                message: 'You must upload between 1 and 5 images, and all image URLs must start with http:// or https://.',
             },
         },
         owner: {
