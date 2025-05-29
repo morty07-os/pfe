@@ -278,15 +278,25 @@ export const addChatMessage = async (req, res, next) => {
 export const getUserBookings = async (req, res, next) => {
     try {
         const renterId = req.user.userId;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
         const bookings = await Booking.find({ renter: renterId })
             .populate('car', 'carName brand year images price wilaya address')
             .populate('owner', 'firstName lastName avatar')
-            .sort({ createdAt: -1 }); // Sort by most recent
+            .sort({ createdAt: -1 }) // Sort by most recent
+            .skip(skip)
+            .limit(limit);
 
-        if (!bookings) {
-            return res.status(404).json({ message: 'No bookings found for this user.' });
-        }
-        res.status(200).json(bookings);
+        const totalBookings = await Booking.countDocuments({ renter: renterId });
+
+        res.status(200).json({
+            bookings,
+            totalBookings,
+            page,
+            totalPages: Math.ceil(totalBookings / limit)
+        });
     } catch (error) {
         console.error("Error in getUserBookings:", error);
         next(error);
@@ -297,15 +307,25 @@ export const getUserBookings = async (req, res, next) => {
 export const getOwnerBookings = async (req, res, next) => {
     try {
         const ownerId = req.user.userId;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
         const bookings = await Booking.find({ owner: ownerId })
             .populate('car', 'carName brand year images price wilaya address')
             .populate('renter', 'firstName lastName avatar email')
-            .sort({ createdAt: -1 }); // Sort by most recent
+            .sort({ createdAt: -1 }) // Sort by most recent
+            .skip(skip)
+            .limit(limit);
 
-        if (!bookings) {
-            return res.status(404).json({ message: 'No bookings found for your listings.' });
-        }
-        res.status(200).json(bookings);
+        const totalBookings = await Booking.countDocuments({ owner: ownerId });
+
+        res.status(200).json({
+            bookings,
+            totalBookings,
+            page,
+            totalPages: Math.ceil(totalBookings / limit)
+        });
     } catch (error) {
         console.error("Error in getOwnerBookings:", error);
         next(error);

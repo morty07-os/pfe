@@ -100,5 +100,11 @@ const carSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Add indexes for frequently queried fields
+carSchema.index({ wilaya: 1 });
+carSchema.index({ price: 1 });
+carSchema.index({ carType: 1 });
+carSchema.index({ isDeleted: 1 });
+
 const Car = mongoose.model("Car", carSchema);
 export default Car;

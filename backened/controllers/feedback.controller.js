@@ -19,11 +19,26 @@ export const createFeedback = async (req, res) => {
     }
 };
 
-// Function to get all feedbacks
+// Function to get all feedbacks with pagination
 export const getFeedbacks = async (req, res) => {
     try {
-        const feedbacks = await Feedback.find().populate('userId', 'username email');
-        res.status(200).json(feedbacks);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const feedbacks = await Feedback.find()
+            .populate('userId', 'username email')
+            .skip(skip)
+            .limit(limit);
+
+        const totalFeedbacks = await Feedback.countDocuments();
+
+        res.status(200).json({
+            feedbacks,
+            totalFeedbacks,
+            page,
+            totalPages: Math.ceil(totalFeedbacks / limit)
+        });
     } catch (error) {
         console.error("Error fetching feedbacks:", error.message);
         res.status(500).json({ error: "Server error" });

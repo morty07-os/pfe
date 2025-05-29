@@ -27,5 +27,9 @@ const ratingSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+// Add indexes for frequently queried fields
+ratingSchema.index({ carId: 1 });
+ratingSchema.index({ ratedUserId: 1 });
+
 const Rating = mongoose.model("Rating", ratingSchema);
 export default Rating;

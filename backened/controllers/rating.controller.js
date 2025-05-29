@@ -170,15 +170,29 @@ export const getAverageRatingByRatedUserId = async (req, res) => {
     }
 };
 
-// Function to fetch all ratings (original function, kept for completeness if needed elsewhere)
+// Function to fetch all ratings with pagination
 export const getRatings = async (req, res) => {
     try {
-        // Retrieve all ratings and populate car details
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Retrieve all ratings and populate car details with pagination
         const ratings = await Rating.find()
             .populate('carId', 'make model')
             .populate('raterId', 'username email firstName lastName profileImage')
-            .populate('ratedUserId', 'username email firstName lastName profileImage');
-        res.status(200).json(ratings);
+            .populate('ratedUserId', 'username email firstName lastName profileImage')
+            .skip(skip)
+            .limit(limit);
+
+        const totalRatings = await Rating.countDocuments();
+
+        res.status(200).json({
+            ratings,
+            totalRatings,
+            page,
+            totalPages: Math.ceil(totalRatings / limit)
+        });
     } catch (error) {
         console.error("Error fetching ratings:", error.message);
         res.status(500).json({ error: "Server error" });

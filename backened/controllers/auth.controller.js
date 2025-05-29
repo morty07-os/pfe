@@ -141,6 +141,26 @@ export const login = async (req, res) => {
 
         console.log('Login successful for user:', user._id);
 
+        // Generate Refresh Token
+        const refreshToken = crypto.randomBytes(32).toString('hex');
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+        // Save hashed refresh token to user document
+        user.refreshToken = hashedRefreshToken;
+        await user.save();
+
+        // Set Refresh Token as HTTP-only cookie
+        const refreshTokenCookieOptions = {
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days expiration for refresh token
+            httpOnly: true,
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/api/auth/refresh-token' // Set path to the refresh token endpoint
+        };
+        res.cookie('refreshToken', refreshToken, refreshTokenCookieOptions);
+        console.log('Refresh token cookie set for user:', user._id);
+
+
         // Return user data without sensitive information
         const userResponse = {
             _id: user._id,
@@ -155,12 +175,12 @@ export const login = async (req, res) => {
 
         res.status(200).json({
             message: 'Login successful',
-            token,
+            token, // This is the access token (JWT)
             user: userResponse
         });
     } catch (error) {
         console.error('Error in login controller:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'An error occurred during login',
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
@@ -298,9 +318,24 @@ export const resendVerificationCode = async (req, res) => {
 };
 
 // Handles user logout
-export const logout = (req, res) => {
+export const logout = async (req, res) => {
     try {
+        // Clear the access token cookie
         res.cookie("jwt", "", { maxAge: 0 });
+
+        // Clear the refresh token cookie
+        res.cookie("refreshToken", "", { maxAge: 0, path: '/api/auth/refresh-token' }); // Ensure path matches the one set in login
+
+        // Invalidate the refresh token in the database
+        if (req.user && req.user.userId) {
+            const user = await User.findById(req.user.userId);
+            if (user) {
+                user.refreshToken = undefined; // Remove the refresh token
+                await user.save();
+                console.log(`Refresh token invalidated for user: ${req.user.userId}`);
+            }
+        }
+
         res.status(200).json({ message: "User logged out successfully" });
     } catch (error) {
         console.error("Error in logout controller:", error.message);
@@ -354,17 +389,52 @@ export const refreshToken = async (req, res) => {
             return res.status(401).json({ error: "No refresh token provided" });
         }
 
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        // Find user by comparing the refresh token with the hashed token in the database
+        const user = await User.findOne({}); // Need to find user based on hashed refresh token
 
-        res.cookie("jwt", newToken, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,
+        // Iterate through users to find a match for the refresh token
+        // This is inefficient for large number of users, consider adding an index on hashed refresh token if possible
+        // Or a different approach for refresh token storage/validation
+        const users = await User.find({}); // Fetch all users (inefficient)
+        let foundUser = null;
+        for (const u of users) {
+            if (u.refreshToken && await bcrypt.compare(refreshToken, u.refreshToken)) {
+                foundUser = u;
+                break;
+            }
+        }
+
+        if (!foundUser) {
+             console.log("Invalid or expired refresh token - user not found");
+            return res.status(401).json({ error: "Invalid or expired refresh token" });
+        }
+
+        // Generate a new access token (JWT)
+        const newToken = jwt.sign({ userId: foundUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        // Set the new access token as an HTTP-only cookie
+        const accessTokenCookieOptions = {
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days expiration for access token
             httpOnly: true,
-            sameSite: "strict",
-            secure: process.env.NODE_ENV !== "development",
-        });
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Consistent sameSite
+            secure: process.env.NODE_ENV === 'production',
+            path: '/' // Consistent path
+        };
+        res.cookie("jwt", newToken, accessTokenCookieOptions);
+        console.log('New access token generated and cookie set for user:', foundUser._id);
 
-        res.status(200).json({ message: "Token refreshed successfully" });
+
+        // Optionally, generate and set a new refresh token and invalidate the old one
+        // This adds complexity but improves security by rotating refresh tokens
+        // const newRefreshToken = crypto.randomBytes(32).toString('hex');
+        // const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+        // foundUser.refreshToken = hashedNewRefreshToken;
+        // await foundUser.save();
+        // const newRefreshTokenCookieOptions = { ...refreshTokenCookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 }; // Longer expiration
+        // res.cookie('refreshToken', newRefreshToken, newRefreshTokenCookieOptions);
+
+
+        res.status(200).json({ message: "Token refreshed successfully", token: newToken });
     } catch (error) {
         console.error("Error refreshing token:", error.message);
         res.status(401).json({ error: "Invalid or expired refresh token" });
