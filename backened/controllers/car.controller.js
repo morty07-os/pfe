@@ -1,9 +1,6 @@
 import Car from '../models/car.models.js';
 import User from '../models/user.models.js';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; 
-import cloudinary from '../utils/cloudinary.js';
-import fs from 'fs';
-import path from 'path';
 
 // Function to create a new car
 export const createCar = async (req, res) => {
@@ -22,20 +19,7 @@ export const createCar = async (req, res) => {
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        // Upload images to Cloudinary
-        const uploadPromises = files.map(async (file) => {
-            const result = await cloudinary.uploader.upload(file.path, {
-                folder: 'car-rental/cars',
-                resource_type: 'image'
-            });
-            
-            // Remove the local file after uploading to Cloudinary
-            fs.unlinkSync(file.path);
-            
-            return result.secure_url;
-        });
-        
-        const images = await Promise.all(uploadPromises);
+        const images = files.map((file) => `uploads/${file.filename}`);
 
         // Parse location if it's a string
         let locationData = body.location;
