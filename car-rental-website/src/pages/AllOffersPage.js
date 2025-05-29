@@ -1147,7 +1147,7 @@ export default function AllOffersPage() {
                           }}>
                             <CardMedia
                               component="img"
-                              image={offer.images?.[0] ? `${process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com'}/uploads/${offer.images[0]}` : '/placeholder.jpg'}
+                              image={offer.images?.[0] && offer.images[0].startsWith('http') ? offer.images[0] : '/placeholder.jpg'}
                               alt={offer.carName || offer.title || 'Car image'}
                               sx={{
                                 objectFit: 'cover',

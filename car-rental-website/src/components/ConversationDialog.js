@@ -827,10 +827,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
                       {message.image && (
                         <Box sx={{ mt: 1, maxWidth: '100%' }}>
                           <img 
-                            src={message.image.startsWith('data:') 
-                              ? message.image 
-                              : `${apiUrl}/${message.image}`
-                            } 
+                            src={message.image.startsWith('http') ? message.image : 'https://via.placeholder.com/200x200?text=Image'}
                             alt="Message attachment" 
                             style={{ 
                               maxWidth: '100%', 

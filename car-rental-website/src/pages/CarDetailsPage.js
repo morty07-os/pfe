@@ -480,7 +480,7 @@ export default function CarDetailsPage() {
                     <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
                       <CardMedia
                         component="img"
-                        image={`${apiUrl}/${car.images?.[selectedImageIndex] || car.images?.[0]}`}
+                        image={car.images?.[selectedImageIndex] && car.images[selectedImageIndex].startsWith('http') ? car.images[selectedImageIndex] : 'https://via.placeholder.com/400x300?text=Car+Image'}
                         alt={car.carName}
                         sx={{
                           borderRadius: 2,
@@ -568,7 +568,7 @@ export default function CarDetailsPage() {
                           >
                             <CardMedia
                               component="img"
-                              image={`${apiUrl}/${img}`}
+                              image={img && img.startsWith('http') ? img : 'https://via.placeholder.com/70x70?text=Car'}
                               alt={`Car image ${index + 1}`}
                               sx={{
                                 width: 70,

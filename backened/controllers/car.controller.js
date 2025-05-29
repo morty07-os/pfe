@@ -9,17 +9,13 @@ export const createCar = async (req, res) => {
             return res.status(401).json({ error: 'Authentication required' });
         }
 
-        console.log("Request body:", req.body); // Log request body
-        console.log("Uploaded files:", req.files); // Log uploaded files
-
         const { body, files } = req;
-        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
-
         if (!files || files.length === 0) {
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        const images = files.map((file) => `uploads/${file.filename}`);
+        // Use Cloudinary URLs
+        const images = files.map((file) => file.path);
 
         // Parse location if it's a string
         let locationData = body.location;
@@ -27,19 +23,18 @@ export const createCar = async (req, res) => {
             try {
                 locationData = JSON.parse(locationData);
             } catch (e) {
-                console.error('Error parsing location:', e);
                 return res.status(400).json({ error: 'Invalid location format' });
             }
         }
 
         // Create location object for GeoJSON
-        const location = {
+        const location = locationData ? {
             type: 'Point',
             coordinates: [
                 parseFloat(locationData.lng || locationData[0]),
                 parseFloat(locationData.lat || locationData[1])
             ]
-        };
+        } : undefined;
 
         // Get user information for owner details
         const user = await User.findById(req.user.userId);
@@ -48,20 +43,7 @@ export const createCar = async (req, res) => {
         }
 
         const newCar = new Car({
-            carName,
-            brand,
-            wilaya,
-            description,
-            energy,
-            seats,
-            doors,
-            transmission,
-            mileage,
-            engine,
-            availabilityStart,
-            availabilityEnd,
-            price,
-            carType,
+            ...body,
             location,
             images,
             owner: req.user.userId,
@@ -72,10 +54,8 @@ export const createCar = async (req, res) => {
         });
 
         await newCar.save();
-        console.log("Car created successfully:", newCar); // Log success
         res.status(201).json({ message: 'Car created successfully', car: newCar });
     } catch (error) {
-        console.error("Error creating car:", error.message); // Log error
         res.status(500).json({ error: 'Failed to create car', details: error.message });
     }
 };

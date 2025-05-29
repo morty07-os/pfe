@@ -23,6 +23,7 @@ export const signup = async (req, res) => {
             return res.status(400).json({ error: "Driving licence images are required" });
         }
 
+        // Use Cloudinary URLs
         const licenceFront = req.files.licenceFront[0].path;
         const licenceBack = req.files.licenceBack[0].path;
 
