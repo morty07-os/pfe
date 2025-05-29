@@ -143,9 +143,9 @@ const RnF_user = ({ open, onClose, userId, userName }) => {
               mb: 4
             }}>
               <Avatar
-                src={userInfo?.profileImage}
-                sx={{ 
-                  width: 100, 
+                src={userInfo?.profileImage || null}
+                sx={{
+                  width: 100,
                   height: 100,
                   bgcolor: '#1e293b',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)'

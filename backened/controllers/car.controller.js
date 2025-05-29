@@ -1,6 +1,7 @@
 import Car from '../models/car.models.js';
 import User from '../models/user.models.js';
-import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; 
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
+import cloudinary from '../utils/cloudinary.js';
 
 // Function to create a new car
 export const createCar = async (req, res) => {
@@ -19,7 +20,16 @@ export const createCar = async (req, res) => {
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        const images = files.map((file) => `uploads/${file.filename}`);
+        const uploadPromises = files.map(async (file) => {
+            const result = await cloudinary.uploader.upload(file.path, {
+                folder: 'car-rental' // Optional folder in Cloudinary
+            });
+            // Delete the file from the local uploads folder
+            fs.unlinkSync(file.path);
+            return result.secure_url;
+        });
+
+        const images = await Promise.all(uploadPromises);
 
         // Parse location if it's a string
         let locationData = body.location;
@@ -72,10 +82,10 @@ export const createCar = async (req, res) => {
         });
 
         await newCar.save();
-        console.log("Car created successfully:", newCar); // Log success
+        console.log("Car created successfully:", newCar);
         res.status(201).json({ message: 'Car created successfully', car: newCar });
     } catch (error) {
-        console.error("Error creating car:", error.message); // Log error
+        console.error("Error creating car:", error.message);
         res.status(500).json({ error: 'Failed to create car', details: error.message });
     }
 };
