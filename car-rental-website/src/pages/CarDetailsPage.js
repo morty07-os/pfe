@@ -548,37 +548,36 @@ export default function CarDetailsPage() {
                           borderRadius: 3,
                         },
                       }}>
-                        {car.images?.map((img, index) => (
+                        {getImageUrls(car.images).map((imageUrl, index) => (
                           <Box
                             key={index}
-                            onClick={() => handleImageChange(index)}
+                            onClick={() => handleImageClick(car.images[index])}
                             sx={{
-                              position: 'relative',
-                              cursor: 'pointer',
-                              borderRadius: 2,
+                              width: 70,
+                              height: 70,
+                              borderRadius: 1,
                               overflow: 'hidden',
-                              border: selectedImageIndex === index 
-                                ? '2px solid #1e293b' 
-                                : '2px solid transparent',
+                              cursor: 'pointer',
+                              border: mainImage === imageUrl ? '2px solid #3b82f6' : '1px solid #e2e8f0',
                               transition: 'all 0.2s ease',
                               '&:hover': {
                                 transform: 'scale(1.05)',
-                              }
+                                borderColor: '#3b82f6',
+                              },
                             }}
                           >
                             <CardMedia
                               component="img"
-                              image={`${apiUrl}/${img}`}
-                              alt={`Car image ${index + 1}`}
                               sx={{
-                                width: 70,
-                                height: 70,
+                                width: '100%',
+                                height: '100%',
                                 objectFit: 'cover',
-                                opacity: selectedImageIndex === index ? 1 : 0.7,
-                                transition: 'opacity 0.2s ease',
-                                '&:hover': {
-                                  opacity: 1,
-                                }
+                              }}
+                              image={imageUrl}
+                              alt={`Thumbnail ${index + 1}`}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = '/placeholder-car.png';
                               }}
                             />
                           </Box>

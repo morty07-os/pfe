@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 // Assuming you have an AuthContext or similar to get user info
 // import { AuthContext } from '../context/AuthContext'; // Example
 import QuickSearch from '../components/QuickSearch';
+import { getFirstImage, getImageUrl } from '../utils/imageUtils';
 import {
   Box,
   Grid,
