@@ -1,5 +1,7 @@
 import Message from '../models/message.models.js';
 import mongoose from 'mongoose';
+import cloudinary from '../utils/cloudinary.js';
+import fs from 'fs';
 
 // Save a new message
 export const saveMessage = async (req, res) => {
@@ -10,7 +12,16 @@ export const saveMessage = async (req, res) => {
     // Handle image if it exists in the request
     let imagePath = null;
     if (req.file) {
-      imagePath = `uploads/${req.file.filename}`;
+      // Upload image to Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'car-rental/messages',
+        resource_type: 'image'
+      });
+      
+      // Remove the local file after uploading to Cloudinary
+      fs.unlinkSync(req.file.path);
+      
+      imagePath = result.secure_url;
     }
 
     let convoId = conversationId;
