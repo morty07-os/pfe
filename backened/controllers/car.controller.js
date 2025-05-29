@@ -23,18 +23,23 @@ export const createCar = async (req, res) => {
         const { body, files } = req;
         const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
 
-        if (!files || files.length === 0) {
+        // Handle images from body (Cloudinary URLs from frontend)
+        let images = body.images;
+        if (typeof images === 'string') {
+            images = [images];
+        }
+        if (!images || !Array.isArray(images) || images.length === 0) {
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
         // Upload images to Cloudinary
-        const images = [];
+        const cloudinaryImages = [];
         for (const file of files) {
             const result = await cloudinary.v2.uploader.upload(file.path, {
                 folder: 'car_rental_cars',
                 resource_type: 'image',
             });
-            images.push(result.secure_url);
+            cloudinaryImages.push(result.secure_url);
             // Remove local file after upload
             fs.unlinkSync(file.path);
         }
@@ -81,7 +86,7 @@ export const createCar = async (req, res) => {
             price,
             carType,
             location,
-            images,
+            images: cloudinaryImages,
             owner: req.user.userId,
             ownerName: {
                 firstName: user.firstName,
