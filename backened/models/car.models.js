@@ -76,9 +76,16 @@ const carSchema = new mongoose.Schema(
             required: true,
             validate: {
                 validator: function (images) {
-                    return images.length >= 1 && images.length <= 5 && images.every((img) => img.startsWith('https://res.cloudinary.com/'));
+                    return images.length >= 1 && images.length <= 5 && images.every((img) => {
+                      try {
+                        new URL(img);
+                        return true;
+                      } catch (e) {
+                        return false;
+                      }
+                    });
                 },
-                message: 'You must upload between 1 and 5 images, and all image paths must start with "https://res.cloudinary.com/".',
+                message: 'You must upload between 1 and 5 images, and all image paths must be valid URLs.',
             },
         },
         owner: {
