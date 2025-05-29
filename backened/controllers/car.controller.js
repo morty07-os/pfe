@@ -1,14 +1,6 @@
 import Car from '../models/car.models.js';
 import User from '../models/user.models.js';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; 
-import cloudinary from 'cloudinary';
-import fs from 'fs';
-
-cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dtob4ibrg',
-  api_key: process.env.CLOUDINARY_API_KEY || '837972942685863',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'dVaH5ZDobVz2-R9NNZuIKXYCidY',
-});
 
 // Function to create a new car
 export const createCar = async (req, res) => {
@@ -23,26 +15,11 @@ export const createCar = async (req, res) => {
         const { body, files } = req;
         const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
 
-        // Handle images from body (Cloudinary URLs from frontend)
-        let images = body.images;
-        if (typeof images === 'string') {
-            images = [images];
-        }
-        if (!images || !Array.isArray(images) || images.length === 0) {
+        if (!files || files.length === 0) {
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        // Upload images to Cloudinary
-        const cloudinaryImages = [];
-        for (const file of files) {
-            const result = await cloudinary.v2.uploader.upload(file.path, {
-                folder: 'car_rental_cars',
-                resource_type: 'image',
-            });
-            cloudinaryImages.push(result.secure_url);
-            // Remove local file after upload
-            fs.unlinkSync(file.path);
-        }
+        const images = files.map((file) => `uploads/${file.filename}`);
 
         // Parse location if it's a string
         let locationData = body.location;
@@ -86,7 +63,7 @@ export const createCar = async (req, res) => {
             price,
             carType,
             location,
-            images: cloudinaryImages,
+            images,
             owner: req.user.userId,
             ownerName: {
                 firstName: user.firstName,
