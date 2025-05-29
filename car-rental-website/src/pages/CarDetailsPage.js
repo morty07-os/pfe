@@ -64,7 +64,8 @@ export default function CarDetailsPage() {
   const [ownerFeedbacks, setOwnerFeedbacks] = useState([]);
   const [ownerRatingsLoading, setOwnerRatingsLoading] = useState(false);
   const [ownerRatingsError, setOwnerRatingsError] = useState(null);
-  
+  const [mainImage, setMainImage] = useState('');
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
@@ -89,7 +90,29 @@ export default function CarDetailsPage() {
   const handleImageChange = (index) => {
     setSelectedImageIndex(index);
   };
-  
+
+  // Get full image URLs
+  const getImageUrls = (images) => {
+    if (!images || !Array.isArray(images)) return [];
+    return images.map(img => `${apiUrl}/${img}`);
+  };
+
+  // Handle image click to set as main image
+  const handleImageClick = (imageUrl) => {
+    setMainImage(`${apiUrl}/${imageUrl}`);
+    const index = car.images.findIndex(img => img === imageUrl);
+    if (index !== -1) {
+      setSelectedImageIndex(index);
+    }
+  };
+
+  // Set initial main image when car data is loaded
+  useEffect(() => {
+    if (car?.images?.length > 0) {
+      setMainImage(`${apiUrl}/${car.images[0]}`);
+    }
+  }, [car]);
+
   const handlePrevImage = () => {
     if (!car?.images?.length) return;
     setSelectedImageIndex((prev) => 
