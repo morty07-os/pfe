@@ -9,6 +9,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import SearchIcon from '@mui/icons-material/Search';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 // Import Leaflet CSS
 import 'leaflet/dist/leaflet.css';
@@ -459,13 +460,15 @@ function PostCarDialog({ open, onClose }) {
     price: '',
     energy: '',
     transmission: '',
-    images: [],
+    images: [], // Will store Cloudinary URLs
+    imageFiles: [], // Will store file objects for upload
     location: null,
     features: {}
   });
   const [imagePreviews, setImagePreviews] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Add authentication check when dialog opens and check for selected location
   useEffect(() => {
@@ -496,22 +499,63 @@ function PostCarDialog({ open, onClose }) {
     return null;
   }
 
+  // Function to upload an image to Cloudinary
+  const uploadImageToCloudinary = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'car_rental'); // Create an unsigned upload preset in your Cloudinary dashboard
+      
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await fetch(`${apiUrl}/api/upload/cloudinary`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image to Cloudinary');
+      }
+      
+      const data = await response.json();
+      return data.secure_url; // Return the Cloudinary URL
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      setSnackbar({ 
+        open: true, 
+        message: 'Failed to upload image. Please try again.', 
+        severity: 'error' 
+      });
+      return null;
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
-      const newImages = Array.from(files);
-      setFormData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
-      setImagePreviews(prev => [...prev, ...newImages.map(file => URL.createObjectURL(file))]);
+      const newImageFiles = Array.from(files);
+      // Store the file objects for later upload
+      setFormData(prev => ({ ...prev, imageFiles: [...prev.imageFiles, ...newImageFiles] }));
+      // Create previews from the files
+      setImagePreviews(prev => [...prev, ...newImageFiles.map(file => URL.createObjectURL(file))]);
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
   const handleRemoveImage = (index) => {
-    const newImages = [...formData.images];
-    newImages.splice(index, 1);
-    setFormData(prev => ({ ...prev, images: newImages }));
+    // Remove from imageFiles array
+    const newImageFiles = [...formData.imageFiles];
+    newImageFiles.splice(index, 1);
+    setFormData(prev => ({ ...prev, imageFiles: newImageFiles }));
     
+    // Remove from images array if it exists
+    if (formData.images.length > index) {
+      const newImages = [...formData.images];
+      newImages.splice(index, 1);
+      setFormData(prev => ({ ...prev, images: newImages }));
+    }
+    
+    // Remove preview
     const newPreviews = [...imagePreviews];
     URL.revokeObjectURL(newPreviews[index]); // Clean up memory
     newPreviews.splice(index, 1);
@@ -589,28 +633,67 @@ function PostCarDialog({ open, onClose }) {
       return;
     }
     
+    // Check if images are selected
+    if (formData.imageFiles.length === 0) {
+      setSnackbar({
+        open: true,
+        message: 'Please upload at least one image of your car',
+        severity: 'error'
+      });
+      return;
+    }
+    
     try {
-      // Create a FormData object to handle file uploads
-      const data = new FormData();
+      setIsUploading(true);
+      
+      // First, upload all images to Cloudinary
+      const cloudinaryUrls = [];
+      
+      // Use the Cloudinary API directly
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      
+      // Upload each image to Cloudinary
+      for (const imageFile of formData.imageFiles) {
+        const uploadData = new FormData();
+        uploadData.append('file', imageFile);
+        
+        const uploadResponse = await fetch(`${apiUrl}/api/upload/cloudinary`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: uploadData
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload images to Cloudinary');
+        }
+        
+        const uploadResult = await uploadResponse.json();
+        cloudinaryUrls.push(uploadResult.secure_url);
+      }
+      
+      // Create a FormData object for the car data
+      const formDataToSend = new FormData();
       
       // Append all form fields
-      data.append('carName', formData.carName);
-      data.append('brand', formData.brand);
-      data.append('wilaya', formData.wilaya); // Added wilaya field
-      data.append('description', formData.description);
-      data.append('energy', formData.energy);
-      data.append('seats', formData.seats);
-      data.append('doors', formData.doors);
-      data.append('transmission', formData.transmission);
-      data.append('mileage', formData.mileage);
-      data.append('engine', formData.engine);
-      data.append('availabilityStart', formData.availabilityStart);
-      data.append('availabilityEnd', formData.availabilityEnd);
-      data.append('price', formData.price);
+      formDataToSend.append('carName', formData.carName);
+      formDataToSend.append('brand', formData.brand);
+      formDataToSend.append('wilaya', formData.wilaya);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('energy', formData.energy);
+      formDataToSend.append('seats', formData.seats);
+      formDataToSend.append('doors', formData.doors);
+      formDataToSend.append('transmission', formData.transmission);
+      formDataToSend.append('mileage', formData.mileage);
+      formDataToSend.append('engine', formData.engine);
+      formDataToSend.append('availabilityStart', formData.availabilityStart);
+      formDataToSend.append('availabilityEnd', formData.availabilityEnd);
+      formDataToSend.append('price', formData.price);
       
       // Append location data
-      data.append('location[lat]', formData.location.lat);
-      data.append('location[lng]', formData.location.lng);
+      formDataToSend.append('location[lat]', formData.location.lat);
+      formDataToSend.append('location[lng]', formData.location.lng);
 
       // Check for token again before submitting
       if (!token) {
@@ -646,19 +729,10 @@ function PostCarDialog({ open, onClose }) {
         }
       }
 
-      // Append images
-      formData.images.forEach((image) => data.append('images', image));
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach((key) => {
-        if (key === 'images') {
-          formData[key].forEach((image) => formDataToSend.append('images', image));
-        } else {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
+      // Append Cloudinary image URLs
+      cloudinaryUrls.forEach(url => formDataToSend.append('images', url));
 
       // Use environment variable for API URL
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/cars/addcars`, {
         method: 'POST',
         headers: {
@@ -677,6 +751,8 @@ function PostCarDialog({ open, onClose }) {
     } catch (error) {
       console.error("Error posting car:", error.message);
       setSnackbar({ open: true, message: error.message || 'Failed to post the car. Please try again.', severity: 'error' });
+    } finally {
+      setIsUploading(false);
     }
   };
 
