@@ -1,28 +1,27 @@
 import express from "express";
 import multer from "multer";
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from '../utils/cloudinary.js';
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Car from "../models/car.models.js";
 
 const router = express.Router();
 
-// Configure Cloudinary storage for multer
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'car-rental-images',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-  },
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/"); // Save files to the "uploads" directory
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
 });
 const upload = multer({ storage });
 
 // Car routes
-router.post("/add", ProtectedRoute(), upload.array("images", 5), createCar);
-router.get("/list", getCars);
-router.put("/update/:id", ProtectedRoute(), upload.array("images", 5), updateCar);
-router.delete("/delete/:id", ProtectedRoute(), deleteCar);
+router.post("/add", ProtectedRoute(), upload.array("images", 5), createCar); // Add a new car with image upload
+router.get("/list", getCars); // Get a list of cars
+router.put("/update/:id", ProtectedRoute(), upload.array("images", 5), updateCar); // Update car details with image upload
+router.delete("/delete/:id", ProtectedRoute(), deleteCar); // Delete a car
 
 // Route to post a car
 router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req, res) => {
@@ -31,12 +30,22 @@ router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req,
         console.log("Uploaded files:", req.files); // Log uploaded files
 
         const { body, files } = req;
+        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
+
         if (!files || files.length === 0) {
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        // Use Cloudinary URLs
-        const imagePaths = files.map((file) => file.path);
+        // Generate image paths with full URL in production
+        const imagePaths = files.map((file) => {
+            const filename = `uploads/${file.filename}`;
+            // In production, use the full URL
+            if (process.env.NODE_ENV === 'production') {
+                const baseUrl = process.env.BACKEND_URL || 'https://your-render-app.onrender.com';
+                return `${baseUrl}/${filename}`;
+            }
+            return `/${filename}`; // In development, use relative path
+        });
 
         // Get user information for owner details
         const User = (await import('../models/user.models.js')).default;
@@ -47,7 +56,20 @@ router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req,
         }
 
         const car = new Car({
-            ...body,
+            carName,
+            brand,
+            wilaya,
+            description,
+            energy,
+            seats,
+            doors,
+            transmission,
+            mileage,
+            engine,
+            availabilityStart,
+            availabilityEnd,
+            price,
+            carType,
             images: imagePaths,
             owner: req.user.userId,
             ownerName: {
@@ -57,9 +79,10 @@ router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req,
         });
 
         await car.save();
-        res.status(201).json({ message: 'Car created successfully', car });
+        res.status(201).json({ message: 'Car posted successfully!', car });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create car', details: error.message });
+        console.error("Error posting car:", error.message); // Log error
+        res.status(500).json({ error: 'Failed to post the car.', details: error.message });
     }
 });
 

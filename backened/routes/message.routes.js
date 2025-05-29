@@ -1,7 +1,5 @@
 import express from "express";
 import multer from "multer";
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from '../utils/cloudinary.js';
 import path from "path";
 import { 
   saveMessage, 
@@ -14,15 +12,28 @@ import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 
 const router = express.Router();
 
-// Configure Cloudinary storage for multer
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'message-images',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+// Configure multer for message image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Save files to the "uploads" directory
+  },
+  filename: (req, file, cb) => {
+    cb(null, `message-${Date.now()}${path.extname(file.originalname)}`);
   },
 });
-const upload = multer({ storage });
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept only image files
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed!"), false);
+    }
+  },
+});
 
 router.get("/conversations", ProtectedRoute(), getConversations);
 router.post("/save", ProtectedRoute(), upload.single("image"), saveMessage);

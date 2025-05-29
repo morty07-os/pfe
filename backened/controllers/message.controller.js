@@ -10,7 +10,7 @@ export const saveMessage = async (req, res) => {
     // Handle image if it exists in the request
     let imagePath = null;
     if (req.file) {
-      imagePath = req.file.path; // Cloudinary URL
+      imagePath = `uploads/${req.file.filename}`;
     }
 
     let convoId = conversationId;
@@ -35,6 +35,7 @@ export const saveMessage = async (req, res) => {
     if (carId && mongoose.Types.ObjectId.isValid(carId)) {
       newMessage.carId = new mongoose.Types.ObjectId(carId);
     } else if (carId) {
+      console.error("Invalid carId:", carId);
       return res.status(400).json({ error: 'Invalid carId provided.' });
     }
 
@@ -42,6 +43,7 @@ export const saveMessage = async (req, res) => {
 
     res.status(201).json(savedMessage);
   } catch (error) {
+    console.error("Error saving message:", error.message);
     res.status(500).json({ error: 'Failed to save message.', details: error.message });
   }
 };

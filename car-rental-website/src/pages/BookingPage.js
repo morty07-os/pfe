@@ -181,18 +181,19 @@ export default function BookingPage() {
   // Prepare images for the carousel
   let processedImages = [];
   if (car) {
+    const imageBaseUrl = apiUrl;
     if (car.images && Array.isArray(car.images) && car.images.length > 0) {
-      processedImages = car.images.map(imgPath =>
-        imgPath.startsWith('http') ? imgPath : 'https://via.placeholder.com/400x300?text=Car+Image'
+      processedImages = car.images.map(imgPath => 
+        imgPath.startsWith('http') ? imgPath : `${imageBaseUrl}${imgPath.replace(/^\.\//, '')}`
       );
-    } else if (car.image_url) {
+    } else if (car.image_url) { // Fallback if car.images is not there or empty
       processedImages = [
-        car.image_url.startsWith('http') ? car.image_url : 'https://via.placeholder.com/400x300?text=Car+Image'
+        car.image_url.startsWith('http') ? car.image_url : `${imageBaseUrl}${car.image_url.replace(/^\.\//, '')}`
       ];
     }
   }
   if (processedImages.length === 0) {
-    processedImages = ['https://via.placeholder.com/400x300?text=Car+Image'];
+    processedImages = ['https://via.placeholder.com/400x300?text=Car+Image']; // Default placeholder
   }
   console.log("Processed images for carousel:", processedImages);
 

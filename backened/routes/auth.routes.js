@@ -1,7 +1,5 @@
 import express from "express";
 import multer from "multer";
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from '../utils/cloudinary.js';
 import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
@@ -10,20 +8,20 @@ import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.con
 
 const router = express.Router();
 
-// Configure Cloudinary storage for multer
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => {
-    let folder = 'user-licences';
-    if (file.fieldname === 'licenceFront') folder = 'user-licences/front';
-    if (file.fieldname === 'licenceBack') folder = 'user-licences/back';
-    return {
-      folder,
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    };
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
-const upload = multer({ storage });
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 // Enable CORS for all routes
 router.use((req, res, next) => {

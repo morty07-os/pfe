@@ -86,6 +86,51 @@ app.use(express.urlencoded({ extended: true }));
 // Middleware for parsing cookies
 app.use(cookieParser());
 
+// Serve static files from the uploads directory
+const uploadsDir = path.join(process.cwd(), 'uploads');
+app.use('/uploads', express.static(uploadsDir, {
+    setHeaders: (res, path, stat) => {
+        // Security headers
+        res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
+        res.set('Cross-Origin-Opener-Policy', 'unsafe-none');
+        
+        // Get the origin from the request
+        const origin = res.req.headers.origin || '';
+        
+        // Check if the origin is in our allowed list
+        if (allowedOrigins.some(allowedOrigin => origin.includes(allowedOrigin.replace(/^https?:\/\//, '')))) {
+            res.set('Access-Control-Allow-Origin', origin);
+        } else if (process.env.NODE_ENV === 'production') {
+            // Default to the main production domain if origin not in allowed list
+            res.set('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
+        } else {
+            // In development, allow any origin
+            res.set('Access-Control-Allow-Origin', '*');
+        }
+        
+        // CORS headers
+        res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.set('Access-Control-Allow-Credentials', 'true');
+        
+        // Caching headers (1 year for images)
+        if (/\.(jpg|jpeg|png|gif|svg)$/i.test(path)) {
+            res.set('Cache-Control', 'public, max-age=31536000, immutable');
+        } else {
+            res.set('Cache-Control', 'no-store');
+        }
+        
+        // Add versioning to prevent caching issues during updates
+        res.set('ETag', `${Date.now()}`);
+    }
+}));
+
+// Create uploads directory if it doesn't exist
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Function to remove the username index if it exists
 const removeUsernameIndex = async () => {
     try {
