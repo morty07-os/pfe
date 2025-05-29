@@ -76,16 +76,9 @@ const carSchema = new mongoose.Schema(
             required: true,
             validate: {
                 validator: function (images) {
-                    return images.length >= 1 && images.length <= 5 && images.every((img) => {
-                      try {
-                        new URL(img);
-                        return true;
-                      } catch (e) {
-                        return false;
-                      }
-                    });
+                    return images.length >= 1 && images.length <= 5 && images.every((img) => img.startsWith('uploads/'));
                 },
-                message: 'You must upload between 1 and 5 images, and all image paths must be valid URLs.',
+                message: 'You must upload between 1 and 5 images, and all image paths must start with "uploads/".',
             },
         },
         owner: {

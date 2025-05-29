@@ -1,7 +1,6 @@
 import Car from '../models/car.models.js';
 import User from '../models/user.models.js';
-import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
-import cloudinary from '../utils/cloudinary.js';
+import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; 
 
 // Function to create a new car
 export const createCar = async (req, res) => {
@@ -20,26 +19,7 @@ export const createCar = async (req, res) => {
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        let images = [];
-        try {
-            const uploadPromises = files.map(async (file) => {
-                try {
-                    const result = await cloudinary.uploader.upload(file.path, {
-                        folder: 'car-rental' // Optional folder in Cloudinary
-                    });
-                    // Delete the file from the local uploads folder
-                    fs.unlinkSync(file.path);
-                    return result.secure_url;
-                } catch (uploadError) {
-                    console.error("Error uploading to Cloudinary:", uploadError);
-                    throw new Error(`Failed to upload image to Cloudinary: ${uploadError.message}`);
-                }
-            });
-
-            images = await Promise.all(uploadPromises);
-        } catch (allUploadError) {
-            return res.status(500).json({ error: allUploadError.message });
-        }
+        const images = files.map((file) => `uploads/${file.filename}`);
 
         // Parse location if it's a string
         let locationData = body.location;
@@ -92,10 +72,10 @@ export const createCar = async (req, res) => {
         });
 
         await newCar.save();
-        console.log("Car created successfully:", newCar);
+        console.log("Car created successfully:", newCar); // Log success
         res.status(201).json({ message: 'Car created successfully', car: newCar });
     } catch (error) {
-        console.error("Error creating car:", error.message);
+        console.error("Error creating car:", error.message); // Log error
         res.status(500).json({ error: 'Failed to create car', details: error.message });
     }
 };
