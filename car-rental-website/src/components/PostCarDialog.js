@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Dialog, DialogContent, DialogActions, Button, TextField, Box, Typography, InputAdornment, MenuItem, IconButton, Snackbar, Alert,
-  DialogTitle, Paper, CircularProgress, LinearProgress
+  DialogTitle, Paper, CircularProgress
 } from '@mui/material';
-import { v4 as uuidv4 } from 'uuid';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CloseIcon from '@mui/icons-material/Close';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -451,28 +450,20 @@ function PostCarDialog({ open, onClose }) {
   const mapRef = useRef(null);
 
   // Move state declarations outside of conditional blocks
-  // Cloudinary configuration
-  const CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'your_cloud_name';
-  const UPLOAD_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || 'your_upload_preset';
-
   const [formData, setFormData] = useState({
     carName: '',
     brand: '',
-    wilaya: '',
-    carType: '',
+    wilaya: '', // Added wilaya field
+    carType: '', // Added carType field
     description: '',
     price: '',
     energy: '',
     transmission: '',
     images: [],
-    imageUrls: [], // Store Cloudinary URLs
     location: null,
     features: {}
   });
-  
   const [imagePreviews, setImagePreviews] = useState([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
 
@@ -505,89 +496,24 @@ function PostCarDialog({ open, onClose }) {
     return null;
   }
 
-  // Upload image to Cloudinary
-  const uploadImageToCloudinary = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', UPLOAD_PRESET);
-    formData.append('cloud_name', CLOUD_NAME);
-    formData.append('public_id', `car-rental/${Date.now()}-${uuidv4()}`);
-
-    try {
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const data = await response.json();
-      return { url: data.secure_url, publicId: data.public_id };
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
-    }
-  };
-
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
       const newImages = Array.from(files);
       setFormData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
-      
-      // Create previews for the new images
-      const newPreviews = newImages.map(file => ({
-        id: URL.createObjectURL(file), // Use object URL as ID
-        file,
-        preview: URL.createObjectURL(file),
-        status: 'pending',
-        progress: 0
-      }));
-      
-      setImagePreviews(prev => [...prev, ...newPreviews]);
+      setImagePreviews(prev => [...prev, ...newImages.map(file => URL.createObjectURL(file))]);
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleRemoveImage = async (index) => {
-    // If the image was already uploaded to Cloudinary, we should delete it
-    const previewToRemove = imagePreviews[index];
-    if (previewToRemove.publicId) {
-      try {
-        // You might want to implement a server-side endpoint to delete from Cloudinary
-        // to keep your Cloudinary credentials secure
-        await fetch(`${process.env.REACT_APP_API_URL}/api/cloudinary/delete`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ publicId: previewToRemove.publicId })
-        });
-      } catch (error) {
-        console.error('Error deleting image from Cloudinary:', error);
-        // Continue with local state update even if deletion fails
-      }
-    }
-
-    // Update local state
+  const handleRemoveImage = (index) => {
     const newImages = [...formData.images];
     newImages.splice(index, 1);
-    
-    const newImageUrls = [...formData.imageUrls];
-    newImageUrls.splice(index, 1);
-    
-    setFormData(prev => ({
-      ...prev,
-      images: newImages,
-      imageUrls: newImageUrls
-    }));
+    setFormData(prev => ({ ...prev, images: newImages }));
     
     const newPreviews = [...imagePreviews];
-    URL.revokeObjectURL(newPreviews[index].preview); // Clean up memory
+    URL.revokeObjectURL(newPreviews[index]); // Clean up memory
     newPreviews.splice(index, 1);
     setImagePreviews(newPreviews);
   };
@@ -650,43 +576,6 @@ function PostCarDialog({ open, onClose }) {
     }
   };
 
-  const uploadImages = async () => {
-    const uploadedImages = [];
-    
-    // Upload each image to Cloudinary
-    for (let i = 0; i < formData.images.length; i++) {
-      const file = formData.images[i];
-      const previewIndex = imagePreviews.findIndex(p => p.file === file);
-      
-      try {
-        // Update UI to show upload in progress
-        setImagePreviews(prev => prev.map((p, idx) => 
-          idx === previewIndex ? { ...p, status: 'uploading' } : p
-        ));
-        
-        // Upload to Cloudinary
-        const { url, publicId } = await uploadImageToCloudinary(file);
-        
-        // Update UI to show upload complete
-        setImagePreviews(prev => prev.map((p, idx) => 
-          idx === previewIndex 
-            ? { ...p, status: 'done', url, publicId, progress: 100 } 
-            : p
-        ));
-        
-        uploadedImages.push({ url, publicId });
-      } catch (error) {
-        console.error(`Error uploading image ${i + 1}:`, error);
-        setImagePreviews(prev => prev.map((p, idx) => 
-          idx === previewIndex ? { ...p, status: 'error' } : p
-        ));
-        throw new Error(`Failed to upload image ${i + 1}. Please try again.`);
-      }
-    }
-    
-    return uploadedImages;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -700,121 +589,94 @@ function PostCarDialog({ open, onClose }) {
       return;
     }
     
-    // Check if there are images
-    if (formData.images.length === 0) {
-      setSnackbar({
-        open: true,
-        message: 'Please add at least one image',
-        severity: 'error'
-      });
-      return;
-    }
-    
-    // Validate token
-    if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
-      console.error("Invalid or missing token");
-      localStorage.removeItem('token');
-      localStorage.removeItem('userId');
-      setSnackbar({ 
-        open: true, 
-        message: 'Your session is invalid. Please sign in again.', 
-        severity: 'error' 
-      });
-      onClose();
-      navigate('/SignIn');
-      return;
-    }
-    
-    // Validate availability dates
-    if (formData.availabilityStart && formData.availabilityEnd) {
-      const startDate = new Date(formData.availabilityStart);
-      const endDate = new Date(formData.availabilityEnd);
+    try {
+      // Create a FormData object to handle file uploads
+      const data = new FormData();
       
-      if (startDate >= endDate) {
-        setSnackbar({ 
-          open: true, 
-          message: 'End date must be after start date.', 
-          severity: 'error' 
-        });
+      // Append all form fields
+      data.append('carName', formData.carName);
+      data.append('brand', formData.brand);
+      data.append('wilaya', formData.wilaya); // Added wilaya field
+      data.append('description', formData.description);
+      data.append('energy', formData.energy);
+      data.append('seats', formData.seats);
+      data.append('doors', formData.doors);
+      data.append('transmission', formData.transmission);
+      data.append('mileage', formData.mileage);
+      data.append('engine', formData.engine);
+      data.append('availabilityStart', formData.availabilityStart);
+      data.append('availabilityEnd', formData.availabilityEnd);
+      data.append('price', formData.price);
+      
+      // Append location data
+      data.append('location[lat]', formData.location.lat);
+      data.append('location[lng]', formData.location.lng);
+
+      // Check for token again before submitting
+      if (!token) {
+        console.error("No token found during submission");
+        setSnackbar({ open: true, message: 'You must be logged in to post a car', severity: 'error' });
+        onClose();
+        navigate('/SignIn'); // Redirect to sign-in page
         return;
       }
-    }
-    
-    try {
-      setIsUploading(true);
-      setUploadProgress(0);
+
+      // Validate token format (basic check for JWT format)
+      if (typeof token !== 'string' || token.split('.').length !== 3) {
+        console.error("Invalid token format");
+        localStorage.removeItem('token'); // Remove invalid token
+        localStorage.removeItem('userId'); // Remove invalid userId
+        setSnackbar({ open: true, message: 'Your session is invalid. Please sign in again.', severity: 'error' });
+        onClose();
+        return;
+      }
       
-      // 1. Upload images to Cloudinary
-      const uploadedImages = await uploadImages();
-      setUploadProgress(50);
-      
-      // 2. Prepare the car data with Cloudinary URLs
-      const carData = {
-        ...formData,
-        images: uploadedImages.map(img => img.url),
-        // Remove the file objects before sending
-        imageFiles: undefined
-      };
-      
-      delete carData.imageFiles; // Remove the files from the final payload
-      
-      // 3. Send the car data to your backend
+      // Validate availability dates
+      if (formData.availabilityStart && formData.availabilityEnd) {
+        const startDate = new Date(formData.availabilityStart);
+        const endDate = new Date(formData.availabilityEnd);
+        
+        if (startDate >= endDate) {
+          setSnackbar({ 
+            open: true, 
+            message: 'End date must be after start date.', 
+            severity: 'error' 
+          });
+          return;
+        }
+      }
+
+      // Append images
+      formData.images.forEach((image) => data.append('images', image));
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach((key) => {
+        if (key === 'images') {
+          formData[key].forEach((image) => formDataToSend.append('images', image));
+        } else {
+          formDataToSend.append(key, formData[key]);
+        }
+      });
+
+      // Use environment variable for API URL
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/cars/addcars`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(carData)
+        body: formDataToSend,
       });
-      
-      setUploadProgress(90);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to post the car');
       }
-      
-      setUploadProgress(100);
-      
-      // 4. Show success and reset form
-      setSnackbar({ 
-        open: true, 
-        message: 'Car posted successfully!', 
-        severity: 'success' 
-      });
-      
-      // Reset form and close dialog after a short delay
-      setTimeout(() => {
-        setFormData({
-          carName: '',
-          brand: '',
-          wilaya: '',
-          carType: '',
-          description: '',
-          price: '',
-          energy: '',
-          transmission: '',
-          images: [],
-          imageUrls: [],
-          location: null,
-          features: {}
-        });
-        setImagePreviews([]);
-        setUploadProgress(0);
-        setIsUploading(false);
-        onClose();
-      }, 1500);
-      
+
+      setSnackbar({ open: true, message: 'Car posted successfully!', severity: 'success' });
+      onClose();
     } catch (error) {
-      console.error("Error posting car:", error);
-      setSnackbar({ 
-        open: true, 
-        message: error.message || 'Failed to post the car. Please try again.', 
-        severity: 'error' 
-      });
-      setIsUploading(false);
+      console.error("Error posting car:", error.message);
+      setSnackbar({ open: true, message: error.message || 'Failed to post the car. Please try again.', severity: 'error' });
     }
   };
 

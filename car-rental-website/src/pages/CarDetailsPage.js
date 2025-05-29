@@ -64,8 +64,7 @@ export default function CarDetailsPage() {
   const [ownerFeedbacks, setOwnerFeedbacks] = useState([]);
   const [ownerRatingsLoading, setOwnerRatingsLoading] = useState(false);
   const [ownerRatingsError, setOwnerRatingsError] = useState(null);
-  const [mainImage, setMainImage] = useState('');
-
+  
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
@@ -90,29 +89,7 @@ export default function CarDetailsPage() {
   const handleImageChange = (index) => {
     setSelectedImageIndex(index);
   };
-
-  // Get full image URLs
-  const getImageUrls = (images) => {
-    if (!images || !Array.isArray(images)) return [];
-    return images.map(img => `${apiUrl}/${img}`);
-  };
-
-  // Handle image click to set as main image
-  const handleImageClick = (imageUrl) => {
-    setMainImage(`${apiUrl}/${imageUrl}`);
-    const index = car.images.findIndex(img => img === imageUrl);
-    if (index !== -1) {
-      setSelectedImageIndex(index);
-    }
-  };
-
-  // Set initial main image when car data is loaded
-  useEffect(() => {
-    if (car?.images?.length > 0) {
-      setMainImage(`${apiUrl}/${car.images[0]}`);
-    }
-  }, [car]);
-
+  
   const handlePrevImage = () => {
     if (!car?.images?.length) return;
     setSelectedImageIndex((prev) => 
@@ -571,36 +548,37 @@ export default function CarDetailsPage() {
                           borderRadius: 3,
                         },
                       }}>
-                        {getImageUrls(car.images).map((imageUrl, index) => (
+                        {car.images?.map((img, index) => (
                           <Box
                             key={index}
-                            onClick={() => handleImageClick(car.images[index])}
+                            onClick={() => handleImageChange(index)}
                             sx={{
-                              width: 70,
-                              height: 70,
-                              borderRadius: 1,
-                              overflow: 'hidden',
+                              position: 'relative',
                               cursor: 'pointer',
-                              border: mainImage === imageUrl ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                              borderRadius: 2,
+                              overflow: 'hidden',
+                              border: selectedImageIndex === index 
+                                ? '2px solid #1e293b' 
+                                : '2px solid transparent',
                               transition: 'all 0.2s ease',
                               '&:hover': {
                                 transform: 'scale(1.05)',
-                                borderColor: '#3b82f6',
-                              },
+                              }
                             }}
                           >
                             <CardMedia
                               component="img"
+                              image={`${apiUrl}/${img}`}
+                              alt={`Car image ${index + 1}`}
                               sx={{
-                                width: '100%',
-                                height: '100%',
+                                width: 70,
+                                height: 70,
                                 objectFit: 'cover',
-                              }}
-                              image={imageUrl}
-                              alt={`Thumbnail ${index + 1}`}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = '/placeholder-car.png';
+                                opacity: selectedImageIndex === index ? 1 : 0.7,
+                                transition: 'opacity 0.2s ease',
+                                '&:hover': {
+                                  opacity: 1,
+                                }
                               }}
                             />
                           </Box>

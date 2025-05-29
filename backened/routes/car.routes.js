@@ -3,131 +3,25 @@ import multer from "multer";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Car from "../models/car.models.js";
-import { uploadToCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
-import fs from 'fs';
-import path from 'path';
 
 const router = express.Router();
 
-// Configure multer for temporary file storage
-const upload = multer({ 
-    dest: 'uploads/',
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-    fileFilter: (req, file, cb) => {
-        const filetypes = /jpe?g|png|webp/;
-        const mimetypes = /image\/jpe?g|image\/png|image\/webp/;
-        
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = mimetypes.test(file.mimetype);
-        
-        if (extname && mimetype) {
-            return cb(null, true);
-        } else {
-            cb(new Error('Images only (jpeg, jpg, png, webp)'));
-        }
-    }
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/"); // Save files to the "uploads" directory
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
 });
-
-// Helper function to delete old images when updating
-const deleteOldImages = async (carId) => {
-    try {
-        const car = await Car.findById(carId);
-        if (!car) return;
-        
-        // Delete old images from Cloudinary
-        const deletePromises = car.images.map(async (imageUrl) => {
-            const publicId = imageUrl.split('/').pop().split('.')[0];
-            return deleteFromCloudinary(`car-rental/${publicId}`);
-        });
-        
-        await Promise.all(deletePromises);
-    } catch (error) {
-        console.error('Error deleting old images:', error);
-    }
-};
+const upload = multer({ storage });
 
 // Car routes
-router.post("/add", ProtectedRoute(), upload.array("images", 5), async (req, res) => {
-    try {
-        const { files } = req;
-        
-        // Upload images to Cloudinary
-        const uploadPromises = files.map(file => 
-            uploadToCloudinary(file).finally(() => {
-                // Clean up the temporary file
-                fs.unlink(file.path, err => {
-                    if (err) console.error('Error deleting temp file:', err);
-                });
-            })
-        );
-        
-        const uploadedImages = await Promise.all(uploadPromises);
-        req.body.images = uploadedImages.map(img => img.url);
-        
-        // Call the original createCar controller
-        await createCar(req, res);
-    } catch (error) {
-        console.error('Error adding car:', error);
-        res.status(500).json({ error: 'Failed to add car', details: error.message });
-    }
-}); // Add a new car with image upload
+router.post("/add", ProtectedRoute(), upload.array("images", 5), createCar); // Add a new car with image upload
 router.get("/list", getCars); // Get a list of cars
-router.put("/update/:id", ProtectedRoute(), upload.array("images", 5), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { files } = req;
-        
-        // If new images are uploaded, delete old ones and upload new ones
-        if (files && files.length > 0) {
-            await deleteOldImages(id);
-            
-            const uploadPromises = files.map(file => 
-                uploadToCloudinary(file).finally(() => {
-                    // Clean up the temporary file
-                    fs.unlink(file.path, err => {
-                        if (err) console.error('Error deleting temp file:', err);
-                    });
-                })
-            );
-            
-            const uploadedImages = await Promise.all(uploadPromises);
-            req.body.images = uploadedImages.map(img => img.url);
-        }
-        
-        // Call the original updateCar controller
-        await updateCar(req, res);
-    } catch (error) {
-        console.error('Error updating car:', error);
-        res.status(500).json({ error: 'Failed to update car', details: error.message });
-    }
-}); // Update car details with image upload
-router.delete("/delete/:id", ProtectedRoute(), async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        // Get car first to delete images
-        const car = await Car.findById(id);
-        if (!car) {
-            return res.status(404).json({ error: 'Car not found' });
-        }
-        
-        // Delete images from Cloudinary
-        const deletePromises = car.images.map(async (imageUrl) => {
-            const publicId = imageUrl.split('/').pop().split('.')[0];
-            return deleteFromCloudinary(`car-rental/${publicId}`);
-        });
-        
-        await Promise.all(deletePromises);
-        
-        // Now delete the car
-        await Car.findByIdAndDelete(id);
-        
-        res.status(200).json({ message: 'Car deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting car:', error);
-        res.status(500).json({ error: 'Failed to delete car', details: error.message });
-    }
-}); // Delete a car
+router.put("/update/:id", ProtectedRoute(), upload.array("images", 5), updateCar); // Update car details with image upload
+router.delete("/delete/:id", ProtectedRoute(), deleteCar); // Delete a car
 
 // Route to post a car
 router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req, res) => {
@@ -142,18 +36,16 @@ router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req,
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        // Upload images to Cloudinary
-        const uploadPromises = files.map(file => 
-            uploadToCloudinary(file).finally(() => {
-                // Clean up the temporary file
-                fs.unlink(file.path, err => {
-                    if (err) console.error('Error deleting temp file:', err);
-                });
-            })
-        );
-        
-        const uploadedImages = await Promise.all(uploadPromises);
-        const imagePaths = uploadedImages.map(img => img.url);
+        // Generate image paths with full URL in production
+        const imagePaths = files.map((file) => {
+            const filename = `uploads/${file.filename}`;
+            // In production, use the full URL
+            if (process.env.NODE_ENV === 'production') {
+                const baseUrl = process.env.BACKEND_URL || 'https://your-render-app.onrender.com';
+                return `${baseUrl}/${filename}`;
+            }
+            return `/${filename}`; // In development, use relative path
+        });
 
         // Get user information for owner details
         const User = (await import('../models/user.models.js')).default;
