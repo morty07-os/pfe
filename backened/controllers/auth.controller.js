@@ -105,10 +105,14 @@ export const login = async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        console.log('Login attempt for email:', email);
+        // Trim whitespace from email and password
+        const trimmedEmail = email.trim();
+        const trimmedPassword = password.trim();
+
+        console.log('Login attempt for email:', trimmedEmail);
 
         // Find the user by email (case insensitive)
-        const user = await User.findOne({ email: email.toLowerCase() });
+        const user = await User.findOne({ email: trimmedEmail.toLowerCase() });
         if (!user) {
             console.log('User not found for email:', email);
             return res.status(401).json({ error: 'Invalid email or password' });
