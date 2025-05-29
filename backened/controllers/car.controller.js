@@ -20,16 +20,26 @@ export const createCar = async (req, res) => {
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        const uploadPromises = files.map(async (file) => {
-            const result = await cloudinary.uploader.upload(file.path, {
-                folder: 'car-rental' // Optional folder in Cloudinary
+        let images = [];
+        try {
+            const uploadPromises = files.map(async (file) => {
+                try {
+                    const result = await cloudinary.uploader.upload(file.path, {
+                        folder: 'car-rental' // Optional folder in Cloudinary
+                    });
+                    // Delete the file from the local uploads folder
+                    fs.unlinkSync(file.path);
+                    return result.secure_url;
+                } catch (uploadError) {
+                    console.error("Error uploading to Cloudinary:", uploadError);
+                    throw new Error(`Failed to upload image to Cloudinary: ${uploadError.message}`);
+                }
             });
-            // Delete the file from the local uploads folder
-            fs.unlinkSync(file.path);
-            return result.secure_url;
-        });
 
-        const images = await Promise.all(uploadPromises);
+            images = await Promise.all(uploadPromises);
+        } catch (allUploadError) {
+            return res.status(500).json({ error: allUploadError.message });
+        }
 
         // Parse location if it's a string
         let locationData = body.location;
