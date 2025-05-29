@@ -50,11 +50,7 @@ export const signup = async (req, res) => {
         // Set expiration time for the verification code (e.g., 10 minutes)
         const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); 
 
-        // Hash the password before creating the user
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Create a new user with the hashed password
+        // Create a new user with the plain password (it will be hashed by the pre-save hook)
         const newUser = new User({
             firstName,
             lastName,
@@ -62,7 +58,7 @@ export const signup = async (req, res) => {
             phone,
             residence,
             email: email.toLowerCase(),
-            password: hashedPassword,
+            password: password,
             licenceFront,
             licenceBack,
             verificationToken: hashedVerificationCode,
@@ -105,21 +101,17 @@ export const login = async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        // Trim whitespace from email and password
-        const trimmedEmail = email.trim();
-        const trimmedPassword = password.trim();
-
-        console.log('Login attempt for email:', trimmedEmail);
+        console.log('Login attempt for email:', email);
 
         // Find the user by email (case insensitive)
-        const user = await User.findOne({ email: trimmedEmail.toLowerCase() });
+        const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
             console.log('User not found for email:', email);
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
         // Check if password is correct
-        const isPasswordValid = await bcrypt.compare(trimmedPassword, user.password);
+        const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             console.log('Invalid password for email:', email);
             return res.status(401).json({ error: 'Invalid email or password' });
