@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
-// Assuming you have an AuthContext or similar to get user info
-// import { AuthContext } from '../context/AuthContext'; // Example
 import QuickSearch from '../components/QuickSearch';
 import {
   Box,
@@ -292,8 +290,6 @@ export default function AllOffersPage() {
             ...car,
             features,
             location: car.location || locationData,
-            // Assuming car data has a 'category' field, if not, this needs to be derived
-            // category: car.category || 'Unknown' // Example, adjust as per your data structure
           };
         });
 
@@ -350,7 +346,7 @@ export default function AllOffersPage() {
       (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
       (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
       (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) &&
-      (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) && // Added carType filter
+      (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) &&
       (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
       (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
       (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1])) &&
@@ -359,7 +355,7 @@ export default function AllOffersPage() {
     );
 
     return tempOffers;
-  }, [offers, search, sidebarFilters, categoryFilter]); // Added categoryFilter to dependency array
+  }, [offers, search, sidebarFilters, categoryFilter]);
 
   function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
     if (!selectedFrom || !selectedTo) return true;
@@ -376,7 +372,7 @@ export default function AllOffersPage() {
       energy: 'Energy',
       transmission: 'Transmission',
       wilaya: 'Location',
-      carType: 'Car Type', // Added carType label
+      carType: 'Car Type',
       seats: 'Seats',
       doors: 'Doors',
       priceRange: 'Price',
@@ -406,7 +402,7 @@ export default function AllOffersPage() {
       case 'wilaya':
         return <LocationOnIcon fontSize="small" />;
       case 'carType':
-        return <DirectionsCarIcon fontSize="small" />; // Icon for car type
+        return <DirectionsCarIcon fontSize="small" />;
       case 'seats':
         return <AirlineSeatReclineNormalIcon fontSize="small" />;
       case 'doors':
@@ -1023,18 +1019,15 @@ export default function AllOffersPage() {
                   </Box>
                 </Grid>
               ) : (
-                // Pagination logic
                 filteredOffers
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((offer) => {
-                    // Check if the current offer belongs to the logged-in user
                     const isOwnOffer = currentUser && offer.owner && (
                       console.log('Owner ID:', offer.owner),
                       console.log('Current User ID:', currentUser._id),
                       offer.owner.toString() === currentUser._id.toString()
                     );
 
-                    // Add a console log to debug the car data
                     if (isOwnOffer) {
                       console.log('Found user car:', offer);
                     }
@@ -1069,7 +1062,6 @@ export default function AllOffersPage() {
                             borderRadius: '2px 0 0 2px',
                             opacity: 0.85
                           },
-                          // Add a subtle gradient overlay at the top
                           '&::after': {
                             content: '""',
                             position: 'absolute',
@@ -1127,7 +1119,6 @@ export default function AllOffersPage() {
                             position: 'relative',
                             borderRadius: 1.25,
                             overflow: 'hidden',
-                            // Add a subtle shadow container for the image
                             '&::before': {
                               content: '""',
                               position: 'absolute',
@@ -1136,7 +1127,6 @@ export default function AllOffersPage() {
                               borderRadius: 'inherit',
                               zIndex: -1
                             },
-                            // Add a subtle gradient overlay
                             '&::after': {
                               content: '""',
                               position: 'absolute',
@@ -1147,8 +1137,11 @@ export default function AllOffersPage() {
                           }}>
                             <CardMedia
                               component="img"
-                              image={offer.images?.[0] ? `${process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com'}/uploads/${offer.images[0]}` : '/placeholder.jpg'}
+                              image={offer.images?.[0] || '/placeholder.jpg'}
                               alt={offer.carName || offer.title || 'Car image'}
+                              onError={(e) => {
+                                e.target.src = '/placeholder.jpg';
+                              }}
                               sx={{
                                 objectFit: 'cover',
                                 width: '100%',
@@ -1186,7 +1179,7 @@ export default function AllOffersPage() {
                                     color="error"
                                     size="small"
                                     sx={{
-                                      display: { md: 'none' }, // Only show on mobile when top-right badge might be hidden
+                                      display: { md: 'none' },
                                       bgcolor: '#ef4444',
                                       color: 'white',
                                       fontWeight: 600,
@@ -1206,7 +1199,6 @@ export default function AllOffersPage() {
                                     letterSpacing: '-0.01em',
                                     position: 'relative',
                                     textShadow: '0 1px 1px rgba(15, 23, 42, 0.05)',
-                                    // Underline effect
                                     '&::after': {
                                       content: '""',
                                       position: 'absolute',
@@ -1358,11 +1350,9 @@ export default function AllOffersPage() {
                               <Box 
                                 component="button"
                                 onClick={() => {
-                                  // Open Google Maps with the car's location
                                   const wilaya = offer.wilaya || 'Alger';
                                   let lat, lng;
                                   
-                                  // Get coordinates from the car's location or from the wilaya coordinates
                                   if (offer.location && offer.location.coordinates) {
                                     lat = offer.location.coordinates.lat;
                                     lng = offer.location.coordinates.lng;
@@ -1370,12 +1360,10 @@ export default function AllOffersPage() {
                                     lat = algeriaWilayaCoordinates[wilaya].lat;
                                     lng = algeriaWilayaCoordinates[wilaya].lng;
                                   } else {
-                                    // Default to Algeria center if no coordinates are found
                                     lat = 36.7372;
                                     lng = 3.0865;
                                   }
                                   
-                                  // Open Google Maps in a new tab
                                   window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
                                 }}
                                 sx={{ 
@@ -1642,7 +1630,6 @@ export default function AllOffersPage() {
                               />
                             </Box>
 
-                            {/* Car Features */}
                             {offer.features && Object.keys(offer.features).length > 0 && (
                               <Box sx={{ mb: 2 }}>
                                 <Typography variant="body2" sx={{ 
@@ -1667,7 +1654,6 @@ export default function AllOffersPage() {
                                   {Object.entries(offer.features)
                                     .filter(([key, value]) => value === true)
                                     .map(([featureId]) => {
-                                      // Find the feature in carFeatures array
                                       const feature = carFeatures.find(f => f.id === featureId);
                                       if (!feature) return null;
 
@@ -1733,7 +1719,6 @@ export default function AllOffersPage() {
                 }))}
             </Grid>
             
-            {/* Pagination Controls */}
             {filteredOffers.length > 0 && (
               <Box sx={{ 
                 mt: 5, 
@@ -1741,7 +1726,6 @@ export default function AllOffersPage() {
                 position: 'relative',
                 overflow: 'visible'
               }}>
-                {/* Shadow effect */}
                 <Box sx={{
                   position: 'absolute',
                   width: '90%',
@@ -1752,7 +1736,7 @@ export default function AllOffersPage() {
                   background: 'linear-gradient(135deg, #334155, #1e293b)',
                   opacity: 0.2,
                   filter: 'blur(20px)',
-                  transform: 'translateZ(0)', // Force GPU acceleration
+                  transform: 'translateZ(0)',
                   zIndex: 0
                 }} />
                 
@@ -1835,7 +1819,6 @@ export default function AllOffersPage() {
                         onChange={(e) => {
                           setRowsPerPage(parseInt(e.target.value, 10));
                           setPage(0);
-                          // Scroll to top when changing items per page
                           if (offersTopRef.current) {
                             offersTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
                           }
@@ -1871,7 +1854,6 @@ export default function AllOffersPage() {
                     page={page + 1}
                     onChange={(event, newPage) => {
                       setPage(newPage - 1);
-                      // Scroll to top of offers section when changing pages
                       if (offersTopRef.current) {
                         offersTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }
