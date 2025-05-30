@@ -18,16 +18,16 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Car routes
-router.post("/add", ProtectedRoute(), upload.array("images", 5), createCar); // Add a new car with image upload
+router.post("/add", ProtectedRoute(), createCar); // Add a new car with image upload
 router.get("/list", getCars); // Get a list of cars
-router.put("/update/:id", ProtectedRoute(), upload.array("images", 5), updateCar); // Update car details with image upload
+router.put("/update/:id", ProtectedRoute(), updateCar); // Update car details with image upload
 router.delete("/delete/:id", ProtectedRoute(), deleteCar); // Delete a car
 
 // Route to post a car
-router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req, res) => {
+router.post('/addcars', ProtectedRoute(), async (req, res) => {
     try {
         console.log("Request body:", req.body); // Log request body
-        console.log("Uploaded files:", req.files); // Log uploaded files
+        // console.log("Uploaded files:", req.files); // Log uploaded files - Removed as files are now uploaded via Cloudinary
 
         const { body, files } = req;
         const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;

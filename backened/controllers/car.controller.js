@@ -10,22 +10,18 @@ export const createCar = async (req, res) => {
         }
 
         console.log("Request body:", req.body); // Log request body
-        console.log("Uploaded files:", req.files); // Log uploaded files
 
-        const { body, files } = req;
-        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
+        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType, images, location: locationData } = req.body;
 
-        if (!files || files.length === 0) {
-            return res.status(400).json({ error: 'No images uploaded' });
+        if (!images || images.length === 0) {
+            return res.status(400).json({ error: 'No images provided' });
         }
 
-        const images = files.map((file) => `uploads/${file.filename}`);
-
         // Parse location if it's a string
-        let locationData = body.location;
-        if (typeof locationData === 'string') {
+        let parsedLocationData = locationData;
+        if (typeof parsedLocationData === 'string') {
             try {
-                locationData = JSON.parse(locationData);
+                parsedLocationData = JSON.parse(parsedLocationData);
             } catch (e) {
                 console.error('Error parsing location:', e);
                 return res.status(400).json({ error: 'Invalid location format' });
@@ -36,8 +32,8 @@ export const createCar = async (req, res) => {
         const location = {
             type: 'Point',
             coordinates: [
-                parseFloat(locationData.lng || locationData[0]),
-                parseFloat(locationData.lat || locationData[1])
+                parseFloat(parsedLocationData.lng || parsedLocationData[0]),
+                parseFloat(parsedLocationData.lat || parsedLocationData[1])
             ]
         };
 
@@ -63,7 +59,7 @@ export const createCar = async (req, res) => {
             price,
             carType,
             location,
-            images,
+            images, // Use the image URLs directly
             owner: req.user.userId,
             ownerName: {
                 firstName: user.firstName,

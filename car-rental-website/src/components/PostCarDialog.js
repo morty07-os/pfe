@@ -576,6 +576,29 @@ function PostCarDialog({ open, onClose }) {
     }
   };
 
+  const uploadImageToCloudinary = async (imageFile) => {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+    formData.append('upload_preset', 'your_upload_preset'); // Replace with your Cloudinary upload preset
+    formData.append('cloud_name', 'dtob4ibrg'); // Replace with your Cloudinary cloud name
+
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/dtob4ibrg/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (response.ok) {
+        return data.secure_url;
+      } else {
+        throw new Error(data.error.message || 'Cloudinary upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -590,28 +613,6 @@ function PostCarDialog({ open, onClose }) {
     }
     
     try {
-      // Create a FormData object to handle file uploads
-      const data = new FormData();
-      
-      // Append all form fields
-      data.append('carName', formData.carName);
-      data.append('brand', formData.brand);
-      data.append('wilaya', formData.wilaya); // Added wilaya field
-      data.append('description', formData.description);
-      data.append('energy', formData.energy);
-      data.append('seats', formData.seats);
-      data.append('doors', formData.doors);
-      data.append('transmission', formData.transmission);
-      data.append('mileage', formData.mileage);
-      data.append('engine', formData.engine);
-      data.append('availabilityStart', formData.availabilityStart);
-      data.append('availabilityEnd', formData.availabilityEnd);
-      data.append('price', formData.price);
-      
-      // Append location data
-      data.append('location[lat]', formData.location.lat);
-      data.append('location[lng]', formData.location.lng);
-
       // Check for token again before submitting
       if (!token) {
         console.error("No token found during submission");
@@ -646,25 +647,42 @@ function PostCarDialog({ open, onClose }) {
         }
       }
 
-      // Append images
-      formData.images.forEach((image) => data.append('images', image));
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach((key) => {
-        if (key === 'images') {
-          formData[key].forEach((image) => formDataToSend.append('images', image));
-        } else {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
+      // Upload images to Cloudinary
+      const imageUrls = [];
+      for (const imageFile of formData.images) {
+        const url = await uploadImageToCloudinary(imageFile);
+        imageUrls.push(url);
+      }
+
+      // Prepare data to send to backend
+      const dataToSend = {
+        carName: formData.carName,
+        brand: formData.brand,
+        wilaya: formData.wilaya,
+        description: formData.description,
+        energy: formData.energy,
+        seats: formData.seats,
+        doors: formData.doors,
+        transmission: formData.transmission,
+        mileage: formData.mileage,
+        engine: formData.engine,
+        availabilityStart: formData.availabilityStart,
+        availabilityEnd: formData.availabilityEnd,
+        price: formData.price,
+        carType: formData.carType,
+        location: formData.location,
+        images: imageUrls, // Send Cloudinary URLs
+      };
 
       // Use environment variable for API URL
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/cars/addcars`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json', // Send as JSON
           'Authorization': `Bearer ${token}`
         },
-        body: formDataToSend,
+        body: JSON.stringify(dataToSend), // Send as JSON
       });
 
       if (!response.ok) {
