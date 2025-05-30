@@ -39,14 +39,8 @@ import CloseIcon from '@mui/icons-material/Close';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-// Helper function to check if car's availability fully encompasses the filter range
-// Car is available if carAvailableFrom <= filterFrom and carAvailableTo >= filterTo
-export const isAvailabilityOverlap = (carAvailableFrom, carAvailableTo, filterFrom, filterTo) => {
-  // If either filter date is not set, consider it a match for that boundary
-  const filterFromDate = filterFrom ? dayjs(filterFrom) : null;
-  const filterToDate = filterTo ? dayjs(filterTo) : null;
-
-  // If car availability dates are not set, it cannot be considered available
+// Updated function to check if the car's availability fully covers the filter period
+export const isAvailabilityMatch = (carAvailableFrom, carAvailableTo, filterFrom, filterTo) => {
   if (!carAvailableFrom || !carAvailableTo) {
     return false;
   }
@@ -54,23 +48,22 @@ export const isAvailabilityOverlap = (carAvailableFrom, carAvailableTo, filterFr
   const carFromDate = dayjs(carAvailableFrom);
   const carToDate = dayjs(carAvailableTo);
 
-  // If no filter dates are set, return true (no filtering applied)
-  if (!filterFromDate && !filterToDate) {
+  const filterFromDate = filterFrom ? dayjs(filterFrom) : null;
+  const filterToDate = filterTo ? dayjs(filterTo) : null;
+
+  if (filterFromDate && filterToDate) {
+    // Both filter dates are set: car must be available for the entire filter period
+    return carFromDate.isSameOrBefore(filterFromDate, 'day') && carToDate.isSameOrAfter(filterToDate, 'day');
+  } else if (filterFromDate) {
+    // Only filterFrom is set: car must be available on or after filterFrom
+    return carToDate.isSameOrAfter(filterFromDate, 'day');
+  } else if (filterToDate) {
+    // Only filterTo is set: car must be available on or before filterTo
+    return carFromDate.isSameOrBefore(filterToDate, 'day');
+  } else {
+    // No filter dates set: match all cars
     return true;
   }
-
-  // If only filterFrom is set, check if car is available from filterFrom or earlier and has a valid end date
-  if (filterFromDate && !filterToDate) {
-    return carFromDate.isSameOrBefore(filterFromDate, 'day');
-  }
-
-  // If only filterTo is set, check if car is available until filterTo or later
-  if (!filterFromDate && filterToDate) {
-    return carToDate.isSameOrAfter(filterToDate, 'day');
-  }
-
-  // If both filter dates are set, check if car availability fully encompasses the filter range
-  return carFromDate.isSameOrBefore(filterFromDate, 'day') && carToDate.isSameOrAfter(filterToDate, 'day');
 };
 
 const brands = [
@@ -219,7 +212,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
   };
 
   // Format filter value for display
-  const getFilterDisplayValue = (key, value) => {
+   getFilterDisplayValue = (key, value) => {
     if (key === 'priceRange') {
       return `DZD ${value[0]} - DZD ${value[1]}`;
     } else if (key === 'seatsRange') {
