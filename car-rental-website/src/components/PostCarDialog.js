@@ -579,7 +579,9 @@ function PostCarDialog({ open, onClose }) {
   const uploadImageToCloudinary = async (imageFile) => {
     const formData = new FormData();
     formData.append('file', imageFile);
-    formData.append('upload_preset', 'your_upload_preset'); // Replace with your Cloudinary upload preset
+    // Replace 'your_unsigned_upload_preset_name' with the actual name of your unsigned upload preset in Cloudinary.
+    // You can find this in your Cloudinary dashboard under Settings -> Upload -> Upload presets.
+    formData.append('upload_preset', 'your_unsigned_upload_preset_name'); 
     formData.append('cloud_name', 'dtob4ibrg'); // Replace with your Cloudinary cloud name
 
     try {
