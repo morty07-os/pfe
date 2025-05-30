@@ -480,7 +480,7 @@ export default function CarDetailsPage() {
                     <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
                       <CardMedia
                         component="img"
-                        image={`${apiUrl}/${car.images?.[selectedImageIndex] || car.images?.[0]}`}
+                        image={car.images?.[selectedImageIndex] || car.images?.[0] || '/placeholder.jpg'}
                         alt={car.carName}
                         sx={{
                           borderRadius: 2,

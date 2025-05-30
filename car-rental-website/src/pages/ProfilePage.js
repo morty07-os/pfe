@@ -612,7 +612,7 @@ const ProfilePage = () => {
                                 }}
                               >
                                 <img
-                                  src={car.images?.[0] ? `${process.env.REACT_APP_API_URL}/${car.images[0]}` : '/placeholder.jpg'}
+                                  src={car.images?.[0] || '/placeholder.jpg'}
                                   alt={car.carName}
                                   style={{
                                     width: '100%',
