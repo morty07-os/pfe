@@ -4,6 +4,7 @@ import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import sendVerificationEmail from '../utils/email.utils.js';
+import sendPasswordResetEmail from '../utils/email.utils.js'; // Assuming email.utils can send different types of emails
 
 
 
@@ -84,10 +85,115 @@ export const signup = async (req, res) => {
         });
     } catch (error) {
         console.error("Error in signup controller:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Server error",
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
+    }
+};
+
+// Handles password reset request (sends verification code)
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: "Email is required" });
+        }
+
+        console.log(`Password reset request for email: ${email}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            // Return a generic message to prevent email enumeration
+            return res.status(404).json({ message: "If a user with that email exists, a password reset code has been sent." });
+        }
+
+        // Generate 6-digit password reset code
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedResetCode = await bcrypt.hash(resetCode, 10);
+
+        // Set expiration time for the reset code (e.g., 15 minutes)
+        const resetCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+        user.passwordResetToken = hashedResetCode;
+        user.passwordResetExpires = resetCodeExpires;
+        await user.save();
+        console.log(`Password reset code generated for user: ${user._id}`);
+
+        // Send password reset email with the code
+        try {
+            // Assuming sendPasswordResetEmail function exists in email.utils.js
+            // and can handle sending a code instead of a link
+            await sendPasswordResetEmail(user.email, resetCode, 'password_reset'); // Pass type 'password_reset'
+            console.log(`Password reset email sent to: ${user.email}`);
+        } catch (emailError) {
+            console.error(`Error sending password reset email: ${emailError.message}`);
+            return res.status(500).json({ error: "Failed to send password reset email. Please try again later." });
+        }
+
+        res.status(200).json({ message: "Password reset code sent to your email." });
+    } catch (error) {
+        console.error("Error in forgotPassword controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles password reset with verification code
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, verificationCode, newPassword } = req.body;
+
+        if (!email || !verificationCode || !newPassword) {
+            return res.status(400).json({ error: "Email, verification code, and new password are required" });
+        }
+
+        console.log(`Password reset attempt for email: ${email} with code: ${verificationCode}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (!user.passwordResetToken || !user.passwordResetExpires) {
+            console.log(`No password reset token found for user: ${user._id}`);
+            return res.status(400).json({ error: "No password reset request found or it has expired. Please request a new one." });
+        }
+
+        if (user.passwordResetExpires < Date.now()) {
+            console.log(`Password reset token expired for user: ${user._id}`);
+            return res.status(400).json({ error: "Password reset code has expired. Please request a new one." });
+        }
+
+        const isCodeValid = await bcrypt.compare(verificationCode, user.passwordResetToken);
+
+        if (!isCodeValid) {
+            console.log(`Invalid password reset code for user: ${user._id}`);
+            return res.status(400).json({ error: "Invalid verification code" });
+        }
+
+        if (newPassword.length < 6) {
+            console.log("New password too short");
+            return res.status(400).json({ error: "New password must be at least 6 characters long" });
+        }
+
+        // Hash the new password and update user
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedNewPassword;
+        user.passwordResetToken = undefined; // Clear the reset token
+        user.passwordResetExpires = undefined; // Clear the expiration time
+
+        await user.save();
+        console.log(`Password reset successfully for user: ${user._id}`);
+
+        res.status(200).json({ message: "Password reset successfully." });
+    } catch (error) {
+        console.error("Error in resetPassword controller:", error.message);
+        res.status(500).json({ error: "Server error" });
     }
 };
 
