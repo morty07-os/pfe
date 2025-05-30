@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode } from "../controllers/auth.controller.js";
+import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, requestPasswordReset, verifyPasswordResetCode, resetPassword } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 
