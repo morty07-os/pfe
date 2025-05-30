@@ -453,12 +453,18 @@ function PostCarDialog({ open, onClose }) {
   const [formData, setFormData] = useState({
     carName: '',
     brand: '',
-    wilaya: '', // Added wilaya field
-    carType: '', // Added carType field
+    wilaya: '',
+    carType: '',
     description: '',
     price: '',
     energy: '',
     transmission: '',
+    seats: '',
+    doors: '',
+    mileage: '',
+    engine: '',
+    availabilityStart: '',
+    availabilityEnd: '',
     images: [],
     location: null,
     features: {}
@@ -466,6 +472,7 @@ function PostCarDialog({ open, onClose }) {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Add authentication check when dialog opens and check for selected location
   useEffect(() => {
@@ -589,76 +596,55 @@ function PostCarDialog({ open, onClose }) {
       return;
     }
     
+    // Check if images are uploaded
+    if (formData.images.length === 0) {
+      setSnackbar({
+        open: true,
+        message: 'Please upload at least one image',
+        severity: 'error'
+      });
+      return;
+    }
+    
     try {
+      setLoading(true);
+      
       // Create a FormData object to handle file uploads
-      const data = new FormData();
+      const formDataToSend = new FormData();
       
       // Append all form fields
-      data.append('carName', formData.carName);
-      data.append('brand', formData.brand);
-      data.append('wilaya', formData.wilaya); // Added wilaya field
-      data.append('description', formData.description);
-      data.append('energy', formData.energy);
-      data.append('seats', formData.seats);
-      data.append('doors', formData.doors);
-      data.append('transmission', formData.transmission);
-      data.append('mileage', formData.mileage);
-      data.append('engine', formData.engine);
-      data.append('availabilityStart', formData.availabilityStart);
-      data.append('availabilityEnd', formData.availabilityEnd);
-      data.append('price', formData.price);
+      formDataToSend.append('carName', formData.carName);
+      formDataToSend.append('brand', formData.brand);
+      formDataToSend.append('wilaya', formData.wilaya);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('energy', formData.energy);
+      formDataToSend.append('seats', formData.seats);
+      formDataToSend.append('doors', formData.doors);
+      formDataToSend.append('transmission', formData.transmission);
+      formDataToSend.append('mileage', formData.mileage);
+      formDataToSend.append('engine', formData.engine);
+      formDataToSend.append('availabilityStart', formData.availabilityStart);
+      formDataToSend.append('availabilityEnd', formData.availabilityEnd);
+      formDataToSend.append('price', formData.price);
+      formDataToSend.append('carType', formData.carType);
       
       // Append location data
-      data.append('location[lat]', formData.location.lat);
-      data.append('location[lng]', formData.location.lng);
-
-      // Check for token again before submitting
-      if (!token) {
-        console.error("No token found during submission");
-        setSnackbar({ open: true, message: 'You must be logged in to post a car', severity: 'error' });
-        onClose();
-        navigate('/SignIn'); // Redirect to sign-in page
-        return;
-      }
-
-      // Validate token format (basic check for JWT format)
-      if (typeof token !== 'string' || token.split('.').length !== 3) {
-        console.error("Invalid token format");
-        localStorage.removeItem('token'); // Remove invalid token
-        localStorage.removeItem('userId'); // Remove invalid userId
-        setSnackbar({ open: true, message: 'Your session is invalid. Please sign in again.', severity: 'error' });
-        onClose();
-        return;
-      }
+      formDataToSend.append('location', JSON.stringify({
+        lat: formData.location.lat,
+        lng: formData.location.lng,
+        address: formData.location.address || ''
+      }));
       
-      // Validate availability dates
-      if (formData.availabilityStart && formData.availabilityEnd) {
-        const startDate = new Date(formData.availabilityStart);
-        const endDate = new Date(formData.availabilityEnd);
-        
-        if (startDate >= endDate) {
-          setSnackbar({ 
-            open: true, 
-            message: 'End date must be after start date.', 
-            severity: 'error' 
-          });
-          return;
-        }
-      }
-
+      // Append features
+      formDataToSend.append('features', JSON.stringify(formData.features));
+      
       // Append images
-      formData.images.forEach((image) => data.append('images', image));
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach((key) => {
-        if (key === 'images') {
-          formData[key].forEach((image) => formDataToSend.append('images', image));
-        } else {
-          formDataToSend.append(key, formData[key]);
-        }
+      formData.images.forEach((image) => {
+        formDataToSend.append('images', image);
       });
 
       // Use environment variable for API URL
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
       const response = await fetch(`${apiUrl}/api/cars/addcars`, {
         method: 'POST',
         headers: {
@@ -667,16 +653,49 @@ function PostCarDialog({ open, onClose }) {
         body: formDataToSend,
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to post the car');
+        throw new Error(result.error || 'Failed to post the car');
       }
 
-      setSnackbar({ open: true, message: 'Car posted successfully!', severity: 'success' });
+      // Reset form on success
+      setFormData({
+        carName: '',
+        brand: '',
+        wilaya: '',
+        carType: '',
+        description: '',
+        price: '',
+        energy: '',
+        transmission: '',
+        seats: '',
+        doors: '',
+        mileage: '',
+        engine: '',
+        availabilityStart: '',
+        availabilityEnd: '',
+        images: [],
+        location: null,
+        features: {}
+      });
+      setImagePreviews([]);
+      
+      setSnackbar({ 
+        open: true, 
+        message: 'Car posted successfully!', 
+        severity: 'success' 
+      });
       onClose();
     } catch (error) {
-      console.error("Error posting car:", error.message);
-      setSnackbar({ open: true, message: error.message || 'Failed to post the car. Please try again.', severity: 'error' });
+      console.error("Error posting car:", error);
+      setSnackbar({ 
+        open: true, 
+        message: error.message || 'Failed to post the car. Please try again.', 
+        severity: 'error' 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

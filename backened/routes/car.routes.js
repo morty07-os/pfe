@@ -1,21 +1,25 @@
 import express from "express";
+import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Car from "../models/car.models.js";
 
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 const router = express.Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/"); // Save files to the "uploads" directory
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    },
+// Configure multer for file uploads (in-memory storage for Cloudinary)
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
-const upload = multer({ storage });
 
 // Car routes
 router.post("/add", ProtectedRoute(), upload.array("images", 5), createCar); // Add a new car with image upload
@@ -23,12 +27,28 @@ router.get("/list", getCars); // Get a list of cars
 router.put("/update/:id", ProtectedRoute(), upload.array("images", 5), updateCar); // Update car details with image upload
 router.delete("/delete/:id", ProtectedRoute(), deleteCar); // Delete a car
 
+// Helper function to upload files to Cloudinary
+const uploadToCloudinary = (file) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { 
+        folder: 'car-rental',
+        upload_preset: 'unsigned_preset',
+        resource_type: 'auto'
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+    
+    uploadStream.end(file.buffer);
+  });
+};
+
 // Route to post a car
 router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req, res) => {
     try {
-        console.log("Request body:", req.body); // Log request body
-        console.log("Uploaded files:", req.files); // Log uploaded files
-
         const { body, files } = req;
         const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
 
@@ -36,16 +56,9 @@ router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req,
             return res.status(400).json({ error: 'No images uploaded' });
         }
 
-        // Generate image paths with full URL in production
-        const imagePaths = files.map((file) => {
-            const filename = `uploads/${file.filename}`;
-            // In production, use the full URL
-            if (process.env.NODE_ENV === 'production') {
-                const baseUrl = process.env.BACKEND_URL || 'https://your-render-app.onrender.com';
-                return `${baseUrl}/${filename}`;
-            }
-            return `/${filename}`; // In development, use relative path
-        });
+        // Upload all images to Cloudinary
+        const uploadPromises = files.map(file => uploadToCloudinary(file));
+        const imageUrls = await Promise.all(uploadPromises);
 
         // Get user information for owner details
         const User = (await import('../models/user.models.js')).default;
@@ -70,7 +83,7 @@ router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req,
             availabilityEnd,
             price,
             carType,
-            images: imagePaths,
+            images: imageUrls, // Store Cloudinary URLs
             owner: req.user.userId,
             ownerName: {
                 firstName: user.firstName,
@@ -79,10 +92,19 @@ router.post('/addcars', ProtectedRoute(), upload.array('images', 5), async (req,
         });
 
         await car.save();
-        res.status(201).json({ message: 'Car posted successfully!', car });
+        res.status(201).json({ 
+            message: 'Car posted successfully!', 
+            car: {
+                ...car.toObject(),
+                images: imageUrls
+            } 
+        });
     } catch (error) {
-        console.error("Error posting car:", error.message); // Log error
-        res.status(500).json({ error: 'Failed to post the car.', details: error.message });
+        console.error("Error posting car:", error);
+        res.status(500).json({ 
+            error: 'Failed to post the car.', 
+            details: error.message 
+        });
     }
 });
 
