@@ -7,19 +7,6 @@ const carSchema = new mongoose.Schema(
             unique: true,
             default: () => new mongoose.Types.ObjectId().toString(),
         },
-        images: {
-            type: [String],
-            required: [true, 'Images are required'],
-            validate: {
-                validator: function(images) {
-                    return Array.isArray(images) && 
-                           images.length > 0 && 
-                           images.length <= 5 && 
-                           images.every(img => typeof img === 'string' && img.length > 0);
-                },
-                message: 'You must upload between 1 and 5 images',
-            },
-        },
         carName: {
             type: String,
             required: true,
