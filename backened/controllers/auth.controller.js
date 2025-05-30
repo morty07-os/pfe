@@ -3,8 +3,7 @@ import bcrypt from 'bcryptjs';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import sendVerificationEmail from '../utils/email.utils.js';
-import sendPasswordResetEmail from '../utils/email.utils.js'; // Assuming email.utils can send different types of emails
+import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email.utils.js';
 
 
 
