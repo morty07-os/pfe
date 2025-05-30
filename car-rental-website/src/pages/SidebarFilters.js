@@ -39,26 +39,29 @@ import CloseIcon from '@mui/icons-material/Close';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-// Helper function to check if car's availability fully covers the requested period
-export const isAvailabilityFullyCovered = (carAvailableFrom, carAvailableTo, filterFrom, filterTo) => {
-  // If either filter date is not set, return true to allow partial filtering
-  if (!filterFrom || !filterTo) {
-    return true;
-  }
+// Helper function to check if two date ranges overlap
+// Range 1: [start1, end1], Range 2: [start2, end2]
+// Overlap occurs if (start1 <= end2) AND (end1 >= start2)
+export const isAvailabilityOverlap = (carAvailableFrom, carAvailableTo, filterFrom, filterTo) => {
+  // If either filter date is not set, consider it a match for that boundary
+  const filterFromDate = filterFrom ? dayjs(filterFrom) : null;
+  const filterToDate = filterTo ? dayjs(filterTo) : null;
 
-  // If car availability dates are not set, it cannot fully cover a specific range
+  // If car availability dates are not set, it cannot overlap with a specific filter range
   if (!carAvailableFrom || !carAvailableTo) {
     return false;
   }
 
   const carFromDate = dayjs(carAvailableFrom);
   const carToDate = dayjs(carAvailableTo);
-  const filterFromDate = dayjs(filterFrom);
-  const filterToDate = dayjs(filterTo);
 
-  // Check if car is available for the entire requested period
-  return carFromDate.isSameOrBefore(filterFromDate, 'day') && carToDate.isSameOrAfter(filterToDate, 'day');
+  // Check for overlap: car starts before or on filter end AND car ends after or on filter start
+  const startsBeforeFilterEnds = filterToDate ? carFromDate.isSameOrBefore(filterToDate, 'day') : true;
+  const endsAfterFilterStarts = filterFromDate ? carToDate.isSameOrAfter(filterFromDate, 'day') : true;
+
+  return startsBeforeFilterEnds && endsAfterFilterStarts;
 };
+
 
 const brands = [
   'Toyota', 'Renault', 'Peugeot', 'Hyundai', 'Volkswagen', 'Kia', 'Dacia', 'Citroën', 'Fiat', 'Seat',
@@ -69,7 +72,7 @@ const brands = [
 ];
 const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
 const transmissions = ['Manual', 'Automatic'];
-const carTypes = ['SUV', 'VAN', 'STATIONWAGON', 'CITADINE', 'SEDAN'];
+const carTypes = ['SUV', 'VAN', 'STATIONWAGON', 'CITADINE', 'SEDAN']; // Added carTypes
 const wilayas = [
   "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
 ];
@@ -146,6 +149,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
     onFilterChange({});
   };
 
+  // Remove a specific filter
   const handleRemoveFilter = (filterName) => {
     const newFilters = { ...pendingFilters };
     delete newFilters[filterName];
@@ -155,6 +159,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
     setTimeout(() => setShowApplyEffect(false), 1500);
   };
 
+  // Reset a specific filter to its default value
   const handleResetFilter = (filterName) => {
     let newFilters = { ...pendingFilters };
 
@@ -168,7 +173,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       case 'doorsRange':
         newFilters.doorsRange = [2, 5];
         break;
-      case 'carType':
+      case 'carType': // Added carType reset
         newFilters.carType = '';
         break;
       default:
@@ -178,6 +183,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
     setPendingFilters(newFilters);
   };
 
+  // Count active filters
   const getActiveFilterCount = () => {
     return Object.keys(pendingFilters).filter(key => {
       if (key === 'priceRange') {
@@ -192,16 +198,18 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         return pendingFilters[key] &&
                (pendingFilters[key][0] !== 2 || pendingFilters[key][1] !== 5);
       }
-      if (key === 'carType') {
+      if (key === 'carType') { // Added carType filter count
         return pendingFilters[key] && pendingFilters[key] !== '';
       }
+      // For availableFrom/availableTo, count as active if either is set
       if (key === 'availableFrom' || key === 'availableTo') {
-        return pendingFilters.availableFrom || pendingFilters.availableTo;
+          return pendingFilters.availableFrom || pendingFilters.availableTo;
       }
       return pendingFilters[key] && pendingFilters[key] !== '';
     }).length;
   };
 
+  // Format filter value for display
   const getFilterDisplayValue = (key, value) => {
     if (key === 'priceRange') {
       return `DZD ${value[0]} - DZD ${value[1]}`;
@@ -210,24 +218,26 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
     } else if (key === 'doorsRange') {
       return `${value[0]} - ${value[1]} doors`;
     } else if (key === 'availableFrom' || key === 'availableTo') {
+      // Only format if the value is a valid date string
       try {
-        return dayjs(value).isValid() ? dayjs(value).format('YYYY-MM-DD') : value;
+          return dayjs(value).isValid() ? dayjs(value).format('YYYY-MM-DD') : value;
       } catch (e) {
-        return value;
+          return value; // Return raw value if dayjs parsing fails
       }
-    } else if (key === 'carType') {
+    } else if (key === 'carType') { // Added carType display value
       return value;
     }
     return value;
   };
 
+  // Get filter label
   const getFilterLabel = (key) => {
     const labels = {
       brand: 'Brand',
       energy: 'Energy',
       transmission: 'Transmission',
       wilaya: 'Location',
-      carType: 'Car Type',
+      carType: 'Car Type', // Added carType label
       seatsRange: 'Seats',
       doorsRange: 'Doors',
       priceRange: 'Price',
@@ -237,6 +247,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
     return labels[key] || key;
   };
 
+  // Get filter icon
   const getFilterIcon = (key) => {
     switch(key) {
       case 'brand':
@@ -256,7 +267,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       case 'availableFrom':
       case 'availableTo':
         return <CalendarMonthIcon fontSize="small" />;
-      case 'carType':
+      case 'carType': // Added carType icon
         return <DirectionsCarIcon fontSize="small" />;
       default:
         return null;
@@ -290,6 +301,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         })
       }}
     >
+      {/* Header with gradient background */}
       <Box sx={{
         p: 1.5,
         background: 'linear-gradient(135deg, #455a64 0%, #37474f 100%)',
@@ -346,6 +358,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         </Box>
       </Box>
 
+      {/* Active Filters Section */}
       {hasActiveFilters && (
         <Box sx={{
           px: 2,
@@ -361,6 +374,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
             {Object.entries(pendingFilters).map(([key, value]) => {
+              // Skip empty values or default ranges
               if (!value ||
                   (key === 'priceRange' && value[0] === 0 && value[1] === 100000) ||
                   (key === 'seatsRange' && value[0] === 2 && value[1] === 9) ||
@@ -368,105 +382,109 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 return null;
               }
 
+              // Special handling for availability dates to show both if one is set
               if (key === 'availableFrom' && !pendingFilters.availableTo) {
-                return (
-                  <Chip
-                    key={key}
-                    icon={getFilterIcon(key)}
-                    label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, value)}`}
-                    onDelete={() => handleRemoveFilter(key)}
-                    size="small"
-                    sx={{
-                      bgcolor: '#fff',
-                      border: '1px solid #cbd5e1',
-                      color: '#455a64',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      height: 24,
-                      '& .MuiChip-deleteIcon': {
-                        color: '#94a3b8',
-                        fontSize: '0.9rem',
-                        '&:hover': {
-                          color: '#f43f5e'
-                        }
-                      },
-                      '& .MuiChip-icon': {
-                        color: '#455a64',
-                        fontSize: '0.9rem',
-                        marginLeft: '4px'
-                      }
-                    }}
-                  />
-                );
+                  return (
+                      <Chip
+                          key={key}
+                          icon={getFilterIcon(key)}
+                          label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, value)}`}
+                          onDelete={() => handleRemoveFilter(key)}
+                          size="small"
+                          sx={{
+                              bgcolor: '#fff',
+                              border: '1px solid #cbd5e1',
+                              color: '#455a64',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24,
+                              '& .MuiChip-deleteIcon': {
+                                  color: '#94a3b8',
+                                  fontSize: '0.9rem',
+                                  '&:hover': {
+                                      color: '#f43f5e'
+                                  }
+                              },
+                              '& .MuiChip-icon': {
+                                  color: '#455a64',
+                                  fontSize: '0.9rem',
+                                  marginLeft: '4px'
+                              }
+                          }}
+                      />
+                  );
               }
               if (key === 'availableTo' && !pendingFilters.availableFrom) {
-                return (
-                  <Chip
-                    key={key}
-                    icon={getFilterIcon(key)}
-                    label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, value)}`}
-                    onDelete={() => handleRemoveFilter(key)}
-                    size="small"
-                    sx={{
-                      bgcolor: '#fff',
-                      border: '1px solid #cbd5e1',
-                      color: '#455a64',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      height: 24,
-                      '& .MuiChip-deleteIcon': {
-                        color: '#94a3b8',
-                        fontSize: '0.9rem',
-                        '&:hover': {
-                          color: '#f43f5e'
-                        }
-                      },
-                      '& .MuiChip-icon': {
-                        color: '#455a64',
-                        fontSize: '0.9rem',
-                        marginLeft: '4px'
-                      }
-                    }}
-                  />
-                );
+                   return (
+                      <Chip
+                          key={key}
+                          icon={getFilterIcon(key)}
+                          label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, value)}`}
+                          onDelete={() => handleRemoveFilter(key)}
+                          size="small"
+                          sx={{
+                              bgcolor: '#fff',
+                              border: '1px solid #cbd5e1',
+                              color: '#455a64',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24,
+                              '& .MuiChip-deleteIcon': {
+                                  color: '#94a3b8',
+                                  fontSize: '0.9rem',
+                                  '&:hover': {
+                                      color: '#f43f5e'
+                                  }
+                              },
+                              '& .MuiChip-icon': {
+                                  color: '#455a64',
+                                  fontSize: '0.9rem',
+                                  marginLeft: '4px'
+                              }
+                          }}
+                      />
+                  );
               }
+              // If both are set, show a single chip for the range
               if (key === 'availableFrom' && pendingFilters.availableTo) {
-                return (
-                  <Chip
-                    key="availabilityRange"
-                    icon={getFilterIcon(key)}
-                    label={`Available: ${getFilterDisplayValue('availableFrom', pendingFilters.availableFrom)} to ${getFilterDisplayValue('availableTo', pendingFilters.availableTo)}`}
-                    onDelete={() => {
-                      handleRemoveFilter('availableFrom');
-                      handleRemoveFilter('availableTo');
-                    }}
-                    size="small"
-                    sx={{
-                      bgcolor: '#fff',
-                      border: '1px solid #cbd5e1',
-                      color: '#455a64',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      height: 24,
-                      '& .MuiChip-deleteIcon': {
-                        color: '#94a3b8',
-                        fontSize: '0.9rem',
-                        '&:hover': {
-                          color: '#f43f5e'
-                        }
-                      },
-                      '& .MuiChip-icon': {
-                        color: '#455a64',
-                        fontSize: '0.9rem',
-                        marginLeft: '4px'
-                      }
-                    }}
-                  />
-                );
+                  return (
+                      <Chip
+                          key="availabilityRange"
+                          icon={getFilterIcon(key)}
+                          label={`Available: ${getFilterDisplayValue('availableFrom', pendingFilters.availableFrom)} to ${getFilterDisplayValue('availableTo', pendingFilters.availableTo)}`}
+                          onDelete={() => {
+                              handleRemoveFilter('availableFrom');
+                              handleRemoveFilter('availableTo');
+                          }}
+                          size="small"
+                          sx={{
+                              bgcolor: '#fff',
+                              border: '1px solid #cbd5e1',
+                              color: '#455a64',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24,
+                              '& .MuiChip-deleteIcon': {
+                                  color: '#94a3b8',
+                                  fontSize: '0.9rem',
+                                  '&:hover': {
+                                      color: '#f43f5e'
+                                  }
+                              },
+                              '& .MuiChip-icon': {
+                                  color: '#455a64',
+                                  fontSize: '0.9rem',
+                                  marginLeft: '4px'
+                              }
+                          }}
+                      />
+                  );
               }
+              // Skip availableTo if availableFrom is already handled
               if (key === 'availableTo' && pendingFilters.availableFrom) {
-                return null;
+                  return null;
               }
+
 
               return (
                 <Chip
@@ -524,6 +542,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         </Box>
       )}
 
+      {/* Filter content - Scrollable */}
       <Box sx={{
         p: 1.5,
         overflowY: 'auto',
@@ -543,6 +562,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           }
         }
       }}>
+        {/* Brand Section */}
         <FilterSection
           title="Brand"
           icon={<BrandingWatermarkIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
@@ -607,6 +627,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           </Box>
         </FilterSection>
 
+        {/* Energy Type Section */}
         <FilterSection
           title="Energy Type"
           icon={<LocalGasStationIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
@@ -764,6 +785,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           </Box>
         </FilterSection>
 
+        {/* Transmission Section */}
         <FilterSection
           title="Transmission"
           icon={<SettingsIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
@@ -840,6 +862,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           </Box>
         </FilterSection>
 
+        {/* Location Section */}
         <FilterSection
           title="Location"
           icon={<LocationOnIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
@@ -904,6 +927,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           </Box>
         </FilterSection>
 
+        {/* Car Type Section */}
         <FilterSection
           title="Car Type"
           icon={<DirectionsCarIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
@@ -917,12 +941,12 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               size="small"
               fullWidth
               sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
+                display: 'flex', // Changed to flex
+                flexWrap: 'wrap', // Added flexWrap
                 gap: 1,
                 '& .MuiToggleButtonGroup-grouped': {
-                  flexGrow: 1,
-                  flexBasis: '48%',
+                  flexGrow: 1, // Allow items to grow
+                  flexBasis: '48%', // Approximate half width for two columns, adjust as needed
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
@@ -979,6 +1003,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           </Box>
         </FilterSection>
 
+        {/* Seats Section */}
         <FilterSection
           title="Seats Range"
           icon={<AirlineSeatReclineNormalIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
@@ -1045,6 +1070,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           </Box>
         </FilterSection>
 
+        {/* Doors Section */}
         <FilterSection
           title="Doors Range"
           icon={<MeetingRoomIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
@@ -1111,6 +1137,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           </Box>
         </FilterSection>
 
+        {/* Price Range Section */}
         <FilterSection
           title="Price Range"
           icon={<AttachMoneyIcon sx={{ fontSize: '1.1rem', color: '#607d8b' }} />}
@@ -1149,6 +1176,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
 
         </FilterSection>
 
+        {/* Availability Section */}
         <FilterSection
           title="Availability"
           icon={<CalendarMonthIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
@@ -1260,9 +1288,11 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           </Box>
         </FilterSection>
 
+        {/* Add some bottom padding to ensure content doesn't get hidden behind fixed buttons */}
         <Box sx={{ height: 80 }} />
       </Box>
 
+      {/* Fixed Action Buttons */}
       <Box
         sx={{
           p: 1.5,

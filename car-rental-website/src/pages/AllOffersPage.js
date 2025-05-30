@@ -350,8 +350,8 @@ export default function AllOffersPage() {
       (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
       (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
       (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1])) &&
-      (!sidebarFilters.availableFrom || dayjs(offer.availabilityStart || offer.availableFrom).isSameOrAfter(dayjs(sidebarFilters.availableFrom), 'day')) &&
-      (!sidebarFilters.availableTo || dayjs(offer.availabilityEnd || offer.availableTo).isSameOrBefore(dayjs(sidebarFilters.availableTo), 'day'))
+      (!sidebarFilters.availableFrom || dayjs(offer.availabilityStart || offer.availableFrom).isSameOrBefore(dayjs(sidebarFilters.availableFrom), 'day')) &&
+      (!sidebarFilters.availableTo || dayjs(offer.availabilityEnd || offer.availableTo).isSameOrAfter(dayjs(sidebarFilters.availableTo), 'day'))
     );
 
     return tempOffers;
