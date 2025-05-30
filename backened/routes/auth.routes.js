@@ -53,6 +53,8 @@ router.post("/logout", logout);
 router.post("/refresh-token", refreshToken);
 router.post("/verify-email", verifyEmail);
 router.post("/resend-verification-code", resendVerificationCode);
+router.post("/request-password-reset", requestPasswordReset);
+router.post("/reset-password", resetPassword);
 
 // Car routes
 router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload

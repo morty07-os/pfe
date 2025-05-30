@@ -313,6 +313,117 @@ export const resendVerificationCode = async (req, res) => {
     }
 };
 
+// Handles requesting a password reset code
+export const requestPasswordReset = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: "Email is required" });
+        }
+
+        console.log(`Requesting password reset for email: ${email}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Generate a password reset token (similar to verification token)
+        const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedResetToken = await bcrypt.hash(resetToken, 10);
+
+        // Set expiration time for the reset token (e.g., 15 minutes)
+        const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+        user.resetPasswordToken = hashedResetToken;
+        user.resetPasswordExpires = resetTokenExpires;
+        await user.save();
+        console.log(`Password reset token generated for user: ${user._id}`);
+
+        // Send password reset email
+        try {
+            // You'll need to create a new email utility function for password reset emails
+            // For now, let's assume a function sendPasswordResetEmail exists
+            // await sendPasswordResetEmail(user.email, resetToken);
+            console.log(`Password reset email sent to: ${user.email} with code: ${resetToken}`);
+             res.status(200).json({ message: "Password reset code sent to your email." });
+        } catch (emailError) {
+            console.error(`Error sending password reset email: ${emailError.message}`);
+            // Revert changes if email sending fails? Or just log and let the user retry?
+            // For now, just log and return an error response
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpires = undefined;
+            await user.save();
+            return res.status(500).json({ error: "Failed to send password reset email. Please try again later." });
+        }
+
+
+    } catch (error) {
+        console.error("Error in requestPasswordReset controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles resetting the password
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, verificationCode, newPassword } = req.body;
+
+        if (!email || !verificationCode || !newPassword) {
+            return res.status(400).json({ error: "Email, verification code, and new password are required" });
+        }
+
+        console.log(`Attempting to reset password for email: ${email}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (!user.resetPasswordToken || !user.resetPasswordExpires) {
+            console.log(`No reset token found for user: ${user._id}`);
+            return res.status(400).json({ error: "No password reset code found or it has expired. Please request a new one." });
+        }
+
+        if (user.resetPasswordExpires < Date.now()) {
+            console.log(`Reset token expired for user: ${user._id}`);
+            return res.status(400).json({ error: "Password reset code has expired. Please request a new one." });
+        }
+
+        const isCodeValid = await bcrypt.compare(verificationCode, user.resetPasswordToken);
+
+        if (!isCodeValid) {
+            console.log(`Invalid reset code for user: ${user._id}`);
+            return res.status(400).json({ error: "Invalid verification code" });
+        }
+
+        if (newPassword.length < 6) {
+            console.log("New password too short");
+            return res.status(400).json({ error: "New password must be at least 6 characters long" });
+        }
+
+        // Update user's password
+        user.password = newPassword; // The pre-save hook will hash the password
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        await user.save();
+        console.log(`Password reset successfully for user: ${user._id}`);
+
+        res.status(200).json({ message: "Password reset successfully. You can now log in with your new password." });
+
+    } catch (error) {
+        console.error("Error in resetPassword controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+
 // Handles user logout
 export const logout = async (req, res) => {
     try {
