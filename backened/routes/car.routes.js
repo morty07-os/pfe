@@ -24,10 +24,11 @@ router.put("/update/:id", ProtectedRoute(), updateCar); // Update car details wi
 router.delete("/delete/:id", ProtectedRoute(), deleteCar); // Delete a car
 
 // Route to post a car
-router.post('/addcars', ProtectedRoute(), async (req, res) => {
+// Add upload.array('images') middleware to handle multiple file uploads with the field name 'images'
+router.post('/addcars', ProtectedRoute(), upload.array('images'), async (req, res) => {
     try {
         console.log("Request body:", req.body); // Log request body
-        // console.log("Uploaded files:", req.files); // Log uploaded files - Removed as files are now uploaded via Cloudinary
+        console.log("Uploaded files:", req.files); // Log uploaded files
 
         const { body, files } = req;
         const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
