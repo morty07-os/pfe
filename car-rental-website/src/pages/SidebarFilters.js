@@ -10,7 +10,6 @@ import {
   Button,
   Autocomplete,
   Divider,
-  getFilterDisplayValue,
   Paper,
   Chip,
   Collapse,
@@ -40,8 +39,12 @@ import CloseIcon from '@mui/icons-material/Close';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-// Updated function to check if the car's availability fully covers the filter period
-export const isAvailabilityMatch = (carAvailableFrom, carAvailableTo, filterFrom, filterTo) => {
+// Helper function to check if the filter date range is contained within the car's availability range
+// Car Availability Range: [carAvailableFrom, carAvailableTo]
+// Filter Range: [filterFrom, filterTo]
+// Containment occurs if (filterFrom >= carAvailableFrom) AND (filterTo <= carAvailableTo)
+export const isAvailabilityOverlap = (carAvailableFrom, carAvailableTo, filterFrom, filterTo) => {
+  // If car availability dates are not set, it cannot match any specific filter range
   if (!carAvailableFrom || !carAvailableTo) {
     return false;
   }
@@ -52,20 +55,17 @@ export const isAvailabilityMatch = (carAvailableFrom, carAvailableTo, filterFrom
   const filterFromDate = filterFrom ? dayjs(filterFrom) : null;
   const filterToDate = filterTo ? dayjs(filterTo) : null;
 
-  if (filterFromDate && filterToDate) {
-    // Both filter dates are set: car must be available for the entire filter period
-    return carFromDate.isSameOrBefore(filterFromDate, 'day') && carToDate.isSameOrAfter(filterToDate, 'day');
-  } else if (filterFromDate) {
-    // Only filterFrom is set: car must be available on or after filterFrom
-    return carToDate.isSameOrAfter(filterFromDate, 'day');
-  } else if (filterToDate) {
-    // Only filterTo is set: car must be available on or before filterTo
-    return carFromDate.isSameOrBefore(filterToDate, 'day');
-  } else {
-    // No filter dates set: match all cars
-    return true;
-  }
+  // If filter dates are not set, the filter is not active for availability, so it matches.
+  // Otherwise, check if the filter range is contained within the car's availability range.
+  const filterStartsOnOrAfterCarStarts = filterFromDate ? filterFromDate.isSameOrAfter(carFromDate, 'day') : true;
+  const filterEndsOnOrBeforeCarEnds = filterToDate ? filterToDate.isSameOrBefore(carToDate, 'day') : true;
+
+  // If both filter dates are set, also ensure the filter start is not after the filter end
+  const filterRangeIsValid = (filterFromDate && filterToDate) ? filterFromDate.isSameOrBefore(filterToDate, 'day') : true;
+
+  return filterStartsOnOrAfterCarStarts && filterEndsOnOrBeforeCarEnds && filterRangeIsValid;
 };
+
 
 const brands = [
   'Toyota', 'Renault', 'Peugeot', 'Hyundai', 'Volkswagen', 'Kia', 'Dacia', 'Citroën', 'Fiat', 'Seat',
@@ -76,7 +76,7 @@ const brands = [
 ];
 const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
 const transmissions = ['Manual', 'Automatic'];
-const carTypes = ['SUV', 'VAN', 'STATIONWAGON', 'CITADINE', 'SEDAN'];
+const carTypes = ['SUV', 'VAN', 'STATIONWAGON', 'CITADINE', 'SEDAN']; // Added carTypes
 const wilayas = [
   "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
 ];
@@ -177,7 +177,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       case 'doorsRange':
         newFilters.doorsRange = [2, 5];
         break;
-      case 'carType':
+      case 'carType': // Added carType reset
         newFilters.carType = '';
         break;
       default:
@@ -202,9 +202,10 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         return pendingFilters[key] &&
                (pendingFilters[key][0] !== 2 || pendingFilters[key][1] !== 5);
       }
-      if (key === 'carType') {
+      if (key === 'carType') { // Added carType filter count
         return pendingFilters[key] && pendingFilters[key] !== '';
       }
+      // For availableFrom/availableTo, count as active if either is set
       if (key === 'availableFrom' || key === 'availableTo') {
           return pendingFilters.availableFrom || pendingFilters.availableTo;
       }
@@ -213,7 +214,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
   };
 
   // Format filter value for display
-   getFilterDisplayValue = (key, value) => {
+  const getFilterDisplayValue = (key, value) => {
     if (key === 'priceRange') {
       return `DZD ${value[0]} - DZD ${value[1]}`;
     } else if (key === 'seatsRange') {
@@ -221,12 +222,13 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
     } else if (key === 'doorsRange') {
       return `${value[0]} - ${value[1]} doors`;
     } else if (key === 'availableFrom' || key === 'availableTo') {
+      // Only format if the value is a valid date string
       try {
           return dayjs(value).isValid() ? dayjs(value).format('YYYY-MM-DD') : value;
       } catch (e) {
-          return value;
+          return value; // Return raw value if dayjs parsing fails
       }
-    } else if (key === 'carType') {
+    } else if (key === 'carType') { // Added carType display value
       return value;
     }
     return value;
@@ -239,7 +241,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       energy: 'Energy',
       transmission: 'Transmission',
       wilaya: 'Location',
-      carType: 'Car Type',
+      carType: 'Car Type', // Added carType label
       seatsRange: 'Seats',
       doorsRange: 'Doors',
       priceRange: 'Price',
@@ -269,7 +271,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       case 'availableFrom':
       case 'availableTo':
         return <CalendarMonthIcon fontSize="small" />;
-      case 'carType':
+      case 'carType': // Added carType icon
         return <DirectionsCarIcon fontSize="small" />;
       default:
         return null;
@@ -376,6 +378,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
             {Object.entries(pendingFilters).map(([key, value]) => {
+              // Skip empty values or default ranges
               if (!value ||
                   (key === 'priceRange' && value[0] === 0 && value[1] === 100000) ||
                   (key === 'seatsRange' && value[0] === 2 && value[1] === 9) ||
@@ -383,6 +386,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 return null;
               }
 
+              // Special handling for availability dates to show both if one is set
               if (key === 'availableFrom' && !pendingFilters.availableTo) {
                   return (
                       <Chip
@@ -445,6 +449,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                       />
                   );
               }
+              // If both are set, show a single chip for the range
               if (key === 'availableFrom' && pendingFilters.availableTo) {
                   return (
                       <Chip
@@ -479,9 +484,11 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                       />
                   );
               }
+              // Skip availableTo if availableFrom is already handled
               if (key === 'availableTo' && pendingFilters.availableFrom) {
                   return null;
               }
+
 
               return (
                 <Chip
@@ -938,12 +945,12 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               size="small"
               fullWidth
               sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
+                display: 'flex', // Changed to flex
+                flexWrap: 'wrap', // Added flexWrap
                 gap: 1,
                 '& .MuiToggleButtonGroup-grouped': {
-                  flexGrow: 1,
-                  flexBasis: '48%',
+                  flexGrow: 1, // Allow items to grow
+                  flexBasis: '48%', // Approximate half width for two columns, adjust as needed
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
@@ -1170,6 +1177,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               }
             }}
           />
+
         </FilterSection>
 
         {/* Availability Section */}
