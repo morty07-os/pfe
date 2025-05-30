@@ -1,5 +1,4 @@
 import express from "express";
-import express from "express";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Car from "../models/car.models.js";
