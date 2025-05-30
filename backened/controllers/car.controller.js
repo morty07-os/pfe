@@ -1,6 +1,8 @@
 import Car from '../models/car.models.js';
 import User from '../models/user.models.js';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js'; 
+import cloudinary from '../utils/cloudinary.js'; // Import cloudinary
+import fs from 'fs'; // Import fs for file system operations
 
 // Function to create a new car
 export const createCar = async (req, res) => {
@@ -10,16 +12,18 @@ export const createCar = async (req, res) => {
         }
 
         console.log("Request body:", req.body); // Log request body
-        console.log("Uploaded files:", req.files); // Log uploaded files
+        // In this updated logic, req.files will not be used for car creation
+        // console.log("Uploaded files:", req.files); // Log uploaded files
 
-        const { body, files } = req;
-        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType } = body;
+        const { body } = req;
+        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType, images } = body; // Expect images as URLs
 
-        if (!files || files.length === 0) {
-            return res.status(400).json({ error: 'No images uploaded' });
+        if (!images || images.length === 0) {
+            return res.status(400).json({ error: 'No images provided' });
         }
 
-        const images = files.map((file) => `uploads/${file.filename}`);
+        // Images are now expected to be Cloudinary URLs, so no local file processing needed here
+        const imageUrls = images;
 
         // Parse location if it's a string
         let locationData = body.location;
@@ -63,7 +67,7 @@ export const createCar = async (req, res) => {
             price,
             carType,
             location,
-            images,
+            images: imageUrls, // Save Cloudinary URLs
             owner: req.user.userId,
             ownerName: {
                 firstName: user.firstName,
@@ -147,5 +151,25 @@ export const deleteCar = async (req, res) => {
     } catch (error) {
         console.error("Error deleting car:", error.message);
         res.status(500).json({ error: error.message || "Server error" });
+    }
+};
+
+// Function to upload image to Cloudinary
+export const uploadImageToCloudinary = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No image file uploaded' });
+        }
+
+        // Upload image to Cloudinary
+        const result = await cloudinary.uploader.upload(req.file.path);
+
+        // Remove the local file after successful upload (optional but recommended)
+        fs.unlinkSync(req.file.path); // Clean up the local file
+
+        res.status(200).json({ url: result.secure_url });
+    } catch (error) {
+        console.error("Error uploading image to Cloudinary:", error.message);
+        res.status(500).json({ error: 'Failed to upload image to Cloudinary', details: error.message });
     }
 };

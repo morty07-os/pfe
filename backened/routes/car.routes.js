@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
+import { createCar, getCars, updateCar, deleteCar, uploadImageToCloudinary } from "../controllers/car.controller.js"; // Import the new controller function
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Car from "../models/car.models.js";
 
@@ -207,5 +207,8 @@ router.get('/details/:id', ProtectedRoute({ required: false }), async (req, res)
         res.status(500).json({ error: 'Failed to fetch car details.', details: error.message });
     }
 });
+
+// New route for Cloudinary image upload
+router.post('/upload/image', ProtectedRoute(), upload.single('image'), uploadImageToCloudinary);
 
 export default router;
