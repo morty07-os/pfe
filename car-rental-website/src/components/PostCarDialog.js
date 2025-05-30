@@ -646,44 +646,16 @@ function PostCarDialog({ open, onClose }) {
         }
       }
 
-      // Upload images to Cloudinary first
-      const uploadedImageUrls = [];
-      const uploadPromises = formData.images.map(async (image) => {
-        const imageData = new FormData();
-        imageData.append('image', image);
-
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
-        const uploadResponse = await fetch(`${apiUrl}/api/upload/image`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: imageData,
-        });
-
-        if (!uploadResponse.ok) {
-          const errorData = await uploadResponse.json();
-          throw new Error(errorData.error || `Failed to upload image: ${image.name}`);
-        }
-
-        const uploadResult = await uploadResponse.json();
-        uploadedImageUrls.push(uploadResult.url);
-      });
-
-      await Promise.all(uploadPromises);
-
-      // Now submit the car data with Cloudinary URLs
-      const carData = new FormData();
-
-      // Append all form fields except images
+      // Append images
+      formData.images.forEach((image) => data.append('images', image));
+      const formDataToSend = new FormData();
       Object.keys(formData).forEach((key) => {
-        if (key !== 'images') {
-          carData.append(key, formData[key]);
+        if (key === 'images') {
+          formData[key].forEach((image) => formDataToSend.append('images', image));
+        } else {
+          formDataToSend.append(key, formData[key]);
         }
       });
-
-      // Append Cloudinary image URLs
-      uploadedImageUrls.forEach((url) => carData.append('images', url));
 
       // Use environment variable for API URL
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
@@ -692,7 +664,7 @@ function PostCarDialog({ open, onClose }) {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: carData,
+        body: formDataToSend,
       });
 
       if (!response.ok) {
@@ -983,7 +955,9 @@ function PostCarDialog({ open, onClose }) {
                     boxShadow: formData.location ? '0 2px 6px rgba(30,41,59,0.08)' : '0 1px 4px rgba(30,41,59,0.03)',
                     cursor: 'pointer',
                     '&:hover': { bgcolor: '#e2e8f0', borderColor: '#cbd5e1' },
-                    '&.Mui-focused': { boxShadow: '0 0 0 2px #475569', borderColor: '#475569' }
+                    '&.Mui-focused': { boxShadow: '0 0 0 2px #475569', borderColor: '#475569' },
+                    height: 56,
+                    pl: 2
                   }
                 }}
               />
