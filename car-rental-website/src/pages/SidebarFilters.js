@@ -10,6 +10,7 @@ import {
   Button,
   Autocomplete,
   Divider,
+  getFilterDisplayValue,
   Paper,
   Chip,
   Collapse,
