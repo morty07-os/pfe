@@ -313,6 +313,135 @@ export const resendVerificationCode = async (req, res) => {
     }
 };
 
+// Handles requesting a password reset (sending the code)
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: "Email is required" });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Generate a reset token (e.g., a 6-digit code or a longer random string)
+        const resetToken = crypto.randomBytes(3).toString('hex'); // 6-character hex code
+        const hashedResetToken = await bcrypt.hash(resetToken, 10);
+
+        // Set token expiration time (e.g., 15 minutes)
+        const resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+        user.resetPasswordToken = hashedResetToken;
+        user.resetPasswordExpire = resetTokenExpires;
+        await user.save();
+
+        // Send email with the reset token
+        // You'll need to implement a sendResetPasswordEmail function similar to sendVerificationEmail
+        // For now, we'll just log the token
+        console.log(`Password reset token for ${user.email}: ${resetToken}`);
+
+        // await sendResetPasswordEmail(user.email, resetToken); // Placeholder
+
+        res.status(200).json({ message: "Password reset code sent to your email." });
+
+    } catch (error) {
+        console.error("Error in forgotPassword controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles verifying the reset code
+export const verifyResetCode = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+
+        if (!email || !code) {
+            return res.status(400).json({ error: "Email and code are required" });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (!user.resetPasswordToken || !user.resetPasswordExpire) {
+             return res.status(400).json({ error: "No reset request found or it has expired." });
+        }
+
+        if (user.resetPasswordExpire < Date.now()) {
+            return res.status(400).json({ error: "Reset code has expired. Please request a new one." });
+        }
+
+        const isCodeValid = await bcrypt.compare(code, user.resetPasswordToken);
+
+        if (!isCodeValid) {
+            return res.status(400).json({ error: "Invalid reset code." });
+        }
+
+        // Code is valid, user can now proceed to reset password
+        // We don't clear the token here, it will be cleared after password reset
+        res.status(200).json({ message: "Code verified successfully. You can now reset your password." });
+
+    } catch (error) {
+        console.error("Error in verifyResetCode controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles resetting the password
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+
+        if (!email || !code || !newPassword) {
+            return res.status(400).json({ error: "Email, code, and new password are required" });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+         if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (!user.resetPasswordToken || !user.resetPasswordExpire) {
+             return res.status(400).json({ error: "No reset request found or it has expired." });
+        }
+
+        if (user.resetPasswordExpire < Date.now()) {
+            return res.status(400).json({ error: "Reset code has expired. Please request a new one." });
+        }
+
+        const isCodeValid = await bcrypt.compare(code, user.resetPasswordToken);
+
+        if (!isCodeValid) {
+            return res.status(400).json({ error: "Invalid reset code." });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ error: "Password must be at least 6 characters long" });
+        }
+
+        // Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+
+        // Clear the reset token fields
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+
+        await user.save();
+
+        res.status(200).json({ message: "Password reset successfully." });
+
+    } catch (error) {
+        console.error("Error in resetPassword controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+
 // Handles user logout
 export const logout = async (req, res) => {
     try {

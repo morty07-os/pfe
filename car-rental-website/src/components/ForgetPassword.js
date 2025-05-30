@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -9,25 +9,28 @@ import {
   Box,
   Typography,
   IconButton,
-  CircularProgress,
-  Alert,
   useTheme,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
+import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
+
+const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com'; // Assuming a similar API URL structure
 
 const ForgetPassword = ({ open, onClose }) => {
   const theme = useTheme();
-  const [step, setStep] = useState(1); // 1: Enter Email, 2: Enter Code, 3: Set New Password, 4: Success
+  const [step, setStep] = useState(1); // 1: Enter Email, 2: Enter Code, 3: Enter New Password, 4: Success/Error
   const [email, setEmail] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
+  const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState({ text: '', type: '' }); // Use object for message
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0); // Add resend cooldown state
 
+  // Effect for resend cooldown timer
   useEffect(() => {
     let timer;
     if (resendCooldown > 0) {
@@ -38,271 +41,295 @@ const ForgetPassword = ({ open, onClose }) => {
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
-  const handleSendCode = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage({ type: '', text: '' });
-    // Placeholder for sending verification code
-    console.log(`Sending verification code to: ${email}`);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    setLoading(false);
-    setMessage({ type: 'success', text: 'Verification code sent. Check your email.' });
-    setStep(2);
-    setResendCooldown(60); // Start cooldown for resend
-  };
 
-  const handleVerifyCode = async (e) => {
-    e.preventDefault();
+  const handleSendCode = async () => {
+    setMessage({ text: '', type: '' });
     setLoading(true);
-    setMessage({ type: '', text: '' });
-    // Placeholder for verifying code
-    console.log(`Verifying code: ${verificationCode} for email: ${email}`);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    setLoading(false);
-    // Simulate successful verification
-    if (verificationCode === '123456') { // Use a dummy code for testing
-      setMessage({ type: 'success', text: 'Code verified. Set your new password.' });
-      setStep(3);
-    } else {
-      setMessage({ type: 'error', text: 'Invalid verification code.' });
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          text: data.message || 'Password reset code sent to your email.',
+          type: 'success',
+        });
+        setStep(2); // Move to the next step
+      } else {
+        setMessage({
+          text: data.error || 'Failed to send reset code. Please try again.',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error sending reset code:', error);
+      setMessage({
+        text: 'An error occurred. Please try again later.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSetNewPassword = async (e) => {
-    e.preventDefault();
+  const handleVerifyCode = async () => {
+    setMessage({ text: '', type: '' });
     setLoading(true);
-    setMessage({ type: '', text: '' });
-    if (newPassword !== confirmPassword) {
-      setMessage({ type: 'error', text: 'Passwords do not match.' });
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/verify-reset-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          text: data.message || 'Code verified. Please enter your new password.',
+          type: 'success',
+        });
+        setStep(3); // Move to the next step
+      } else {
+        setMessage({
+          text: data.error || 'Invalid or expired code. Please try again.',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying code:', error);
+      setMessage({
+        text: 'An error occurred. Please try again later.',
+        type: 'error',
+      });
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setMessage({ text: 'Passwords do not match.', type: 'error' });
       return;
     }
-    // Placeholder for sending new password to backend
-    console.log(`Setting new password for ${email}: ${newPassword}`);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    setLoading(false);
-    setMessage({ type: 'success', text: 'Password reset successfully.' });
-    setStep(4);
-    setTimeout(() => {
-      onClose(); // Close modal after a delay
-    }, 2000);
-  };
-
-  const handleResendCode = async () => {
+    setMessage({ text: '', type: '' });
     setLoading(true);
-    setMessage({ type: '', text: '' });
-    setResendCooldown(60);
-    // Placeholder for resending verification code
-    console.log(`Resending verification code to: ${email}`);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    setLoading(false);
-    setMessage({ type: 'success', text: 'Verification code resent.' });
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code, newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          text: data.message || 'Password reset successfully.',
+          type: 'success',
+        });
+        setStep(4); // Move to the success step
+      } else {
+        setMessage({
+          text: data.error || 'Failed to reset password. Please try again.',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      setMessage({
+        text: 'An error occurred. Please try again later.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderStepContent = () => {
     switch (step) {
       case 1:
         return (
-          <Box component="form" onSubmit={handleSendCode} sx={{ width: '100%', mt: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <TextField
-              margin="normal"
               required
               fullWidth
-              id="email"
-              label="Enter your email"
+              label="Email"
               name="email"
               type="email"
-              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&:hover fieldset': { borderColor: '#94a3b8' },
-                  '&.Mui-focused fieldset': { borderColor: '#475569' },
-                },
-              }}
+              variant="outlined"
               InputProps={{
                 startAdornment: (
-                  <EmailIcon sx={{ color: '#64748b' }} />
+                  <IconButton position="start" edge="start" disabled>
+                    <EmailIcon />
+                  </IconButton>
                 ),
               }}
             />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{
-                mt: 3,
-                mb: 2,
-                bgcolor: '#475569',
-                color: 'white',
-                py: 1.5,
-                fontSize: '1rem',
-                textTransform: 'none',
-                '&:hover': { bgcolor: '#334155' },
-              }}
-              disabled={loading || !email}
-            >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Send Verification Code'}
-            </Button>
+            {message.text && <Alert severity={message.type}>{message.text}</Alert>}
           </Box>
         );
       case 2:
         return (
-          <Box component="form" onSubmit={handleVerifyCode} sx={{ width: '100%', mt: 1 }}>
-             <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
-                A 6-digit verification code has been sent to <br />
-                <Typography component="span" sx={{ fontWeight: 'bold', color: '#475569' }}>{email}</Typography>.
-                Please enter it below.
-              </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography variant="body1">Enter the verification code sent to {email}.</Typography>
             <TextField
-              margin="normal"
               required
               fullWidth
-              id="verificationCode"
               label="Verification Code"
-              name="verificationCode"
-              autoComplete="off"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value)}
-              inputProps={{ maxLength: 6 }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&:hover fieldset': { borderColor: '#94a3b8' },
-                  '&.Mui-focused fieldset': { borderColor: '#475569' },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <LockIcon sx={{ color: '#64748b' }} />
-                ),
-              }}
+              name="code"
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              variant="outlined"
             />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{
-                mt: 3,
-                mb: 2,
-                bgcolor: '#475569',
-                color: 'white',
-                py: 1.5,
-                fontSize: '1rem',
-                textTransform: 'none',
-                '&:hover': { bgcolor: '#334155' },
-              }}
-              disabled={loading || !verificationCode}
-            >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify Code'}
-            </Button>
-             <Button
-                fullWidth
-                variant="outlined"
-                sx={{
-                  mt: 1,
-                  color: '#475569',
-                  borderColor: '#475569',
-                  py: 1.5,
-                  fontSize: '1rem',
-                  textTransform: 'none',
-                  '&:hover': {
-                    bgcolor: 'rgba(71, 85, 105, 0.04)',
-                    borderColor: '#334155',
-                  },
-                }}
-                onClick={handleResendCode}
-                disabled={loading || resendCooldown > 0}
-              >
-                {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
-              </Button>
+            {message.text && <Alert severity={message.type}>{message.text}</Alert>}
           </Box>
         );
       case 3:
         return (
-          <Box component="form" onSubmit={handleSetNewPassword} sx={{ width: '100%', mt: 1 }}>
-             <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
-                Enter your new password.
-              </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography variant="body1">Enter your new password.</Typography>
             <TextField
-              margin="normal"
               required
               fullWidth
-              id="newPassword"
               label="New Password"
               name="newPassword"
               type="password"
-              autoComplete="new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&:hover fieldset': { borderColor: '#94a3b8' },
-                  '&.Mui-focused fieldset': { borderColor: '#475569' },
-                },
-              }}
+              variant="outlined"
               InputProps={{
                 startAdornment: (
-                  <LockIcon sx={{ color: '#64748b' }} />
+                  <IconButton position="start" edge="start" disabled>
+                    <LockIcon />
+                  </IconButton>
                 ),
               }}
             />
              <TextField
-              margin="normal"
               required
               fullWidth
-              id="confirmPassword"
               label="Confirm New Password"
               name="confirmPassword"
               type="password"
-              autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&:hover fieldset': { borderColor: '#94a3b8' },
-                  '&.Mui-focused fieldset': { borderColor: '#475569' },
-                },
-              }}
-               InputProps={{
+              variant="outlined"
+              InputProps={{
                 startAdornment: (
-                  <LockIcon sx={{ color: '#64748b' }} />
+                  <IconButton position="start" edge="start" disabled>
+                    <LockIcon />
+                  </IconButton>
                 ),
               }}
             />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{
-                mt: 3,
-                mb: 2,
-                bgcolor: '#475569',
-                color: 'white',
-                py: 1.5,
-                fontSize: '1rem',
-                textTransform: 'none',
-                '&:hover': { bgcolor: '#334155' },
-              }}
-              disabled={loading || !newPassword || !confirmPassword}
-            >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Set New Password'}
-            </Button>
+            {message.text && <Alert severity={message.type}>{message.text}</Alert>}
           </Box>
         );
       case 4:
         return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mt: 2 }}>
-            <Typography variant="h6" color="success.main" align="center">
-              Success!
-            </Typography>
-            <Typography variant="body1" color="text.secondary" align="center">
-              Your password has been reset. You can now sign in with your new password.
-            </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography variant="body1">{message.text}</Typography>
+             {message.text && <Alert severity={message.type}>{message.text}</Alert>}
           </Box>
         );
       default:
         return null;
+    }
+  };
+
+  const renderDialogActions = () => {
+    switch (step) {
+      case 1:
+        return (
+          <Button onClick={handleSendCode} color="primary" disabled={!email || loading}>
+            {loading ? 'Sending...' : 'Send Code'}
+          </Button>
+        );
+      case 2:
+        return (
+          <>
+            <Button
+              onClick={handleResendCode}
+              color="secondary"
+              disabled={loading || resendCooldown > 0}
+            >
+              {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
+            </Button>
+            <Button onClick={handleVerifyCode} color="primary" disabled={!code || loading}>
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify Code'}
+            </Button>
+          </>
+        );
+      case 3:
+        return (
+          <Button onClick={handleResetPassword} color="primary" disabled={!newPassword || !confirmPassword || loading}>
+             {loading ? <CircularProgress size={24} color="inherit" /> : 'Reset Password'}
+          </Button>
+        );
+      case 4:
+        return (
+          <Button onClick={onClose} color="primary">
+            Close
+          </Button>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const handleResendCode = async () => {
+    setMessage({ text: '', type: '' });
+    setLoading(true);
+    setResendCooldown(60); // Start cooldown
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/forgot-password`, { // Use forgot-password endpoint to resend
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          text: data.message || 'New password reset code sent to your email.',
+          type: 'success',
+        });
+      } else {
+        setMessage({
+          text: data.error || 'Failed to resend code. Please try again.',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error resending code:', error);
+      setMessage({
+        text: 'An error occurred. Please try again later.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -337,13 +364,6 @@ const ForgetPassword = ({ open, onClose }) => {
         }}>
           Forgot Password
         </Typography>
-        <Typography variant="body2" sx={{
-          opacity: 0.9,
-          fontSize: '0.95rem',
-          color: '#e2e8f0'
-        }}>
-          Reset your password in a few steps
-        </Typography>
         <IconButton
           onClick={onClose}
           size="small"
@@ -366,21 +386,20 @@ const ForgetPassword = ({ open, onClose }) => {
 
       <DialogContent sx={{
         p: 4,
-        backgroundColor: '#f8fafc',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 2,
+        backgroundColor: '#f8fafc'
       }}>
-         {message.text && (
-          <Alert severity={message.type} sx={{ width: '100%' }}>
-            {message.text}
-          </Alert>
-        )}
         {renderStepContent()}
       </DialogContent>
 
-      {/* No DialogActions needed for this flow */}
+      <DialogActions sx={{
+        justifyContent: 'flex-end',
+        p: 3,
+        pt: 2,
+        borderTop: '1px solid #e2e8f0',
+        backgroundColor: '#f8fafc'
+      }}>
+        {renderDialogActions()}
+      </DialogActions>
     </Dialog>
   );
 };
