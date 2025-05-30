@@ -568,7 +568,7 @@ export default function CarDetailsPage() {
                           >
                             <CardMedia
                               component="img"
-                              image={`${apiUrl}/${img}`}
+                              image={img || '/placeholder.jpg'}
                               alt={`Car image ${index + 1}`}
                               sx={{
                                 width: 70,
@@ -586,9 +586,9 @@ export default function CarDetailsPage() {
                       </Box>
                     )}
                     
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
+                    <Box sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
                       mt: 3,
                       p: { xs: 2, sm: 3 },
