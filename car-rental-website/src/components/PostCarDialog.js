@@ -576,34 +576,9 @@ function PostCarDialog({ open, onClose }) {
     }
   };
 
-  const uploadImageToCloudinary = async (imageFile) => {
-    const formData = new FormData();
-    formData.append('file', imageFile);
-    // Replace 'your_unsigned_upload_preset_name' with the actual name of your unsigned upload preset in Cloudinary.
-    // You can find this in your Cloudinary dashboard under Settings -> Upload -> Upload presets.
-    formData.append('upload_preset', 'unsigned_preset'); 
-    formData.append('cloud_name', 'dtob4ibrg'); // Replace with your Cloudinary cloud name
-
-    try {
-      const response = await fetch(`https://api.cloudinary.com/v1_1/dtob4ibrg/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      if (response.ok) {
-        return data.secure_url;
-      } else {
-        throw new Error(data.error.message || 'Cloudinary upload failed');
-      }
-    } catch (error) {
-      console.error('Error uploading to Cloudinary:', error);
-      throw error;
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Check if location is set
     if (!formData.location) {
       setSnackbar({
@@ -613,7 +588,7 @@ function PostCarDialog({ open, onClose }) {
       });
       return;
     }
-    
+
     try {
       // Check for token again before submitting
       if (!token) {
@@ -633,58 +608,55 @@ function PostCarDialog({ open, onClose }) {
         onClose();
         return;
       }
-      
+
       // Validate availability dates
       if (formData.availabilityStart && formData.availabilityEnd) {
         const startDate = new Date(formData.availabilityStart);
         const endDate = new Date(formData.availabilityEnd);
-        
+
         if (startDate >= endDate) {
-          setSnackbar({ 
-            open: true, 
-            message: 'End date must be after start date.', 
-            severity: 'error' 
+          setSnackbar({
+            open: true,
+            message: 'End date must be after start date.',
+            severity: 'error'
           });
           return;
         }
       }
 
-      // Upload images to Cloudinary
-      const imageUrls = [];
-      for (const imageFile of formData.images) {
-        const url = await uploadImageToCloudinary(imageFile);
-        imageUrls.push(url);
-      }
+      // Prepare data to send to backend using FormData for file uploads
+      const dataToSend = new FormData();
+      dataToSend.append('carName', formData.carName);
+      dataToSend.append('brand', formData.brand);
+      dataToSend.append('wilaya', formData.wilaya);
+      dataToSend.append('description', formData.description);
+      dataToSend.append('energy', formData.energy);
+      dataToSend.append('seats', formData.seats);
+      dataToSend.append('doors', formData.doors);
+      dataToSend.append('transmission', formData.transmission);
+      dataToSend.append('mileage', formData.mileage);
+      dataToSend.append('engine', formData.engine);
+      dataToSend.append('availabilityStart', formData.availabilityStart);
+      dataToSend.append('availabilityEnd', formData.availabilityEnd);
+      dataToSend.append('price', formData.price);
+      dataToSend.append('carType', formData.carType);
+      dataToSend.append('location[lat]', formData.location.lat);
+      dataToSend.append('location[lng]', formData.location.lng);
 
-      // Prepare data to send to backend
-      const dataToSend = {
-        carName: formData.carName,
-        brand: formData.brand,
-        wilaya: formData.wilaya,
-        description: formData.description,
-        energy: formData.energy,
-        seats: formData.seats,
-        doors: formData.doors,
-        transmission: formData.transmission,
-        mileage: formData.mileage,
-        engine: formData.engine,
-        availabilityStart: formData.availabilityStart,
-        availabilityEnd: formData.availabilityEnd,
-        price: formData.price,
-        carType: formData.carType,
-        location: formData.location,
-        images: imageUrls, // Send Cloudinary URLs
-      };
+      // Append each image file
+      formData.images.forEach((imageFile) => {
+        dataToSend.append('images', imageFile);
+      });
 
       // Use environment variable for API URL
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/cars/addcars`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json', // Send as JSON
           'Authorization': `Bearer ${token}`
+          // Do NOT set Content-Type for FormData, fetch does it automatically
         },
-        body: JSON.stringify(dataToSend), // Send as JSON
+        body: dataToSend, // Send FormData
       });
 
       if (!response.ok) {
