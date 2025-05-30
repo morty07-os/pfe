@@ -10,11 +10,13 @@ export const createCar = async (req, res) => {
         }
 
         console.log("Request body:", req.body); // Log request body
+        console.log("Request body images:", req.body.images); // Log images from request body
 
-        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType, images, location: locationData } = req.body;
+        const { carName, brand, wilaya, description, energy, seats, doors, transmission, mileage, engine, availabilityStart, availabilityEnd, price, carType, location: locationData } = req.body;
+        const images = req.body.images; // Explicitly access images from req.body
 
-        if (!images || images.length === 0) {
-            return res.status(400).json({ error: 'No images provided' });
+        if (!images || !Array.isArray(images) || images.length === 0) {
+            return res.status(400).json({ error: 'No images provided or invalid format' });
         }
 
         // Parse location if it's a string
