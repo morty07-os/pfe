@@ -14,6 +14,10 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
+import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
+
+const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com'; // Assuming a similar API URL structure
 
 const ForgetPassword = ({ open, onClose }) => {
   const theme = useTheme();
@@ -22,47 +26,138 @@ const ForgetPassword = ({ open, onClose }) => {
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState({ text: '', type: '' }); // Use object for message
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0); // Add resend cooldown state
+
+  // Effect for resend cooldown timer
+  useEffect(() => {
+    let timer;
+    if (resendCooldown > 0) {
+      timer = setTimeout(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
 
   const handleSendCode = async () => {
-    setMessage('');
+    setMessage({ text: '', type: '' });
     setLoading(true);
-    // Placeholder for sending verification code API call
-    console.log(`Sending code to ${email}`);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call delay
-    setLoading(false);
-    // Assume success for now
-    setStep(2);
-    setMessage('Verification code sent to your email.');
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          text: data.message || 'Password reset code sent to your email.',
+          type: 'success',
+        });
+        setStep(2); // Move to the next step
+      } else {
+        setMessage({
+          text: data.error || 'Failed to send reset code. Please try again.',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error sending reset code:', error);
+      setMessage({
+        text: 'An error occurred. Please try again later.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyCode = async () => {
-    setMessage('');
+    setMessage({ text: '', type: '' });
     setLoading(true);
-    // Placeholder for verifying verification code API call
-    console.log(`Verifying code ${code} for ${email}`);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call delay
-    setLoading(false);
-    // Assume success for now
-    setStep(3);
-    setMessage('Code verified. Please enter your new password.');
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/verify-reset-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          text: data.message || 'Code verified. Please enter your new password.',
+          type: 'success',
+        });
+        setStep(3); // Move to the next step
+      } else {
+        setMessage({
+          text: data.error || 'Invalid or expired code. Please try again.',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying code:', error);
+      setMessage({
+        text: 'An error occurred. Please try again later.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResetPassword = async () => {
     if (newPassword !== confirmPassword) {
-      setMessage('Passwords do not match.');
+      setMessage({ text: 'Passwords do not match.', type: 'error' });
       return;
     }
-    setMessage('');
+    setMessage({ text: '', type: '' });
     setLoading(true);
-    // Placeholder for resetting password API call
-    console.log(`Resetting password for ${email} with new password`);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call delay
-    setLoading(false);
-    // Assume success for now
-    setStep(4);
-    setMessage('Your password has been reset successfully.');
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code, newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          text: data.message || 'Password reset successfully.',
+          type: 'success',
+        });
+        setStep(4); // Move to the success step
+      } else {
+        setMessage({
+          text: data.error || 'Failed to reset password. Please try again.',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      setMessage({
+        text: 'An error occurred. Please try again later.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderStepContent = () => {
@@ -87,7 +182,7 @@ const ForgetPassword = ({ open, onClose }) => {
                 ),
               }}
             />
-            {message && <Typography variant="body2" color="error">{message}</Typography>}
+            {message.text && <Alert severity={message.type}>{message.text}</Alert>}
           </Box>
         );
       case 2:
@@ -104,7 +199,7 @@ const ForgetPassword = ({ open, onClose }) => {
               onChange={(e) => setCode(e.target.value)}
               variant="outlined"
             />
-            {message && <Typography variant="body2" color="error">{message}</Typography>}
+            {message.text && <Alert severity={message.type}>{message.text}</Alert>}
           </Box>
         );
       case 3:
@@ -145,13 +240,14 @@ const ForgetPassword = ({ open, onClose }) => {
                 ),
               }}
             />
-            {message && <Typography variant="body2" color="error">{message}</Typography>}
+            {message.text && <Alert severity={message.type}>{message.text}</Alert>}
           </Box>
         );
       case 4:
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Typography variant="body1">{message}</Typography>
+            <Typography variant="body1">{message.text}</Typography>
+             {message.text && <Alert severity={message.type}>{message.text}</Alert>}
           </Box>
         );
       default:
@@ -169,14 +265,23 @@ const ForgetPassword = ({ open, onClose }) => {
         );
       case 2:
         return (
-          <Button onClick={handleVerifyCode} color="primary" disabled={!code || loading}>
-             {loading ? 'Verifying...' : 'Verify Code'}
-          </Button>
+          <>
+            <Button
+              onClick={handleResendCode}
+              color="secondary"
+              disabled={loading || resendCooldown > 0}
+            >
+              {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
+            </Button>
+            <Button onClick={handleVerifyCode} color="primary" disabled={!code || loading}>
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify Code'}
+            </Button>
+          </>
         );
       case 3:
         return (
           <Button onClick={handleResetPassword} color="primary" disabled={!newPassword || !confirmPassword || loading}>
-             {loading ? 'Resetting...' : 'Reset Password'}
+             {loading ? <CircularProgress size={24} color="inherit" /> : 'Reset Password'}
           </Button>
         );
       case 4:
@@ -187,6 +292,44 @@ const ForgetPassword = ({ open, onClose }) => {
         );
       default:
         return null;
+    }
+  };
+
+  const handleResendCode = async () => {
+    setMessage({ text: '', type: '' });
+    setLoading(true);
+    setResendCooldown(60); // Start cooldown
+
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/forgot-password`, { // Use forgot-password endpoint to resend
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({
+          text: data.message || 'New password reset code sent to your email.',
+          type: 'success',
+        });
+      } else {
+        setMessage({
+          text: data.error || 'Failed to resend code. Please try again.',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error resending code:', error);
+      setMessage({
+        text: 'An error occurred. Please try again later.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
