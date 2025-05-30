@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword } from "../controllers/auth.controller.js";
+import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 
@@ -53,11 +53,6 @@ router.post("/logout", logout);
 router.post("/refresh-token", refreshToken);
 router.post("/verify-email", verifyEmail);
 router.post("/resend-verification-code", resendVerificationCode);
-
-// Forgot password routes
-router.post("/forgot-password", forgotPassword); // Request password reset (send code)
-router.post("/verify-reset-code", verifyResetCode); // Verify reset code
-router.post("/reset-password", resetPassword); // Reset password
 
 // Car routes
 router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload
