@@ -18,7 +18,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import { useNavigate } from 'react-router-dom';
-import ForgetPasswordDialog from './ForgetPasswordDialog';
+import ForgotPasswordDialog from './ForgotPasswordDialog';
 import { endpoints, fetchOptions } from '../utils/apiConfig';
 
 const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
@@ -351,9 +351,13 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
         </DialogActions>
       </form>
 
-      <ForgetPasswordDialog
+      <ForgotPasswordDialog
         open={showForgotPassword}
         onClose={() => setShowForgotPassword(false)}
+        onSwitchToSignIn={() => {
+          setShowForgotPassword(false);
+          onClose();
+        }}
       />
     </Dialog>
   );
