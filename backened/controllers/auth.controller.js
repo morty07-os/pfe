@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import sendVerificationEmail from '../utils/email.utils.js';
+import sendEmail from '../utils/email.utils.js'; // Renamed import for clarity
 
 
 
@@ -71,7 +71,17 @@ export const signup = async (req, res) => {
 
         // Send verification email
         try {
-            await sendVerificationEmail(newUser.email, verificationCode);
+            await sendEmail(newUser.email, 'Email Verification', `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2 style="color: #475569;">Email Verification</h2>
+                    <p>Thank you for signing up for the Car Rental Website!</p>
+                    <p>Please use the following 6-digit code to verify your email address:</p>
+                    <h3 style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; display: inline-block; letter-spacing: 2px;">${verificationCode}</h3>
+                    <p>This code is valid for 10 minutes.</p>
+                    <p>If you did not sign up for this service, please ignore this email.</p>
+                    <p>Best regards,<br>The Car Rental Team</p>
+                </div>
+            `);
             console.log("Verification email sent successfully");
         } catch (emailError) {
             console.error("Error sending verification email:", emailError);
@@ -88,6 +98,164 @@ export const signup = async (req, res) => {
             error: "Server error",
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
+    }
+};
+
+// Handles requesting a password reset code
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: "Email is required" });
+        }
+
+        console.log(`Forgot password request for email: ${email}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Generate 6-digit reset code
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedResetCode = await bcrypt.hash(resetCode, 10);
+
+        // Set expiration time for the reset code (e.g., 15 minutes)
+        const resetCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+        user.resetPasswordToken = hashedResetCode;
+        user.resetPasswordExpire = resetCodeExpires;
+        await user.save();
+        console.log(`Password reset code generated for user: ${user._id}`);
+
+        // Send password reset email
+        try {
+            await sendEmail(user.email, 'Password Reset Request', `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2 style="color: #475569;">Password Reset Request</h2>
+                    <p>You have requested to reset the password for your Car Rental Website account.</p>
+                    <p>Please use the following 6-digit code to reset your password:</p>
+                    <h3 style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; display: inline-block; letter-spacing: 2px;">${resetCode}</h3>
+                    <p>This code is valid for 15 minutes.</p>
+                    <p>If you did not request a password reset, please ignore this email.</p>
+                    <p>Best regards,<br>The Car Rental Team</p>
+                </div>
+            `);
+            console.log(`Password reset email sent to: ${user.email}`);
+        } catch (emailError) {
+            console.error(`Error sending password reset email: ${emailError.message}`);
+            // Don't fail the request if email fails, just log it and inform the user
+            return res.status(500).json({ error: "Failed to send password reset email. Please try again later." });
+        }
+
+        res.status(200).json({ message: "Password reset code sent to your email." });
+    } catch (error) {
+        console.error("Error in forgotPassword controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles verifying the password reset code
+export const verifyResetCode = async (req, res) => {
+    try {
+        const { email, verificationCode } = req.body;
+
+        if (!email || !verificationCode) {
+            return res.status(400).json({ error: "Email and verification code are required" });
+        }
+
+        console.log(`Verify reset code attempt for email: ${email} with code: ${verificationCode}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (!user.resetPasswordToken || !user.resetPasswordExpire) {
+            console.log(`No reset token found for user: ${user._id}`);
+            return res.status(400).json({ error: "No reset code found or it has expired. Please request a new one." });
+        }
+
+        if (user.resetPasswordExpire < Date.now()) {
+            console.log(`Reset token expired for user: ${user._id}`);
+            // Clear expired token fields
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpire = undefined;
+            await user.save();
+            return res.status(400).json({ error: "Reset code has expired. Please request a new one." });
+        }
+
+        const isCodeValid = await bcrypt.compare(verificationCode, user.resetPasswordToken);
+
+        if (!isCodeValid) {
+            console.log(`Invalid reset code for user: ${user._id}`);
+            return res.status(400).json({ error: "Invalid reset code" });
+        }
+
+        // Code is valid, proceed to password reset step (frontend handles this state change)
+        // We don't clear the token here, it's needed for the actual password reset
+        res.status(200).json({ message: "Code verified successfully. You can now reset your password." });
+    } catch (error) {
+        console.error("Error in verifyResetCode controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles resetting the password
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, verificationCode, newPassword } = req.body;
+
+        if (!email || !verificationCode || !newPassword) {
+            return res.status(400).json({ error: "Email, verification code, and new password are required" });
+        }
+
+        console.log(`Reset password attempt for email: ${email}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (!user.resetPasswordToken || !user.resetPasswordExpire) {
+            console.log(`No reset token found for user: ${user._id}`);
+            return res.status(400).json({ error: "No reset code found or it has expired. Please request a new one." });
+        }
+
+        if (user.resetPasswordExpire < Date.now()) {
+            console.log(`Reset token expired for user: ${user._id}`);
+            // Clear expired token fields
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpire = undefined;
+            await user.save();
+            return res.status(400).json({ error: "Reset code has expired. Please request a new one." });
+        }
+
+        const isCodeValid = await bcrypt.compare(verificationCode, user.resetPasswordToken);
+
+        if (!isCodeValid) {
+            console.log(`Invalid reset code for user: ${user._id}`);
+            return res.status(400).json({ error: "Invalid reset code" });
+        }
+
+        // Code is valid and not expired, reset the password
+        user.password = newPassword; // The pre-save hook will hash this
+        user.resetPasswordToken = undefined; // Clear reset token fields
+        user.resetPasswordExpire = undefined;
+        await user.save();
+        console.log(`Password reset successfully for user: ${user._id}`);
+
+        res.status(200).json({ message: "Password reset successfully. You can now log in." });
+    } catch (error) {
+        console.error("Error in resetPassword controller:", error.message);
+        res.status(500).json({ error: "Server error" });
     }
 };
 
@@ -299,7 +467,17 @@ export const resendVerificationCode = async (req, res) => {
 
         // Send the new verification email
         try {
-            await sendVerificationEmail(user.email, newVerificationCode);
+             await sendEmail(user.email, 'Email Verification', `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2 style="color: #475569;">Email Verification</h2>
+                    <p>You requested a new verification code for your Car Rental Website account.</p>
+                    <p>Please use the following 6-digit code to verify your email address:</p>
+                    <h3 style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; display: inline-block; letter-spacing: 2px;">${newVerificationCode}</h3>
+                    <p>This code is valid for 10 minutes.</p>
+                    <p>If you did not request this, please ignore this email.</p>
+                    <p>Best regards,<br>The Car Rental Team</p>
+                </div>
+            `);
             console.log(`Verification email sent to: ${user.email}`);
         } catch (emailError) {
             console.error(`Error sending verification email: ${emailError.message}`);

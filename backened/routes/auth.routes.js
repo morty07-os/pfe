@@ -54,6 +54,11 @@ router.post("/refresh-token", refreshToken);
 router.post("/verify-email", verifyEmail);
 router.post("/resend-verification-code", resendVerificationCode);
 
+// Forgot Password routes
+router.post("/forgot-password", forgotPassword); // New route to request reset code
+router.post("/verify-reset-code", verifyResetCode); // New route to verify reset code
+router.post("/reset-password", resetPassword); // New route to reset password
+
 // Car routes
 router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload
 router.get("/listcars", ProtectedRoute, getCars); // Get a list of cars
