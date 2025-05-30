@@ -637,7 +637,7 @@ const ProfilePage = () => {
                                     }}
                                   />
                                   <Chip
-                                    label={`€${car.price}/day`}
+                                    label={`DZD${car.price}/day`}
                                     size="small"
                                     sx={{
                                       bgcolor: '#f1f5f9',
@@ -887,7 +887,7 @@ const ProfilePage = () => {
                                     }}
                                   />
                                   <Chip
-                                    label={`€${car.price}/day`}
+                                    label={`DZD${car.price}/day`}
                                     size="small"
                                     sx={{
                                       bgcolor: '#f1f5f9',

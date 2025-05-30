@@ -598,16 +598,16 @@ export default function CarDetailsPage() {
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AttachMoneyIcon sx={{ color: '#1e293b', fontSize: { xs: 24, sm: 28 } }} />
-                        <Typography
-                          variant="h5"
-                          sx={{
-                            fontWeight: 800,
-                            color: '#1e293b',
-                            fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                          }}
-                        >
-                          €{car.price}/day
-                        </Typography>
+                          <Typography
+                            variant="h5"
+                            sx={{
+                              fontWeight: 800,
+                              color: '#1e293b',
+                              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                            }}
+                          >
+                            DZD{car.price}/day
+                          </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', gap: 2 }}>
                         <Tooltip 
