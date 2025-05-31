@@ -81,12 +81,22 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       localStorage.setItem('token', result.token);
       localStorage.setItem('userId', result.user._id);
       localStorage.setItem('userEmail', result.user.email);
-      onClose();
-      const userName = result.user?.firstName || 'User';
-      if (onSuccess) {
-        onSuccess(userName);
+
+      // Check user role and redirect
+      if (result.user.role === 'admin') {
+        console.log("Admin login successful, redirecting to admin page");
+        onClose(); // Close the sign-in dialog
+        navigate('/admin'); // Redirect to the admin page
+      } else {
+        console.log("User login successful, proceeding with normal flow");
+        onClose(); // Close the sign-in dialog
+        const userName = result.user?.firstName || 'User';
+        if (onSuccess) {
+          onSuccess(userName);
+        }
+        window.dispatchEvent(new Event('loginStateChanged'));
       }
-      window.dispatchEvent(new Event('loginStateChanged'));
+
     } catch (error) {
       setMessage(error.message || 'Sign in failed');
       console.error("Error during sign in:", error);

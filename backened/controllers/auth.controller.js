@@ -335,6 +335,7 @@ export const login = async (req, res) => {
             phone: user.phone,
             residence: user.residence,
             isVerified: user.isVerified,
+            role: user.role, // Include the user's role
             createdAt: user.createdAt
         };
 
