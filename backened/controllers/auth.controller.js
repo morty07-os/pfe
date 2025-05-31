@@ -65,7 +65,6 @@ export const signup = async (req, res) => {
             verificationToken: hashedVerificationCode,
             verificationTokenExpires: verificationCodeExpires,
             isVerified: false,
-            isApproved: false,
         });
 
         await newUser.save();
@@ -169,7 +168,7 @@ export const verifyResetCode = async (req, res) => {
             return res.status(400).json({ error: "Email and verification code are required" });
         }
 
-        console.log(`Verification attempt for email: ${email} with code: ${verificationCode}`);
+        console.log(`Verify reset code attempt for email: ${email} with code: ${verificationCode}`);
 
         const user = await User.findOne({ email: email.toLowerCase() });
 
@@ -195,8 +194,8 @@ export const verifyResetCode = async (req, res) => {
         const isCodeValid = await bcrypt.compare(verificationCode, user.resetPasswordToken);
 
         if (!isCodeValid) {
-            console.log(`Invalid verification code for user: ${user._id}`);
-            return res.status(400).json({ error: "Invalid verification code" });
+            console.log(`Invalid reset code for user: ${user._id}`);
+            return res.status(400).json({ error: "Invalid reset code" });
         }
 
         // Code is valid, proceed to password reset step (frontend handles this state change)
@@ -294,16 +293,6 @@ export const login = async (req, res) => {
             return res.status(403).json({ 
                 error: 'Email not verified', 
                 needsVerification: true,
-                email: user.email
-            });
-        }
-
-        // Check if user is approved by admin
-        if (!user.isApproved) {
-            console.log('User not approved by admin:', email);
-            return res.status(403).json({
-                error: 'Account pending admin approval',
-                needsApproval: true,
                 email: user.email
             });
         }
@@ -727,64 +716,6 @@ export const updateProfile = async (req, res) => {
 
     } catch (error) {
         console.error("Error in updateProfile controller:", error.message);
-        res.status(500).json({ error: "Server error" });
-    }
-};
-
-// Handles fetching users pending admin approval
-export const getPendingUsers = async (req, res) => {
-    try {
-        const pendingUsers = await User.find({ isApproved: false }).select("-password");
-        res.status(200).json(pendingUsers);
-    } catch (error) {
-        console.error("Error in getPendingUsers controller:", error.message);
-        res.status(500).json({ error: "Server error" });
-    }
-};
-
-// Handles approving a user
-export const approveUser = async (req, res) => {
-    try {
-        const { userId } = req.params;
-
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        user.isApproved = true;
-        await user.save();
-
-        res.status(200).json({ message: "User approved successfully", user });
-    } catch (error) {
-        console.error("Error in approveUser controller:", error.message);
-        res.status(500).json({ error: "Server error" });
-    }
-};
-
-// Handles refusing a user
-export const refuseUser = async (req, res) => {
-    try {
-        const { userId } = req.params;
-
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        // For now, we'll just mark them as not approved.
-        // A more robust solution might involve a separate 'status' field
-        // or deleting the user.
-        user.isApproved = false; 
-        // Optionally, add a 'status' field like 'refused'
-        // user.status = 'refused'; 
-        await user.save();
-
-        res.status(200).json({ message: "User refused successfully", user });
-    } catch (error) {
-        console.error("Error in refuseUser controller:", error.message);
         res.status(500).json({ error: "Server error" });
     }
 };
