@@ -274,6 +274,7 @@ export const login = async (req, res) => {
 
         // Find the user by email (case insensitive)
         const user = await User.findOne({ email: email.toLowerCase() });
+        console.log('User fetched from DB:', user ? user.email : 'null', 'Role:', user ? user.role : 'undefined'); // Log user and role after fetch
         if (!user) {
             console.log('User not found for email:', email);
             return res.status(401).json({ error: 'Invalid email or password' });
