@@ -297,25 +297,6 @@ export const login = async (req, res) => {
             });
         }
 
-        // Check user status
-        if (user.status === 'pending') {
-            console.log('User account pending approval:', email);
-            return res.status(403).json({
-                error: 'Account pending approval',
-                needsApproval: true,
-                email: user.email
-            });
-        }
-
-        if (user.status === 'rejected') {
-            console.log('User account rejected:', email);
-            return res.status(403).json({
-                error: 'Account rejected. Please contact support or sign up again.',
-                isRejected: true,
-                email: user.email
-            });
-        }
-
         // Generate token and set it in the cookie
         const token = generateTokenAndSetCookie(user._id, res);
         
@@ -414,19 +395,37 @@ export const verifyEmail = async (req, res) => {
         }
 
         // Update user verification status
-        // user.isVerified = true; // Keep isVerified for email status, but don't automatically approve
+        user.isVerified = true;
         user.verificationToken = undefined;
         user.verificationTokenExpires = undefined;
         
         await user.save();
-        console.log(`User ${user._id} email verified successfully. Status is now pending.`);
+        console.log(`User ${user._id} verified successfully`);
 
-        // Do not generate token or log in automatically after email verification.
-        // User must wait for admin approval.
+        // Generate token and set it in the cookie after successful verification
+        const token = generateTokenAndSetCookie(user._id, res);
+        
+        if (!token) {
+            console.error('Failed to generate token after email verification');
+            return res.status(500).json({ error: 'Failed to generate authentication token after verification' });
+        }
+
+        // Return complete user data (without sensitive information)
+        const userResponse = {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            residence: user.residence,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt
+        };
 
         res.status(200).json({
-            message: "Email verified successfully. Your account is now pending administrator approval.",
-            email: user.email // Optionally return email
+            message: "Email verified successfully. You are now logged in.",
+            token,
+            user: userResponse
         });
     } catch (error) {
         console.error("Error in verifyEmail controller:", error.message);
