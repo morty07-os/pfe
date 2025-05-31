@@ -685,16 +685,9 @@ export const updateProfile = async (req, res) => {
             }
             console.log("Current password validated for user:", userId);
 
-            try {
-                // Hash the new password
-                const salt = await bcrypt.genSalt(10);
-                const hashedPassword = await bcrypt.hash(newPassword, salt);
-                user.password = hashedPassword;
-                console.log("New password hashed and assigned for user:", userId);
-            } catch (hashError) {
-                console.error("Error hashing new password for user:", userId, hashError);
-                return res.status(500).json({ error: "Failed to process new password" });
-            }
+            // Assign the new password directly, relying on the pre-save hook to hash it
+            user.password = newPassword;
+            console.log("New password assigned for user:", userId + ". Relying on pre-save hook for hashing.");
         }
 
         try {
