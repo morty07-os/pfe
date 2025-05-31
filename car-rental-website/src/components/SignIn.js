@@ -61,27 +61,13 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       const result = await response.json();
 
       if (!response.ok) {
-        // Handle different error statuses from backend
-        if (response.status === 403) {
-          if (result.needsVerification) {
-            console.log("Email not verified, redirecting to verification page");
-            onClose();
-            navigate('/verify-email', { state: { email: result.email } });
-            return;
-          }
-          if (result.status === 'pending') {
-            console.log("Account pending approval, redirecting to pending page");
-            onClose();
-            navigate('/pending-approval');
-            return;
-          }
-          if (result.status === 'rejected') {
-            console.log("Account rejected, showing error message");
-            setMessage(result.error || 'Your account has been rejected.');
-            return;
-          }
+        // Special handling for unverified emails
+        if (response.status === 403 && result.needsVerification) {
+          console.log("Email not verified, redirecting to verification page");
+          onClose();
+          navigate('/verify-email', { state: { email: result.email } });
+          return;
         }
-        // Generic error for other cases
         throw new Error(result.error || 'Sign in failed');
       }
 
