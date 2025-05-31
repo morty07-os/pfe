@@ -685,9 +685,14 @@ export const updateProfile = async (req, res) => {
             }
             console.log("Current password validated for user:", userId);
 
-            // Assign the new password directly, relying on the pre-save hook to hash it
-            user.password = newPassword;
-            console.log("New password assigned for user:", userId + ". Relying on pre-save hook for hashing.");
+            try {
+                // Assign the new password (pre-save hook will hash it)
+                user.password = newPassword;
+                console.log("New password assigned for user:", userId);
+            } catch (assignError) {
+                console.error("Error assigning new password for user:", userId, assignError);
+                return res.status(500).json({ error: "Failed to process new password" });
+            }
         }
 
         try {
