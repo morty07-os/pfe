@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword, updateProfile } from "../controllers/auth.controller.js";
+import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword, updateProfile, getPendingUsers, updateUserStatus } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { adminAuth } from "../midleware/adminAuth.js"; // Import adminAuth middleware
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
@@ -70,10 +70,16 @@ router.get("/listcars", ProtectedRoute, getCars); // Get a list of cars
 router.put("/updatecars/:id", ProtectedRoute, updateCar); // Update car details
 router.delete("/deletecars/:id", ProtectedRoute, deleteCar); // Delete a car
 
-// Admin routes (placeholder)
+// Admin routes
 router.get("/admin/dashboard", ProtectedRoute(), adminAuth(), (req, res) => {
     res.status(200).json({ message: "Welcome to the admin dashboard!" });
 });
+
+// Route to get pending users
+router.get("/admin/pending-users", ProtectedRoute(), adminAuth(), getPendingUsers);
+
+// Route to update user status (approve/reject)
+router.put("/admin/users/:userId/status", ProtectedRoute(), adminAuth(), updateUserStatus);
 
 
 // Payment route

@@ -49,7 +49,7 @@ export const signup = async (req, res) => {
         const hashedVerificationCode = await bcrypt.hash(verificationCode, 10);
 
         // Set expiration time for the verification code (e.g., 10 minutes)
-        const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); 
+        const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
 
         // Create a new user with the plain password (it will be hashed by the pre-save hook)
         const newUser = new User({
@@ -95,7 +95,7 @@ export const signup = async (req, res) => {
         });
     } catch (error) {
         console.error("Error in signup controller:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Server error",
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
@@ -290,8 +290,8 @@ export const login = async (req, res) => {
         // Check if user is verified
         if (!user.isVerified) {
             console.log('User not verified:', email);
-            return res.status(403).json({ 
-                error: 'Email not verified', 
+            return res.status(403).json({
+                error: 'Email not verified',
                 needsVerification: true,
                 email: user.email
             });
@@ -299,7 +299,7 @@ export const login = async (req, res) => {
 
         // Generate token and set it in the cookie
         const token = generateTokenAndSetCookie(user._id, res);
-        
+
         if (!token) {
             console.error('Failed to generate token');
             return res.status(500).json({ error: 'Failed to generate authentication token' });
@@ -398,13 +398,13 @@ export const verifyEmail = async (req, res) => {
         user.isVerified = true;
         user.verificationToken = undefined;
         user.verificationTokenExpires = undefined;
-        
+
         await user.save();
         console.log(`User ${user._id} verified successfully`);
 
         // Generate token and set it in the cookie after successful verification
         const token = generateTokenAndSetCookie(user._id, res);
-        
+
         if (!token) {
             console.error('Failed to generate token after email verification');
             return res.status(500).json({ error: 'Failed to generate authentication token after verification' });
@@ -716,6 +716,66 @@ export const updateProfile = async (req, res) => {
 
     } catch (error) {
         console.error("Error in updateProfile controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Fetches users who are not yet verified (pending approval)
+export const getPendingUsers = async (req, res) => {
+    try {
+        // Find users who are not verified and have the 'user' role
+        const pendingUsers = await User.find({ isVerified: false, role: 'user' }).select("-password");
+
+        res.status(200).json(pendingUsers);
+    } catch (error) {
+        console.error("Error in getPendingUsers controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Updates user status (approve or reject)
+export const updateUserStatus = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { status } = req.body; // 'approve' or 'reject'
+
+        if (!status || (status !== 'approve' && status !== 'reject')) {
+            return res.status(400).json({ error: "Invalid status provided. Must be 'approve' or 'reject'." });
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (status === 'approve') {
+            if (user.isVerified) {
+                return res.status(400).json({ message: "User is already approved." });
+            }
+            user.isVerified = true;
+            await user.save();
+            // Optionally send an email notification to the user about approval
+            try {
+                await sendEmail(user.email, 'Account Approved', `Your account on the Car Rental Website has been approved. You can now log in.`);
+                console.log(`Approval email sent to: ${user.email}`);
+            } catch (emailError) {
+                console.error(`Error sending approval email: ${emailError.message}`);
+            }
+            res.status(200).json({ message: "User approved successfully." });
+        } else if (status === 'reject') {
+            // Optionally send an email notification to the user about rejection
+             try {
+                await sendEmail(user.email, 'Account Rejected', `Your account on the Car Rental Website could not be approved. Please review the requirements and try signing up again.`);
+                 console.log(`Rejection email sent to: ${user.email}`);
+            } catch (emailError) {
+                console.error(`Error sending rejection email: ${emailError.message}`);
+            }
+            await User.findByIdAndDelete(userId);
+            res.status(200).json({ message: "User rejected and deleted successfully." });
+        }
+    } catch (error) {
+        console.error("Error in updateUserStatus controller:", error.message);
         res.status(500).json({ error: "Server error" });
     }
 };
