@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword } from "../controllers/auth.controller.js";
+import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword, updateProfile } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 
@@ -41,7 +41,11 @@ router.use((req, res, next) => {
 // User routes
 router.get("/me", ProtectedRoute(), getMe);
 router.get("/profile", ProtectedRoute(), getMe);
-router.post("/signup", 
+router.put("/profile", ProtectedRoute(), upload.fields([
+  { name: "licenceFront", maxCount: 1 },
+  { name: "licenceBack", maxCount: 1 }
+]), updateProfile); // New route for profile updates
+router.post("/signup",
   upload.fields([
     { name: "licenceFront", maxCount: 1 }, 
     { name: "licenceBack", maxCount: 1 }

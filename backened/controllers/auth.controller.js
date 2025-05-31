@@ -614,3 +614,87 @@ export const refreshToken = async (req, res) => {
         res.status(401).json({ error: "Invalid or expired refresh token" });
     }
 };
+
+export const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.userId; // Get user ID from ProtectedRoute
+        const { phone, currentPassword, newPassword } = req.body;
+        const files = req.files; // Access uploaded files
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Update phone number if provided
+        if (phone !== undefined) {
+            user.phone = phone;
+        }
+
+        // Handle license file uploads
+        if (files && files.licenceFront) {
+            // Upload new licenceFront
+            const licenceFrontResult = await uploadImageToCloudinary(files.licenceFront[0].path);
+            if (licenceFrontResult && licenceFrontResult.secure_url) {
+                // Optionally delete old licenceFront from Cloudinary
+                if (user.licenceFront) {
+                    // Extract public ID from the old URL and delete
+                    const oldPublicId = user.licenceFront.split('/').pop().split('.')[0];
+                    await deleteImageFromCloudinary(oldPublicId);
+                }
+                user.licenceFront = licenceFrontResult.secure_url;
+            } else {
+                return res.status(500).json({ error: "Failed to upload licence front image" });
+            }
+        }
+
+        if (files && files.licenceBack) {
+            // Upload new licenceBack
+            const licenceBackResult = await uploadImageToCloudinary(files.licenceBack[0].path);
+            if (licenceBackResult && licenceBackResult.secure_url) {
+                 // Optionally delete old licenceBack from Cloudinary
+                if (user.licenceBack) {
+                    // Extract public ID from the old URL and delete
+                    const oldPublicId = user.licenceBack.split('/').pop().split('.')[0];
+                    await deleteImageFromCloudinary(oldPublicId);
+                }
+                user.licenceBack = licenceBackResult.secure_url;
+            } else {
+                return res.status(500).json({ error: "Failed to upload licence back image" });
+            }
+        }
+
+
+        // Update password if newPassword is provided
+        if (newPassword) {
+            if (!currentPassword) {
+                return res.status(400).json({ error: "Current password is required to change password" });
+            }
+
+            const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+            if (!isPasswordValid) {
+                return res.status(401).json({ error: "Incorrect current password" });
+            }
+
+            // Hash the new password
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(newPassword, salt);
+            user.password = hashedPassword;
+        }
+
+        await user.save();
+
+        // Return updated user data (excluding password)
+        const updatedUser = await User.findById(userId).select("-password");
+
+        res.status(200).json({
+            message: "Profile updated successfully",
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.error("Error in updateProfile controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
