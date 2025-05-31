@@ -23,12 +23,7 @@ const AdminWelcomePage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${apiUrl}/api/auth/admin/pending-users`, {
-        headers: {
-          // Assuming admin is authenticated and token is stored in localStorage or cookies
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetch(`${apiUrl}/api/auth/admin/pending-users`);
       if (!response.ok) {
         throw new Error('Failed to fetch pending users');
       }
@@ -52,7 +47,6 @@ const AdminWelcomePage = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({ status: 'approve' }),
       });
@@ -73,7 +67,6 @@ const AdminWelcomePage = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({ status: 'reject' }),
       });
