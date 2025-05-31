@@ -1,7 +1,7 @@
 import './App.css';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import QuickSearch from './components/QuickSearch';
 import CarTypesCarousel from './components/CarTypesCarousel';
@@ -23,8 +23,12 @@ import ReviewsPage from './pages/ReviewsPage';
 import AddCarPage from './pages/AddCarPage';
 import VerificationPage from './pages/VerificationPage';
 import EditProfilePage from './pages/EditProfilePage';
+import AdminDashboardPage from './pages/AdminDashboardPage'; // Import AdminDashboardPage
+import { useAuthContext } from './contexts/AuthContext'; // Import useAuthContext
 
 function App() {
+  const { authUser } = useAuthContext(); // Get authUser from context
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <BrowserRouter>
@@ -55,6 +59,12 @@ function App() {
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/add-car" element={<AddCarPage />} />
             <Route path="/verify-email" element={<VerificationPage />} />
+
+            {/* Admin Route */}
+            <Route
+              path="/admin"
+              element={authUser && authUser.role === 'admin' ? <AdminDashboardPage /> : <Navigate to="/" />}
+            />
           </Routes>
         </div>
       </BrowserRouter>
