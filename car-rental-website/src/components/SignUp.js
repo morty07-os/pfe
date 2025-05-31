@@ -90,7 +90,8 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
         localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
         onClose();
-        navigate('/verify-email', { state: { email: result.email } });
+        // navigate('/verify-email', { state: { email: result.email } }); // Keep email verification for now
+        setMessage('Registration successful. Your account is pending admin approval.'); // Update message
       } else {
         setMessage(result.error || 'Registration failed');
       }

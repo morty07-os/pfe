@@ -75,6 +75,11 @@ router.get("/admin/dashboard", ProtectedRoute(), adminAuth(), (req, res) => {
     res.status(200).json({ message: "Welcome to the admin dashboard!" });
 });
 
+// Admin User Management Routes
+router.get("/admin/pending-users", ProtectedRoute(), adminAuth(), getPendingUsers);
+router.put("/admin/users/:userId/approve", ProtectedRoute(), adminAuth(), approveUser);
+router.put("/admin/users/:userId/refuse", ProtectedRoute(), adminAuth(), refuseUser);
+
 
 // Payment route
 //router.post("/payments", ProtectedRoute, processPayment); // Process a payment
