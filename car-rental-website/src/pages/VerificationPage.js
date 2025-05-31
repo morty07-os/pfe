@@ -72,7 +72,7 @@ const VerificationPage = () => {
         setMessage({ type: 'success', text: result.message });
         window.dispatchEvent(new Event('loginStateChanged'));
         setTimeout(() => {
-          navigate('/pending-approval');
+          navigate('/');
         }, 2000);
       } else {
         setMessage({ type: 'error', text: result.error || 'Verification failed' });
