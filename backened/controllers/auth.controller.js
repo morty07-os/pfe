@@ -337,6 +337,7 @@ export const login = async (req, res) => {
             residence: user.residence,
             isVerified: user.isVerified,
             role: user.role, // Include the user's role
+            status: user.status, // Include the user's status
             createdAt: user.createdAt
         };
 
