@@ -11,18 +11,8 @@ const AdminWelcomePage = () => {
   useEffect(() => {
     const fetchPendingUsers = async () => {
       try {
-        const token = localStorage.getItem('token'); // Assuming token is stored in localStorage
-        if (!token) {
-          setError("No authentication token found.");
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(`${apiUrl}/api/auth/admin/pending-users`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        // Rely on the browser sending the HTTP-only cookie
+        const response = await fetch(`${apiUrl}/api/auth/admin/pending-users`);
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -44,16 +34,10 @@ const AdminWelcomePage = () => {
 
   const handleApprove = async (userId) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError("No authentication token found.");
-        return;
-      }
-
+      // Rely on the browser sending the HTTP-only cookie
       const response = await fetch(`${apiUrl}/api/auth/admin/users/${userId}/approve`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -73,16 +57,10 @@ const AdminWelcomePage = () => {
 
   const handleRefuse = async (userId) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError("No authentication token found.");
-        return;
-      }
-
+      // Rely on the browser sending the HTTP-only cookie
       const response = await fetch(`${apiUrl}/api/auth/admin/users/${userId}/refuse`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
