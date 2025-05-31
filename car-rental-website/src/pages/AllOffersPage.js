@@ -38,9 +38,9 @@ import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import AirlineSeatReclineNormalIcon from '@mui/icons-material/AirlineSeatReclineNormal';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import PersonIcon from '@mui/icons-material/Person';
-// Removed useLocation
+import { useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import SidebarFilters, { isAvailabilityOverlap } from './SidebarFilters'; // Imported isAvailabilityOverlap
+import SidebarFilters from './SidebarFilters';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 // Algeria wilaya coordinates for map display
@@ -163,8 +163,7 @@ function formatDateDMY(dateStr) {
 }
 
 export default function AllOffersPage() {
-  // Removed search state
-  const [localSearch, setLocalSearch] = React.useState(''); // Added localSearch state
+  const [search, setSearch] = React.useState('');
   const [sidebarFilters, setSidebarFilters] = React.useState({});
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   
@@ -177,7 +176,7 @@ export default function AllOffersPage() {
   const [offers, setOffers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null); // Added for current user
   const [userCars, setUserCars] = useState([]); // Added to store user's cars
-  // Removed locationObj = useLocation();
+  const locationObj = useLocation();
 
   useEffect(() => {
     // Attempt to get user from localStorage
@@ -219,14 +218,26 @@ export default function AllOffersPage() {
     }
   };
 
-  // Removed Extract category from query parameters and categoryFilter
+  // Extract category from query parameters
+  const queryParams = React.useMemo(() => new URLSearchParams(locationObj.search), [locationObj.search]);
+  const categoryFilter = queryParams.get('category');
 
   useEffect(() => {
     const fetchOffers = async () => {
       try {
-        // Modified queryParams to only include search term for backend fetch
         const queryParams = new URLSearchParams({
-          search: localSearch || '', // Use localSearch
+          brand: sidebarFilters.brand || '',
+          energy: sidebarFilters.energy || '',
+          transmission: sidebarFilters.transmission || '',
+          wilaya: sidebarFilters.wilaya || '',
+          carType: sidebarFilters.carType || '',
+          seats: sidebarFilters.seats || '',
+          doors: sidebarFilters.doors || '',
+          priceMin: sidebarFilters.priceRange ? sidebarFilters.priceRange[0] : '',
+          priceMax: sidebarFilters.priceRange ? sidebarFilters.priceRange[1] : '',
+          availableFrom: sidebarFilters.availableFrom || '',
+          availableTo: sidebarFilters.availableTo || '',
+          search: search || '',
         }).toString();
         const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
         const response = await fetch(`${apiUrl}/api/cars/getcars?${queryParams}`);
@@ -302,7 +313,7 @@ export default function AllOffersPage() {
     return () => {
       window.removeEventListener('carRemoved', handleCarRemoved);
     };
-  }, [sidebarFilters, localSearch]); // Updated dependencies
+  }, [sidebarFilters, search]);
 
   const filteredOffers = React.useMemo(() => {
     let tempOffers = [...offers];
@@ -310,38 +321,50 @@ export default function AllOffersPage() {
     // Filter out cars without an owner
     tempOffers = tempOffers.filter(offer => offer.owner);
 
-    // Removed category filter logic
+    // Apply category filter from URL query param first
+    if (categoryFilter) {
+      tempOffers = tempOffers.filter(offer =>
+        offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase()
+      );
+    }
 
-    // Removed search term filter fallback (backend handles search)
-    // if (search) {
-    //   tempOffers = tempOffers.filter(offer =>
-    //     offer.brand?.toLowerCase().includes(search.toLowerCase()) ||
-    //     offer.carName?.toLowerCase().includes(search.toLowerCase()) ||
-    //     offer.description?.toLowerCase().includes(search.toLowerCase()) ||
-    //     offer.wilaya?.toLowerCase().includes(search.toLowerCase()) ||
-    //     offer.carType?.toLowerCase().includes(search.toLowerCase()) ||
-    //     offer.engine?.toLowerCase().includes(search.toLowerCase())
-    //   );
-    // }
+    // Apply search term filter (now handled by backend, but keep as fallback)
+    if (search) {
+      tempOffers = tempOffers.filter(offer =>
+        offer.brand?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.carName?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.description?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.wilaya?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.carType?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.engine?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
 
-    // Apply sidebar filters (including wilaya and dates client-side)
+    // Apply sidebar filters
     tempOffers = tempOffers.filter(offer =>
       (!sidebarFilters.brand || offer.brand === sidebarFilters.brand) &&
       (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
       (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
-      (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) && // Wilaya filter
+      (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) &&
       (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) &&
       (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
       (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
       (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1])) &&
-      // Apply date filter using isAvailabilityOverlap
-      isAvailabilityOverlap(offer.availabilityStart || offer.availableFrom, offer.availabilityEnd || offer.availableTo, sidebarFilters.availableFrom, sidebarFilters.availableTo)
+      (!sidebarFilters.availableFrom || dayjs(offer.availabilityStart || offer.availableFrom).isSameOrBefore(dayjs(sidebarFilters.availableFrom), 'day')) &&
+      (!sidebarFilters.availableTo || dayjs(offer.availabilityEnd || offer.availableTo).isSameOrAfter(dayjs(sidebarFilters.availableTo), 'day'))
     );
 
     return tempOffers;
-  }, [offers, localSearch, sidebarFilters]); // Updated dependencies
+  }, [offers, search, sidebarFilters, categoryFilter]);
 
-  // Removed isDateRangeOverlap function
+  function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
+    if (!selectedFrom || !selectedTo) return true;
+    const offerStart = dayjs(offerFrom);
+    const offerEnd = dayjs(offerTo);
+    const selStart = dayjs(selectedFrom);
+    const selEnd = dayjs(selectedTo);
+    return offerEnd.isAfter(selStart) && offerStart.isBefore(selEnd);
+  }
 
   const getFilterLabel = (key) => {
     const labels = {
@@ -646,12 +669,70 @@ export default function AllOffersPage() {
                     }
                   }}
                 >
-                  {/* Replaced the manual Paper/Box/Input with the QuickSearch component */}
-                  <QuickSearch
-                    noBackground
-                    search={localSearch} // Pass localSearch state
-                    onSearchChange={setLocalSearch} // Pass setter
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 45,
+                      height: 45,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.08), rgba(51, 65, 85, 0.04))',
+                      mr: 1.5,
+                      ml: 0.5,
+                      transition: 'all 0.3s ease',
+                      '.MuiPaper-root:focus-within &': {
+                        background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.12), rgba(51, 65, 85, 0.08))',
+                      }
+                    }}
+                  >
+                    <SearchIcon sx={{ 
+                      color: '#475569',
+                      fontSize: '1.5rem',
+                      transition: 'all 0.3s ease',
+                      '.MuiPaper-root:focus-within &': {
+                        color: '#334155',
+                        transform: 'scale(1.1)'
+                      }
+                    }} />
+                  </Box>
+                  <input
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      padding: '16px 12px',
+                      fontSize: '1.05rem',
+                      fontFamily: 'inherit',
+                      backgroundColor: 'transparent',
+                      color: '#334155',
+                      fontWeight: 500,
+                      letterSpacing: '0.3px'
+                    }}
+                    placeholder="Search cars by brand, model or location..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                   />
+                  {search && (
+                    <IconButton 
+                      size="small" 
+                      onClick={() => setSearch('')}
+                      sx={{
+                        color: '#94a3b8',
+                        width: 36,
+                        height: 36,
+                        mr: 0.5,
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          color: '#64748b',
+                          backgroundColor: 'rgba(203, 213, 225, 0.2)',
+                          transform: 'scale(1.05)'
+                        }
+                      }}
+                    >
+                      <RestartAltIcon fontSize="small" />
+                    </IconButton>
+                  )}
                 </Paper>
                 {filteredOffers.length === 0 && (
                   <Box
