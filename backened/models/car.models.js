@@ -67,11 +67,6 @@ const carSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    status: {
-      type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
-    },
     isDeleted: {
       type: Boolean,
       default: false,
