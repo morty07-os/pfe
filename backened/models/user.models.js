@@ -57,6 +57,11 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
+    status: { // Add status field
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
     verificationToken: String,

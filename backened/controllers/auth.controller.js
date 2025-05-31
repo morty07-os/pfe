@@ -65,6 +65,7 @@ export const signup = async (req, res) => {
             verificationToken: hashedVerificationCode,
             verificationTokenExpires: verificationCodeExpires,
             isVerified: false,
+            status: 'pending', // Add status field
         });
 
         await newUser.save();
@@ -290,11 +291,40 @@ export const login = async (req, res) => {
         // Check if user is verified
         if (!user.isVerified) {
             console.log('User not verified:', email);
-            return res.status(403).json({ 
-                error: 'Email not verified', 
+            return res.status(403).json({
+                error: 'Email not verified',
                 needsVerification: true,
                 email: user.email
             });
+        }
+
+        // Check user status
+        if (user.status === 'pending') {
+            console.log('User account pending approval:', email);
+            return res.status(403).json({
+                error: 'Your account is pending administrator approval.',
+                status: 'pending',
+                email: user.email
+            });
+        }
+
+        if (user.status === 'rejected') {
+            console.log('User account rejected:', email);
+            return res.status(403).json({
+                error: 'Your account has been rejected by the administrator. Please contact support or sign up again.',
+                status: 'rejected',
+                email: user.email
+            });
+        }
+
+        // Only proceed if status is 'approved' (or no status field exists, for backward compatibility if needed)
+        if (user.status !== 'approved' && user.status !== undefined) {
+             console.log('User account has unknown status:', email, user.status);
+             return res.status(403).json({
+                 error: 'Your account has an unknown status. Please contact support.',
+                 status: user.status,
+                 email: user.email
+             });
         }
 
         // Generate token and set it in the cookie
@@ -398,6 +428,7 @@ export const verifyEmail = async (req, res) => {
         user.isVerified = true;
         user.verificationToken = undefined;
         user.verificationTokenExpires = undefined;
+        user.status = 'pending'; // Set status to pending after verification
         
         await user.save();
         console.log(`User ${user._id} verified successfully`);
