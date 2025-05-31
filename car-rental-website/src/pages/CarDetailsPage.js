@@ -3,24 +3,27 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Grid,
-  CardMedia,
-  CardContent,
   Button,
-  Container,
-  Paper, 
-  Chip,
+  Card,
+  CardContent,
+  CardMedia,
+  Grid,
   Avatar,
-  Divider,
-  Skeleton,
-  useMediaQuery,
-  useTheme,
-  Fade,
-  IconButton,
   Tooltip,
-  Link,
-  Alert, // Import Alert component
-  Rating // Import Rating component
+  Chip,
+  IconButton,
+  Divider,
+  Rating,
+  CircularProgress,
+  Paper,
+  Stack,
+  Skeleton,
+  Snackbar,
+  Alert,
+  useTheme,
+  useMediaQuery,
+  Container,
+  Fade,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'; // ADDED IMPORT
 import RnF_user from '../components/RnF_user';
@@ -54,6 +57,11 @@ export default function CarDetailsPage() {
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isOwnCar, setIsOwnCar] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
   const [userRatingDialogOpen, setUserRatingDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedUserName, setSelectedUserName] = useState('');
@@ -70,6 +78,61 @@ export default function CarDetailsPage() {
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   
   const navigate = useNavigate();
+
+  // Function to check if user is authenticated
+  const isAuthenticated = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    
+    // Check if token is expired
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp < Date.now() / 1000) {
+        // Token expired
+        localStorage.removeItem('token');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error checking token:', error);
+      return false;
+    }
+  };
+  
+  // Handle Book Now button click
+  const handleBookNow = () => {
+    if (isOwnCar) return; // Don't do anything if it's the user's own car
+    
+    if (!isAuthenticated()) {
+      // Show snackbar message if user is not authenticated
+      setSnackbar({
+        open: true,
+        message: 'Please sign in to continue booking',
+        severity: 'info'
+      });
+      
+      // Keep user on the same page
+      return;
+    }
+    
+    // If authenticated, navigate to chat with car owner
+    const ownerName = typeof car.owner === 'string' ? 
+      (car.ownerName || 'Owner') : 
+      (car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : 'Owner');
+    
+    navigate(`/chat/${ownerName}`, {
+      state: {
+        autoMessage: `I'm interested in renting your ${car.brand} ${car.model}`,
+        carId: car._id,
+      },
+    });
+  };
+  
+  // Handle snackbar close
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   // Get appropriate fuel icon based on energy type
   const getFuelIcon = (energyType) => {
@@ -198,6 +261,8 @@ export default function CarDetailsPage() {
   const handleCloseUserRatingDialog = () => {
     setUserRatingDialogOpen(false);
   };
+
+
 
   if (loading) {
     return (
@@ -337,12 +402,58 @@ export default function CarDetailsPage() {
   return (
     <>
       <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+      {/* Snackbar for authentication message */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity} 
+          variant="filled"
+          sx={{ 
+            width: '100%', 
+            fontWeight: 500,
+            bgcolor: snackbar.severity === 'info' ? '#475569' : 
+                    snackbar.severity === 'success' ? '#475569' : 
+                    snackbar.severity === 'error' ? '#64748b' : '#475569',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
       <Box sx={{ 
         bgcolor: '#f8fafc', 
         minHeight: '100vh', 
         pt: 4, 
         pb: 8 
       }}>
+        {/* Snackbar for authentication message */}
+        <Snackbar 
+          open={snackbar.open} 
+          autoHideDuration={6000} 
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={handleSnackbarClose} 
+            severity={snackbar.severity} 
+            sx={{ 
+              width: '100%', 
+              fontWeight: 500,
+              bgcolor: snackbar.severity === 'info' ? '#475569' : undefined,
+              color: snackbar.severity === 'info' ? 'white' : undefined
+            }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
         <Container maxWidth="lg">
           <Button 
             startIcon={<ArrowBackIcon />}
@@ -598,53 +709,46 @@ export default function CarDetailsPage() {
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AttachMoneyIcon sx={{ color: '#1e293b', fontSize: { xs: 24, sm: 28 } }} />
-                          <Typography
-                            variant="h5"
-                            sx={{
-                              fontWeight: 800,
-                              color: '#1e293b',
-                              fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                            }}
-                          >
-                            DZD{car.price}/day
-                          </Typography>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            fontWeight: 800,
+                            color: '#1e293b',
+                            fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                          }}
+                        >
+                          DZD{car.price}/day
+                        </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Tooltip 
-                          title={isOwnCar ? "You cannot book your own car" : ""}
-                          placement="top"
+                        <Button
+                          variant="contained"
+                          onClick={handleBookNow}
+                          disabled={isOwnCar}
+                          sx={{
+                            borderRadius: 99,
+                            background: isOwnCar 
+                              ? '#e0e0e0' 
+                              : 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
+                            color: isOwnCar ? '#a0a0a0' : '#fff',
+                            fontWeight: 600,
+                            py: { xs: 0.8, sm: 1 },
+                            px: { xs: 2, sm: 3 },
+                            textTransform: 'none',
+                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                            whiteSpace: 'nowrap',
+                            '&:hover': {
+                              background: isOwnCar 
+                                ? '#e0e0e0' 
+                                : 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
+                              boxShadow: isOwnCar ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
+                            },
+                            transition: 'all 0.2s ease-in-out',
+                            cursor: isOwnCar ? 'not-allowed' : 'pointer',
+                          }}
                         >
-                          <span> {/* Wrapper needed for disabled buttons with tooltip */}
-                            <Button
-                              variant="contained"
-                              onClick={() => navigate(`/booking/${carId}`)}
-                              disabled={isOwnCar || !currentUser}
-                              sx={{
-                                borderRadius: 99,
-                                background: isOwnCar 
-                                  ? '#e0e0e0' 
-                                  : 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
-                                color: isOwnCar ? '#a0a0a0' : '#fff',
-                                fontWeight: 600,
-                                py: { xs: 0.8, sm: 1 },
-                                px: { xs: 2, sm: 3 },
-                                textTransform: 'none',
-                                fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                                whiteSpace: 'nowrap',
-                                '&:hover': {
-                                  background: isOwnCar 
-                                    ? '#e0e0e0' 
-                                    : 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
-                                  boxShadow: isOwnCar ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
-                                },
-                                transition: 'all 0.2s ease-in-out',
-                                cursor: isOwnCar ? 'not-allowed' : 'pointer',
-                              }}
-                            >
-                              {isOwnCar ? "Your Own Car" : currentUser ? "Book Now" : "You have to sign in to continue booking"}
-                            </Button>
-                          </span>
-                        </Tooltip>
+                          {isOwnCar ? "Your Own Car" : "Book Now"}
+                        </Button>
                       </Box>
                     </Box>
                   </Grid>

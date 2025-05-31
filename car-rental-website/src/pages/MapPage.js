@@ -311,12 +311,28 @@ const MapPage = () => {
         }
       }
     }
+    // If we only have a wilaya name without coordinates, center the map on that wilaya
+    else if (wilayaName) {
+      const wilaya = wilayasConfig.find(w => w.name === wilayaName);
+      if (wilaya) {
+        setSelectedWilaya(wilaya);
+        setMapCenter(wilaya.coordinates);
+        setMapZoom(12); // Zoom in when a wilaya is selected
+        
+        // Fetch car data for the selected wilaya
+        if (wilaya.available) {
+          fetchCarData(wilayaName);
+        }
+      }
+    }
   }, [location.search]);
 
   // Update map center when wilaya changes
   useEffect(() => {
-    // Skip this effect if we're handling URL parameters
-    if (location.search) return;
+    // Skip this effect if we're handling URL parameters with lat/lng
+    const searchParams = new URLSearchParams(location.search);
+    const hasLatLng = searchParams.get('lat') && searchParams.get('lng');
+    if (hasLatLng) return;
     
     if (selectedWilaya) {
       setMapCenter(selectedWilaya.coordinates);
