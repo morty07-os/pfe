@@ -377,6 +377,7 @@ const ProfilePage = () => {
                     '&:hover': { bgcolor: 'rgba(226, 232, 240, 0.2)' },
                     backdropFilter: 'blur(5px)'
                   }}
+                  onClick={() => navigate('/edit-profile')}
                 >
                   Edit Profile
                 </Button>

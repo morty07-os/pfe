@@ -14,6 +14,7 @@ import CarDetailsPage from './pages/CarDetailsPage';
 import BookingPage from './pages/BookingPage';
 import ConversationPage from './pages/ConversationPage';
 import ConversationListPage from './pages/ConversationListPage';
+import EditProfilePage from './pages/EditProfilePage';
 import CategoriesPage from './pages/CategoriesPage';
 import DealsPage from './pages/DealsPage';
 import AboutPage from './pages/AboutPage';
@@ -41,6 +42,7 @@ function App() {
             <Route path="/offers" element={<AllOffersPage />} />
             <Route path="/offer/:offerId" element={<OfferDetailsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/edit-profile" element={<EditProfilePage />} />
             <Route path="/car-details/:carId" element={<CarDetailsPage />} />
             <Route path="/booking/:carId" element={<BookingPage />} />
             <Route path="/conversation/:carId/:ownerId" element={<ConversationPage />} />
