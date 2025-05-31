@@ -618,7 +618,7 @@ export default function CarDetailsPage() {
                             <Button
                               variant="contained"
                               onClick={() => navigate(`/booking/${carId}`)}
-                              disabled={isOwnCar}
+                              disabled={isOwnCar || !currentUser}
                               sx={{
                                 borderRadius: 99,
                                 background: isOwnCar 
