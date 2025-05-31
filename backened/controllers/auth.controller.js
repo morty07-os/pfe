@@ -669,22 +669,42 @@ export const updateProfile = async (req, res) => {
 
         // Update password if newPassword is provided
         if (newPassword) {
+            console.log("Attempting password change for user:", userId);
+            console.log("Received currentPassword:", currentPassword ? "Provided" : "Not Provided");
+            console.log("Received newPassword:", newPassword ? "Provided" : "Not Provided");
+
             if (!currentPassword) {
+                console.log("Current password not provided for password change");
                 return res.status(400).json({ error: "Current password is required to change password" });
             }
 
             const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
             if (!isPasswordValid) {
+                console.log("Incorrect current password for user:", userId);
                 return res.status(401).json({ error: "Incorrect current password" });
             }
+            console.log("Current password validated for user:", userId);
 
-            // Hash the new password
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(newPassword, salt);
-            user.password = hashedPassword;
+            try {
+                // Hash the new password
+                const salt = await bcrypt.genSalt(10);
+                const hashedPassword = await bcrypt.hash(newPassword, salt);
+                user.password = hashedPassword;
+                console.log("New password hashed and assigned for user:", userId);
+            } catch (hashError) {
+                console.error("Error hashing new password for user:", userId, hashError);
+                return res.status(500).json({ error: "Failed to process new password" });
+            }
         }
 
-        await user.save();
+        try {
+            await user.save();
+            console.log("User profile saved successfully for user:", userId);
+        } catch (saveError) {
+            console.error("Error saving user profile for user:", userId, saveError);
+            return res.status(500).json({ error: "Failed to save profile changes" });
+        }
+
 
         // Return updated user data (excluding password)
         const updatedUser = await User.findById(userId).select("-password");
