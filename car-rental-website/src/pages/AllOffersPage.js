@@ -218,9 +218,36 @@ export default function AllOffersPage() {
     }
   };
 
-  // Extract category from query parameters
+  // Extract parameters from query parameters
   const queryParams = React.useMemo(() => new URLSearchParams(locationObj.search), [locationObj.search]);
   const categoryFilter = queryParams.get('category');
+  const startDate = queryParams.get('startDate');
+  const endDate = queryParams.get('endDate');
+  const wilayaParam = queryParams.get('wilaya');
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const newFilters = { ...sidebarFilters };
+    
+    // Set availability dates if they exist in URL
+    if (startDate) {
+      newFilters.availableFrom = startDate;
+    }
+    
+    if (endDate) {
+      newFilters.availableTo = endDate;
+    }
+    
+    // Set wilaya if it exists in URL
+    if (wilayaParam) {
+      newFilters.wilaya = wilayaParam;
+    }
+    
+    // Only update if we have new filters to add
+    if (startDate || endDate || wilayaParam) {
+      setSidebarFilters(newFilters);
+    }
+  }, [locationObj.search]); // Only run when URL changes
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -341,29 +368,69 @@ export default function AllOffersPage() {
     }
 
     // Apply sidebar filters
-    tempOffers = tempOffers.filter(offer =>
-      (!sidebarFilters.brand || offer.brand === sidebarFilters.brand) &&
-      (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
-      (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
-      (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) &&
-      (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) &&
-      (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
-      (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
-      (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1])) &&
-      (!sidebarFilters.availableFrom || dayjs(offer.availabilityStart || offer.availableFrom).isSameOrBefore(dayjs(sidebarFilters.availableFrom), 'day')) &&
-      (!sidebarFilters.availableTo || dayjs(offer.availabilityEnd || offer.availableTo).isSameOrAfter(dayjs(sidebarFilters.availableTo), 'day'))
-    );
+    tempOffers = tempOffers.filter(offer => {
+      // Basic filters
+      const basicFiltersMatch = 
+        (!sidebarFilters.brand || offer.brand === sidebarFilters.brand) &&
+        (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
+        (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
+        (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) &&
+        (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) &&
+        (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
+        (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
+        (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1]));
+      
+      // Availability filter
+      let availabilityMatch = true;
+      if (sidebarFilters.availableFrom || sidebarFilters.availableTo) {
+        // Get car availability dates
+        const carFrom = offer.availabilityStart || offer.availableFrom;
+        const carTo = offer.availabilityEnd || offer.availableTo;
+        
+        // Check if car is available during the selected period
+        availabilityMatch = isDateRangeOverlap(
+          carFrom, 
+          carTo, 
+          sidebarFilters.availableFrom, 
+          sidebarFilters.availableTo
+        );
+      }
+      
+      return basicFiltersMatch && availabilityMatch;
+    });
 
     return tempOffers;
   }, [offers, search, sidebarFilters, categoryFilter]);
 
   function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
-    if (!selectedFrom || !selectedTo) return true;
+    // If car doesn't have availability dates, it can't match
+    if (!offerFrom || !offerTo) return false;
+    
+    // If no filter dates are provided, consider it a match
+    if (!selectedFrom && !selectedTo) return true;
+    
     const offerStart = dayjs(offerFrom);
     const offerEnd = dayjs(offerTo);
+    
+    // Handle cases where only one date is provided
+    if (selectedFrom && !selectedTo) {
+      // Car must be available on or after the selected start date
+      return offerEnd.isAfter(dayjs(selectedFrom)) || offerEnd.isSame(dayjs(selectedFrom), 'day');
+    }
+    
+    if (!selectedFrom && selectedTo) {
+      // Car must be available on or before the selected end date
+      return offerStart.isBefore(dayjs(selectedTo)) || offerStart.isSame(dayjs(selectedTo), 'day');
+    }
+    
+    // Both dates provided - check for overlap
     const selStart = dayjs(selectedFrom);
     const selEnd = dayjs(selectedTo);
-    return offerEnd.isAfter(selStart) && offerStart.isBefore(selEnd);
+    
+    // Check if the ranges overlap:
+    // Car starts before or on filter end AND car ends after or on filter start
+    return (offerStart.isBefore(selEnd) || offerStart.isSame(selEnd, 'day')) && 
+           (offerEnd.isAfter(selStart) || offerEnd.isSame(selStart, 'day'));
   }
 
   const getFilterLabel = (key) => {
@@ -461,17 +528,26 @@ export default function AllOffersPage() {
           display: 'flex',
           justifyContent: 'center'
         }}>
-          <QuickSearch noBackground sx={{ 
-            mt: 0, 
-            mb: 2,
-            bgcolor: 'none', 
-            background: 'none',
-            maxWidth: '1200px',
-            width: '100%',
-            mx: 'auto',
-            transform: 'translateY(-15px)',
-            position: 'relative',
-            '&::before': {
+          <QuickSearch 
+            noBackground 
+            onFilterChange={(newFilters) => {
+              // Merge with existing filters
+              setSidebarFilters(prevFilters => ({
+                ...prevFilters,
+                ...newFilters
+              }));
+            }}
+            sx={{ 
+              mt: 0, 
+              mb: 2,
+              bgcolor: 'none', 
+              background: 'none',
+              maxWidth: '1200px',
+              width: '100%',
+              mx: 'auto',
+              transform: 'translateY(-15px)',
+              position: 'relative',
+              '&::before': {
               content: '""',
               position: 'absolute',
               top: 0,
