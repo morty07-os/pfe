@@ -223,27 +223,25 @@ export default function AllOffersPage() {
   const categoryFilter = queryParams.get('category');
 
   useEffect(() => {
-    const fetchOffers = async () => {
-      try {
-        const queryParams = new URLSearchParams({
-          brand: sidebarFilters.brand || '',
-          energy: sidebarFilters.energy || '',
-          transmission: sidebarFilters.transmission || '',
-          wilaya: sidebarFilters.wilaya || '',
-          carType: sidebarFilters.carType || '',
-          seats: sidebarFilters.seats || '',
-          doors: sidebarFilters.doors || '',
-          priceMin: sidebarFilters.priceRange ? sidebarFilters.priceRange[0] : '',
-          priceMax: sidebarFilters.priceRange ? sidebarFilters.priceRange[1] : '',
-          availableFrom: sidebarFilters.availableFrom || '',
-          availableTo: sidebarFilters.availableTo || '',
-          search: search || '',
-        }).toString();
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
-        const response = await fetch(`${apiUrl}/api/cars/getcars?${queryParams}`);
-        if (!response.ok) throw new Error('Failed to fetch offers');
-        const data = await response.json();
-        console.log('Fetched car data:', data);
+        const fetchOffers = async () => {
+          try {
+            // Construct query parameters excluding wilaya and availability for client-side filtering
+            const queryParams = new URLSearchParams({
+              brand: sidebarFilters.brand || '',
+              energy: sidebarFilters.energy || '',
+              transmission: sidebarFilters.transmission || '',
+              carType: sidebarFilters.carType || '',
+              seats: sidebarFilters.seats || '',
+              doors: sidebarFilters.doors || '',
+              priceMin: sidebarFilters.priceRange ? sidebarFilters.priceRange[0] : '',
+              priceMax: sidebarFilters.priceRange ? sidebarFilters.priceRange[1] : '',
+              search: search || '',
+            }).toString();
+            const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+            const response = await fetch(`${apiUrl}/api/cars/getcars?${queryParams}`);
+            if (!response.ok) throw new Error('Failed to fetch offers');
+            const data = await response.json();
+            console.log('Fetched car data:', data);
 
         const enhancedData = data.map(car => {
           const wilaya = car.wilaya || 'Alger'; // Default to Alger if no wilaya specified
