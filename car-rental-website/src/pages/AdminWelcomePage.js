@@ -12,6 +12,11 @@ const AdminWelcomePage = () => {
           This is a placeholder page for the admin dashboard.
         </Typography>
       </Box>
+      <Box sx={{ mt: 4, p: 2, border: '1px solid #ccc', textAlign: 'center' }}>
+        <Typography variant="h6" component="h2">
+          Approve New User
+        </Typography>
+      </Box>
     </Container>
   );
 };
