@@ -72,48 +72,31 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       }
 
       console.log("Login successful:", result);
-      // Check user status after successful login
-      const userStatus = result.user.status;
-      console.log("Logged in user status:", userStatus);
+      setMessage('Sign in successful');
+      // Clear any previous user info from localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userEmail');
+      // Store user data in localStorage
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('userId', result.user._id);
+      localStorage.setItem('userEmail', result.user.email);
 
-      if (userStatus === 'pending') {
-        setMessage('Your account is awaiting admin approval.');
+      console.log("Logged in user role:", result.user.role); // Log the user's role
+
+      // Check user role and redirect
+      if (result.user.role === 'admin') {
+        console.log("Admin login successful, redirecting to admin page");
         onClose(); // Close the sign-in dialog
-        navigate('/pending-approval', { state: { email: result.user.email } });
-      } else if (userStatus === 'rejected') {
-        setMessage('Your signup request was rejected. Please register again or contact support.');
-        // Do not log the user in, just show the message
-      } else if (userStatus === 'approved') {
-        setMessage('Sign in successful');
-        // Clear any previous user info from localStorage
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('userEmail');
-        // Store user data in localStorage
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('userId', result.user._id);
-        localStorage.setItem('userEmail', result.user.email);
-
-        console.log("Logged in user role:", result.user.role); // Log the user's role
-
-        // Check user role and redirect for approved users
-        if (result.user.role === 'admin') {
-          console.log("Admin login successful, redirecting to admin page");
-          onClose(); // Close the sign-in dialog
-          navigate('/admin'); // Redirect to the admin page
-        } else {
-          console.log("User login successful, proceeding with normal flow");
-          onClose(); // Close the sign-in dialog
-          const userName = result.user?.firstName || 'User';
-          if (onSuccess) {
-            onSuccess(userName);
-          }
-          window.dispatchEvent(new Event('loginStateChanged'));
-        }
+        navigate('/admin'); // Redirect to the admin page
       } else {
-        // Handle unexpected status
-        setMessage('An unexpected account status was encountered. Please contact support.');
-        console.error("Unexpected user status:", userStatus);
+        console.log("User login successful, proceeding with normal flow");
+        onClose(); // Close the sign-in dialog
+        const userName = result.user?.firstName || 'User';
+        if (onSuccess) {
+          onSuccess(userName);
+        }
+        window.dispatchEvent(new Event('loginStateChanged'));
       }
 
     } catch (error) {

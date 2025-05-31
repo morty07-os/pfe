@@ -24,7 +24,6 @@ import AddCarPage from './pages/AddCarPage';
 import VerificationPage from './pages/VerificationPage';
 import EditProfilePage from './pages/EditProfilePage';
 import AdminWelcomePage from './pages/AdminWelcomePage'; // Import AdminWelcomePage
-import PendingApprovalPage from './pages/PendingApprovalPage'; // Import PendingApprovalPage
 
 function App() {
   return (
@@ -57,7 +56,6 @@ function App() {
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/add-car" element={<AddCarPage />} />
             <Route path="/verify-email" element={<VerificationPage />} />
-            <Route path="/pending-approval" element={<PendingApprovalPage />} /> {/* Add Pending Approval route */}
             <Route path="/admin" element={<AdminWelcomePage />} /> {/* Add Admin route */}
           </Routes>
         </div>
