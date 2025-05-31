@@ -23,7 +23,9 @@ const AdminWelcomePage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${apiUrl}/api/auth/admin/pending-users`);
+      const response = await fetch(`${apiUrl}/api/auth/admin/pending-users`, {
+        credentials: 'include', // Include cookies
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch pending users');
       }
@@ -48,6 +50,7 @@ const AdminWelcomePage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ status: 'approve' }),
       });
       if (!response.ok) {
@@ -68,6 +71,7 @@ const AdminWelcomePage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ status: 'reject' }),
       });
       if (!response.ok) {
