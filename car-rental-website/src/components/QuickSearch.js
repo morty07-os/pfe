@@ -1,47 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Paper, 
-  TextField, 
-  Button, 
-  InputAdornment, 
-  Typography, 
-  Fade,
-  Autocomplete
+import React from 'react'; // Removed useState, useEffect
+import {
+  Box,
+  Paper,
+  TextField,
+  InputAdornment,
+  // Removed Typography, Fade, Autocomplete, Button
 } from '@mui/material';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import dayjs from 'dayjs';
+// Removed LocalizationProvider, DatePicker, AdapterDayjs
+import SearchIcon from '@mui/icons-material/Search'; // Added SearchIcon
+import RestartAltIcon from '@mui/icons-material/RestartAlt'; // Added RestartAltIcon
+// Removed LocationOnIcon, DirectionsCarIcon
+// Removed dayjs
 
-// List of all Algerian wilayas (from MapPage.js)
-const wilayas = [
-  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
-];
+// Removed wilayas constant
 
-const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
-  const [startDate, setStartDate] = useState(dayjs());
-  const [endDate, setEndDate] = useState(dayjs().add(3, 'day'));
-  const [location, setLocation] = useState(null);
-  const [locationInput, setLocationInput] = useState('');
-  const [isDateInvalid, setIsDateInvalid] = useState(false);
-
-  useEffect(() => {
-    if (startDate && endDate) {
-      // Check if endDate is strictly before startDate (ignoring time for this specific validation if needed, or include time)
-      // For DateTimePicker, comparing directly should work with time.
-      if (dayjs(endDate).isBefore(dayjs(startDate))) {
-        setIsDateInvalid(true);
-      } else {
-        setIsDateInvalid(false);
-      }
-    } else {
-      // If either date is not set, consider it invalid for submission purposes
-      setIsDateInvalid(true); 
-    }
-  }, [startDate, endDate]);
+// Added search and onSearchChange props
+const QuickSearch = ({ noBackground = false, search, onSearchChange }) => {
+  // Removed state variables: startDate, endDate, location, locationInput, isDateInvalid
+  // Removed useEffect hook
 
   return (
     <Box
@@ -55,6 +31,7 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
               marginTop: 0,
             }
           : {
+              // Kept background for potential other uses, though not used in AllOffersPage with noBackground=true
               background: 'linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 100%), url("https://images.unsplash.com/photo-1485291571150-772bcfc10da5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80")',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
@@ -70,160 +47,141 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
         overflow: 'hidden'
       }}
     >
-      <Fade in timeout={1000}>
-        <Box sx={{ textAlign: 'center', mb: 0, mt: 0, color: 'white' }}>
-          <Typography variant="h2" sx={{ fontWeight: 'bold', mb: noBackground ? 0 : 2 }}>
-            Find Your Perfect Ride
-          </Typography>
-          <Typography variant="h5" sx={{ mb: noBackground ? 0 : 4 }}>
-            Rent a car anywhere, anytime
-          </Typography>
-        </Box>
-      </Fade>
+      {/* Removed Fade and Box with Typography for title and subtitle */}
 
-      <Fade in timeout={1500}>
-        <Paper
-          elevation={6}
-          sx={{
-            p: noBackground ? 0 : 4,
-            borderRadius: noBackground ? 0 : 3,
+      {/* Adjusted Paper styling */}
+      <Paper
+        elevation={6}
+        sx={{
+          p: noBackground ? '8px 12px' : 4, // Adjusted padding for noBackground
+          borderRadius: noBackground ? 5 : 3, // Adjusted border radius for noBackground
+          width: '100%',
+          maxWidth: noBackground ? 420 : 1000, // Adjusted max width for noBackground
+          display: 'flex', // Keep flex display for the input and icon
+          alignItems: 'center', // Align items vertically
+          gap: noBackground ? 1.5 : 3, // Adjusted gap for noBackground
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          position: 'relative',
+          zIndex: 2,
+          // Added styles from AllOffersPage search input Paper
+          border: noBackground ? '2px solid rgba(203, 213, 225, 0.8)' : 'none',
+          boxShadow: noBackground ? '0 10px 30px rgba(15, 23, 42, 0.12)' : '0 10px 30px rgba(0,0,0,0.08)',
+          transition: noBackground ? 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
+          '&:hover': noBackground ? {
+            boxShadow: '0 15px 35px rgba(15, 23, 42, 0.15)',
+            borderColor: '#94a3b8',
+            transform: 'translateY(-3px) scale(1.01)'
+          } : {},
+          '&:focus-within': noBackground ? {
+            boxShadow: '0 15px 35px rgba(15, 23, 42, 0.18)',
+            borderColor: '#475569',
+            borderWidth: '2px',
+            transform: 'translateY(-3px) scale(1.01)'
+          } : {},
+          overflow: 'hidden',
+          '&::before': noBackground ? {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
             width: '100%',
-            maxWidth: 1000,
-            borderRadius: 3,
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-            position: 'relative',
-            zIndex: 2
-          }}
-        >
-          <Box sx={{ flex: 2 }}>
-            <Autocomplete
-              fullWidth
-              options={wilayas}
-              value={location}
-              onChange={(event, newValue) => setLocation(newValue)}
-              inputValue={locationInput}
-              onInputChange={(event, newInputValue) => setLocationInput(newInputValue)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Select Wilaya"
-                  variant="outlined"
-                  InputProps={{
-                    ...params.InputProps,
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LocationOnIcon sx={{ color: '#475569' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
-              sx={{ 
-                '& .MuiOutlinedInput-root': { 
-                  borderRadius: 2,
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#475569',
-                  },
-                },
-                '& .MuiAutocomplete-popupIndicator': {
-                  color: '#475569',
-                },
-              }}
-              filterOptions={(options, state) => {
-                // If no wilaya selected or input, show all wilayas
-                if (!state.inputValue) return options;
-                // Otherwise, filter as usual
-                return options.filter(option => option.toLowerCase().includes(state.inputValue.toLowerCase()));
-              }}
-            />
-          </Box>
-
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Box sx={{ flex: 1.5 }}>
-              <DatePicker
-                label="Start Date"
-                value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
-                minDate={dayjs()}
-                sx={{ width: '100%' }}
-              />
-            </Box>
-
-            <Box sx={{ flex: 1.5 }}>
-              <DatePicker
-                label="End Date"
-                value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
-                minDate={startDate} // Keeps visual cue, but button logic is main guard
-                sx={{ width: '100%' }}
-              />
-            </Box>
-          </LocalizationProvider>
-
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<DirectionsCarIcon />}
-            disabled={isDateInvalid} // Disable button if dates are invalid
+            height: '4px',
+            background: 'linear-gradient(90deg, #475569, #64748b)',
+            opacity: 0,
+            transition: 'opacity 0.3s ease',
+          } : {},
+          '&:focus-within::before': noBackground ? {
+            opacity: 1
+          } : {},
+          '&::after': noBackground ? {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: '10%',
+            width: '80%',
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.2), transparent)',
+            opacity: 0.5
+          } : {}
+        }}
+      >
+        {/* Added Search Icon Box from AllOffersPage */}
+        {noBackground && (
+          <Box
             sx={{
-              flex: 1,
-              height: '56px',
-              backgroundColor: '#475569',
-              borderRadius: 2,
-              fontSize: '1.1rem',
-              textTransform: 'none',
-              '&:hover': {
-                backgroundColor: '#334155',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 20px rgba(71,85,105,0.4)'
-              },
-              transition: 'all 0.3s ease'
-            }}
-            onClick={() => {
-              if (!startDate || !endDate) return;
-              const start = startDate.format('YYYY-MM-DD');
-              const end = endDate.format('YYYY-MM-DD');
-              let url = `/offers?startDate=${start}&endDate=${end}`;
-              if (location) {
-                url += `&wilaya=${encodeURIComponent(location)}`;
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 45,
+              height: 45,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.08), rgba(51, 65, 85, 0.04))',
+              mr: 1.5,
+              ml: 0.5,
+              transition: 'all 0.3s ease',
+              '.MuiPaper-root:focus-within &': {
+                background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.12), rgba(51, 65, 85, 0.08))',
               }
-              window.location.href = url;
             }}
           >
-            Find Cars
-          </Button>
-        </Paper>
-      </Fade>
+            <SearchIcon sx={{
+              color: '#475569',
+              fontSize: '1.5rem',
+              transition: 'all 0.3s ease',
+              '.MuiPaper-root:focus-within &': {
+                color: '#334155',
+                transform: 'scale(1.1)'
+              }
+            }} />
+          </Box>
+        )}
 
-      {/* Decorative elements */}
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: -100,
-          left: -100,
-          width: 300,
-          height: 300,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,166,153,0.2) 0%, rgba(0,166,153,0) 70%)',
-          zIndex: 1
-        }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          top: -50,
-          right: -50,
-          width: 200,
-          height: 200,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
-          zIndex: 1
-        }}
-      />
+        {/* Removed Autocomplete for location */}
+        {/* Removed LocalizationProvider and DatePickers */}
+        {/* Removed Button */}
+
+        {/* Kept and updated input field */}
+        <input
+          style={{
+            flex: 1,
+            border: 'none',
+            outline: 'none',
+            padding: noBackground ? '16px 0' : '16px 12px', // Adjusted padding
+            fontSize: '1.05rem',
+            fontFamily: 'inherit',
+            backgroundColor: 'transparent',
+            color: '#334155',
+            fontWeight: 500,
+            letterSpacing: '0.3px'
+          }}
+          placeholder="Search cars by brand, model or location..."
+          value={search} // Use search prop
+          onChange={(e) => onSearchChange(e.target.value)} // Use onSearchChange prop
+        />
+         {search && ( // Added clear button logic from AllOffersPage
+          <IconButton
+            size="small"
+            onClick={() => onSearchChange('')}
+            sx={{
+              color: '#94a3b8',
+              width: 36,
+              height: 36,
+              mr: 0.5,
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                color: '#64748b',
+                backgroundColor: 'rgba(203, 213, 225, 0.2)',
+                transform: 'scale(1.05)'
+              }
+            }}
+          >
+            <RestartAltIcon fontSize="small" />
+          </IconButton>
+        )}
+      </Paper>
+
+      {/* Removed decorative elements */}
     </Box>
   );
 };
