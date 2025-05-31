@@ -667,7 +667,6 @@ function PostCarDialog({ open, onClose }) {
     energy: "",
     transmission: "",
     images: [],
-    documentation: null, // Add documentation field
     location: null,
     locationValid: false, // Track if location is in a valid wilaya
     detectedWilaya: null, // Store the detected wilaya from location
@@ -679,7 +678,6 @@ function PostCarDialog({ open, onClose }) {
     location: false
   });
   const [imagePreviews, setImagePreviews] = useState([]);
-  const [documentationPreview, setDocumentationPreview] = useState(null); // Add documentation preview state
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -875,22 +873,6 @@ function PostCarDialog({ open, onClose }) {
         setFormErrors(prev => ({ ...prev, location: false }));
       }
     }
-    
-      data.append('availabilityEnd', formData.availabilityEnd);
-      data.append('price', formData.price);
-      
-      // Append location data
-      // Append car features and other data
-      Object.entries(formData.features || {}).forEach(([key, value]) => {
-        if (value) {
-          data.append(`features[${key}]`, 'true');
-        }
-      });
-      
-      // Append images
-      formData.images.forEach((imageFile) => {
-        data.append('images', imageFile);
-      });
 
     if (formData.images.length === 0) {
       setSnackbar({
@@ -1139,94 +1121,6 @@ function PostCarDialog({ open, onClose }) {
                     </Box>
                   ))}
                 </Box>
-              </Box>
-              {/* Documentation Upload */}
-              <Box>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ mb: 1, color: "#334155", fontWeight: 600 }}
-                >
-                  Car Documentation (PDF)
-                </Typography>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<AddPhotoAlternateIcon />} // Using the same icon for now
-                  fullWidth
-                  sx={{
-                    mb: 1.5,
-                    textTransform: "none",
-                    justifyContent: "flex-start",
-                    borderRadius: 2,
-                    borderColor: "#475569",
-                    color: "#475569",
-                    bgcolor: "#f1f5f9",
-                    "&:hover": { borderColor: "#334155", bgcolor: "#e2e8f0" },
-                  }}
-                >
-                  Upload Documentation (PDF)
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    name="documentation"
-                    hidden
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      setFormData((prev) => ({ ...prev, documentation: file }));
-                      setDocumentationPreview(file ? file.name : null);
-                    }}
-                  />
-                </Button>
-                {documentationPreview && (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      mt: 1,
-                      p: 1.5,
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 2,
-                      bgcolor: "#f8fafc",
-                      boxShadow: "0 2px 8px rgba(30,41,59,0.07)",
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        bgcolor: "#e2e8f0",
-                        borderRadius: "50%",
-                        width: 32,
-                        height: 32,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {/* Placeholder icon for PDF */}
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M14 2V8H20" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M10 12H14" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M10 16H14" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M8 8H10" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Box>
-                    <Typography variant="body2" sx={{ flexGrow: 1, color: "#334155", fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {documentationPreview}
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        setFormData((prev) => ({ ...prev, documentation: null }));
-                        setDocumentationPreview(null);
-                      }}
-                      sx={{ color: "#94a3b8", flexShrink: 0 }}
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                )}
               </Box>
               {/* Description */}
               <TextField

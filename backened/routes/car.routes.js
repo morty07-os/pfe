@@ -24,7 +24,7 @@ router.put("/update/:id", ProtectedRoute(), upload.single("image"), updateCar);
 router.delete("/delete/:id", ProtectedRoute(), deleteCar);
 
 // Route to post a car with Cloudinary uploads
-router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCount: 5 }, { name: 'documentation', maxCount: 1 }]), async (req, res) => {
+router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCount: 5 }]), async (req, res) => {
   try {
     console.log("Request body:", req.body);
     console.log("Uploaded files:", req.files);
@@ -48,7 +48,6 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
     } = body;
 
     const images = files.images;
-    const documentation = files.documentation ? files.documentation[0] : null;
 
     // Check if images were uploaded
     if (!images || images.length === 0) {
@@ -78,41 +77,6 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
     );
 
     const imageUrls = await Promise.all(uploadImagePromises);
-    let documentationUrl = null;
-
-    // Upload documentation to Cloudinary if provided
-    if (documentation) {
-      try {
-        const uploadDocResult = await new Promise((resolve, reject) => {
-          cloudinary.v2.uploader
-            .upload_stream(
-              {
-                resource_type: "raw", // Use 'raw' for non-image files like PDF
-                upload_preset: "unsigned_preset", // Use your unsigned preset
-                folder: "car_documentation", // Optional: specify a folder
-              },
-              (error, result) => {
-                if (error) {
-                  console.error("Cloudinary documentation upload error:", error);
-                  reject(error);
-                } else {
-                  resolve(result);
-                }
-              }
-            )
-            .end(documentation.buffer);
-        });
-        documentationUrl = uploadDocResult.secure_url;
-      } catch (docUploadError) {
-        console.error("Error uploading documentation:", docUploadError);
-        // Decide how to handle documentation upload failure:
-        // Option 1: Return an error and stop the car posting process
-        // return res.status(500).json({ error: "Failed to upload car documentation." });
-        // Option 2: Log the error and proceed without documentation (as it's optional in the model)
-        console.warn("Proceeding without documentation due to upload error.");
-      }
-    }
-
 
     // Get user information for owner details
     const User = (await import("../models/user.models.js")).default;
@@ -138,7 +102,6 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
       price,
       carType,
       images: imageUrls, // Store Cloudinary URLs
-      documentation: documentationUrl, // Store documentation URL
       owner: req.user.userId,
       ownerName: {
         firstName: user.firstName,
