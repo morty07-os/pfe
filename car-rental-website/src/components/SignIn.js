@@ -82,6 +82,8 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       localStorage.setItem('userId', result.user._id);
       localStorage.setItem('userEmail', result.user.email);
 
+      console.log("Logged in user role:", result.user.role); // Log the user's role
+
       // Check user role and redirect
       if (result.user.role === 'admin') {
         console.log("Admin login successful, redirecting to admin page");
