@@ -4,6 +4,7 @@ import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import sendEmail from '../utils/email.utils.js'; // Renamed import for clarity
+import { uploadImageToCloudinary, deleteImageFromCloudinary } from "../utils/cloudinary.js";
 
 
 
