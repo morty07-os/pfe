@@ -24,7 +24,7 @@ router.put("/update/:id", ProtectedRoute(), upload.single("image"), updateCar);
 router.delete("/delete/:id", ProtectedRoute(), deleteCar);
 
 // Route to post a car with Cloudinary uploads
-router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCount: 5 }, { name: 'documentation', maxCount: 1 }]), async (req, res) => {
+router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCount: 5 }, { name: 'documentationImages', maxCount: 5 }]), async (req, res) => {
   try {
     console.log("Request body:", req.body);
     console.log("Uploaded files:", req.files);
@@ -48,14 +48,13 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
     } = body;
 
     const images = files.images;
-    const documentation = files.documentation ? files.documentation[0] : null;
 
     // Check if images were uploaded
     if (!images || images.length === 0) {
       return res.status(400).json({ error: "No images uploaded" });
     }
 
-    // Upload images to Cloudinary using the unsigned preset
+    // Upload car images to Cloudinary using the unsigned preset
     const uploadImagePromises = images.map((file) =>
       new Promise((resolve, reject) => {
         cloudinary.v2.uploader
@@ -63,10 +62,11 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
             {
               resource_type: "image",
               upload_preset: "unsigned_preset",
+              folder: "car_images", // Optional: specify a folder for car images
             },
             (error, result) => {
               if (error) {
-                console.error("Cloudinary image upload error:", error);
+                console.error("Cloudinary car image upload error:", error);
                 reject(error);
               } else {
                 resolve(result.secure_url);
@@ -78,39 +78,34 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
     );
 
     const imageUrls = await Promise.all(uploadImagePromises);
-    let documentationUrl = null;
 
-    // Upload documentation to Cloudinary if provided
-    if (documentation) {
-      try {
-        const uploadDocResult = await new Promise((resolve, reject) => {
+    const documentationImages = files.documentationImages;
+    let documentationImageUrls = [];
+
+    // Upload documentation images to Cloudinary if provided
+    if (documentationImages && documentationImages.length > 0) {
+      const uploadDocumentationImagePromises = documentationImages.map((file) =>
+        new Promise((resolve, reject) => {
           cloudinary.v2.uploader
             .upload_stream(
               {
-                resource_type: "raw", // Use 'raw' for non-image files like PDF
-                upload_preset: "unsigned_preset", // Use your unsigned preset
-                folder: "car_documentation", // Optional: specify a folder
+                resource_type: "image",
+                upload_preset: "unsigned_preset",
+                folder: "car_documentation_images", // Optional: specify a folder for documentation images
               },
               (error, result) => {
                 if (error) {
-                  console.error("Cloudinary documentation upload error:", error);
+                  console.error("Cloudinary documentation image upload error:", error);
                   reject(error);
                 } else {
-                  resolve(result);
+                  resolve(result.secure_url);
                 }
               }
             )
-            .end(documentation.buffer);
-        });
-        documentationUrl = uploadDocResult.secure_url;
-      } catch (docUploadError) {
-        console.error("Error uploading documentation:", docUploadError);
-        // Decide how to handle documentation upload failure:
-        // Option 1: Return an error and stop the car posting process
-        // return res.status(500).json({ error: "Failed to upload car documentation." });
-        // Option 2: Log the error and proceed without documentation (as it's optional in the model)
-        console.warn("Proceeding without documentation due to upload error.");
-      }
+            .end(file.buffer);
+            })
+          );
+      documentationImageUrls = await Promise.all(uploadDocumentationImagePromises);
     }
 
 
@@ -138,7 +133,6 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
       price,
       carType,
       images: imageUrls, // Store Cloudinary URLs
-      documentation: documentationUrl, // Store documentation URL
       owner: req.user.userId,
       ownerName: {
         firstName: user.firstName,

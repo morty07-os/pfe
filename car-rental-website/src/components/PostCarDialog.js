@@ -667,7 +667,7 @@ function PostCarDialog({ open, onClose }) {
     energy: "",
     transmission: "",
     images: [],
-    documentation: null, // Add documentation field
+    documentationImages: [], // Add state for documentation images
     location: null,
     locationValid: false, // Track if location is in a valid wilaya
     detectedWilaya: null, // Store the detected wilaya from location
@@ -679,7 +679,7 @@ function PostCarDialog({ open, onClose }) {
     location: false
   });
   const [imagePreviews, setImagePreviews] = useState([]);
-  const [documentationPreview, setDocumentationPreview] = useState(null); // Add documentation preview state
+  const [documentationImagePreviews, setDocumentationImagePreviews] = useState([]); // Add state for documentation image previews
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -875,22 +875,6 @@ function PostCarDialog({ open, onClose }) {
         setFormErrors(prev => ({ ...prev, location: false }));
       }
     }
-    
-      data.append('availabilityEnd', formData.availabilityEnd);
-      data.append('price', formData.price);
-      
-      // Append location data
-      // Append car features and other data
-      Object.entries(formData.features || {}).forEach(([key, value]) => {
-        if (value) {
-          data.append(`features[${key}]`, 'true');
-        }
-      });
-      
-      // Append images
-      formData.images.forEach((imageFile) => {
-        data.append('images', imageFile);
-      });
 
     if (formData.images.length === 0) {
       setSnackbar({
@@ -961,6 +945,10 @@ function PostCarDialog({ open, onClose }) {
 
       formData.images.forEach((imageFile) => {
         dataToSend.append("images", imageFile);
+      });
+
+      formData.documentationImages.forEach((imageFile) => {
+        dataToSend.append("documentationImages", imageFile);
       });
 
       const apiUrl = process.env.REACT_APP_API_URL || "https://pfe-uhbw.onrender.com";
@@ -1140,18 +1128,18 @@ function PostCarDialog({ open, onClose }) {
                   ))}
                 </Box>
               </Box>
-              {/* Documentation Upload */}
+              {/* Documentation Images Upload */}
               <Box>
                 <Typography
                   variant="subtitle2"
                   sx={{ mb: 1, color: "#334155", fontWeight: 600 }}
                 >
-                  Car Documentation (PDF)
+                  Car Documentation (Images)
                 </Typography>
                 <Button
                   variant="outlined"
                   component="label"
-                  startIcon={<AddPhotoAlternateIcon />} // Using the same icon for now
+                  startIcon={<AddPhotoAlternateIcon />}
                   fullWidth
                   sx={{
                     mb: 1.5,
@@ -1164,69 +1152,92 @@ function PostCarDialog({ open, onClose }) {
                     "&:hover": { borderColor: "#334155", bgcolor: "#e2e8f0" },
                   }}
                 >
-                  Upload Documentation (PDF)
+                  Upload Documentation Images (max 5)
                   <input
                     type="file"
-                    accept=".pdf"
-                    name="documentation"
+                    accept="image/*"
+                    name="documentationImages"
+                    multiple
                     hidden
                     onChange={(e) => {
-                      const file = e.target.files[0];
-                      setFormData((prev) => ({ ...prev, documentation: file }));
-                      setDocumentationPreview(file ? file.name : null);
+                      const newImages = Array.from(e.target.files);
+                      setFormData((prev) => ({
+                        ...prev,
+                        documentationImages: [...prev.documentationImages, ...newImages].slice(0, 5), // Limit to 5 images
+                      }));
+                      setDocumentationImagePreviews((prev) => [
+                        ...prev,
+                        ...newImages.map((file) => URL.createObjectURL(file)),
+                      ].slice(0, 5));
                     }}
                   />
                 </Button>
-                {documentationPreview && (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      mt: 1,
-                      p: 1.5,
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 2,
-                      bgcolor: "#f8fafc",
-                      boxShadow: "0 2px 8px rgba(30,41,59,0.07)",
-                    }}
-                  >
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1.5,
+                    overflowX: "auto",
+                    mt: 1,
+                    p: 1,
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 2,
+                    bgcolor: "#f8fafc",
+                  }}
+                >
+                  {documentationImagePreviews.map((src, idx) => (
                     <Box
+                      key={idx}
                       sx={{
-                        bgcolor: "#e2e8f0",
-                        borderRadius: "50%",
-                        width: 32,
-                        height: 32,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        position: "relative",
+                        width: 72,
+                        height: 72,
+                        borderRadius: 3,
+                        overflow: "hidden",
+                        border: "2px solid #cbd5e1",
+                        bgcolor: "#fff",
+                        boxShadow: "0 2px 8px rgba(30,41,59,0.07)",
                         flexShrink: 0,
                       }}
                     >
-                      {/* Placeholder icon for PDF */}
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M14 2V8H20" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M10 12H14" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M10 16H14" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M8 8H10" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                      <img
+                        src={src}
+                        alt="documentation preview"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          borderRadius: 12,
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const newImages = [...formData.documentationImages];
+                          newImages.splice(idx, 1);
+                          setFormData((prev) => ({ ...prev, documentationImages: newImages }));
+
+                          const newPreviews = [...documentationImagePreviews];
+                          URL.revokeObjectURL(newPreviews[idx]);
+                          newPreviews.splice(idx, 1);
+                          setDocumentationImagePreviews(newPreviews);
+                        }}
+                        sx={{
+                          position: "absolute",
+                          top: 0,
+                          right: 0,
+                          color: "white",
+                          backgroundColor: "rgba(0, 0, 0, 0.5)",
+                          "&:hover": {
+                            backgroundColor: "rgba(0, 0, 0, 0.7)",
+                          },
+                          p: 0.5,
+                        }}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
                     </Box>
-                    <Typography variant="body2" sx={{ flexGrow: 1, color: "#334155", fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {documentationPreview}
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        setFormData((prev) => ({ ...prev, documentation: null }));
-                        setDocumentationPreview(null);
-                      }}
-                      sx={{ color: "#94a3b8", flexShrink: 0 }}
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                )}
+                  ))}
+                </Box>
               </Box>
               {/* Description */}
               <TextField
