@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { 
-  Box, 
-  Typography, 
-  TextField, 
-  Slider, 
-  Button, 
+import {
+  Box,
+  Typography,
+  TextField,
+  Slider,
+  Button,
   Autocomplete,
   Divider,
   Paper,
@@ -40,6 +40,30 @@ import CloseIcon from '@mui/icons-material/Close';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
+// Helper function to check if two date ranges overlap
+// Range 1: [start1, end1], Range 2: [start2, end2]
+// Overlap occurs if (start1 <= end2) AND (end1 >= start2)
+export const isAvailabilityOverlap = (carAvailableFrom, carAvailableTo, filterFrom, filterTo) => {
+  // If either filter date is not set, consider it a match for that boundary
+  const filterFromDate = filterFrom ? dayjs(filterFrom) : null;
+  const filterToDate = filterTo ? dayjs(filterTo) : null;
+
+  // If car availability dates are not set, it cannot overlap with a specific filter range
+  if (!carAvailableFrom || !carAvailableTo) {
+    return false;
+  }
+
+  const carFromDate = dayjs(carAvailableFrom);
+  const carToDate = dayjs(carAvailableTo);
+
+  // Check for overlap: car starts before or on filter end AND car ends after or on filter start
+  const startsBeforeFilterEnds = filterToDate ? carFromDate.isSameOrBefore(filterToDate, 'day') : true;
+  const endsAfterFilterStarts = filterFromDate ? carToDate.isSameOrAfter(filterFromDate, 'day') : true;
+
+  return startsBeforeFilterEnds && endsAfterFilterStarts;
+};
+
+
 const brands = [
   'Toyota', 'Renault', 'Peugeot', 'Hyundai', 'Volkswagen', 'Kia', 'Dacia', 'Citroën', 'Fiat', 'Seat',
   'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Nissan', 'Honda', 'Mazda', 'Jeep', 'Land Rover',
@@ -57,18 +81,18 @@ const wilayas = [
 // Collapsible section component
 const FilterSection = ({ title, icon, children, defaultOpen = true }) => {
   const [open, setOpen] = useState(defaultOpen);
-  
+
   return (
-    <Box sx={{ 
+    <Box sx={{
       mb: 1.5,
       bgcolor: open ? 'rgba(241, 245, 249, 0.5)' : 'transparent',
       borderRadius: 2,
       transition: 'all 0.2s ease'
     }}>
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'space-between',
           cursor: 'pointer',
           py: 1,
@@ -101,7 +125,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
   const [pendingFilters, setPendingFilters] = useState(filters || {});
   const [showApplyEffect, setShowApplyEffect] = useState(false);
 
-  const handleChange = (e) => {  
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setPendingFilters({ ...pendingFilters, [name]: value });
   };
@@ -139,7 +163,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
   // Reset a specific filter to its default value
   const handleResetFilter = (filterName) => {
     let newFilters = { ...pendingFilters };
-    
+
     switch(filterName) {
       case 'priceRange':
         newFilters.priceRange = [0, 100000];
@@ -156,7 +180,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       default:
         delete newFilters[filterName];
     }
-    
+
     setPendingFilters(newFilters);
   };
 
@@ -164,19 +188,23 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
   const getActiveFilterCount = () => {
     return Object.keys(pendingFilters).filter(key => {
       if (key === 'priceRange') {
-        return pendingFilters[key] && 
+        return pendingFilters[key] &&
                (pendingFilters[key][0] > 0 || pendingFilters[key][1] < 100000);
       }
       if (key === 'seatsRange') {
-        return pendingFilters[key] && 
+        return pendingFilters[key] &&
                (pendingFilters[key][0] !== 2 || pendingFilters[key][1] !== 9);
       }
       if (key === 'doorsRange') {
-        return pendingFilters[key] && 
+        return pendingFilters[key] &&
                (pendingFilters[key][0] !== 2 || pendingFilters[key][1] !== 5);
       }
       if (key === 'carType') { // Added carType filter count
         return pendingFilters[key] && pendingFilters[key] !== '';
+      }
+      // For availableFrom/availableTo, count as active if either is set
+      if (key === 'availableFrom' || key === 'availableTo') {
+          return pendingFilters.availableFrom || pendingFilters.availableTo;
       }
       return pendingFilters[key] && pendingFilters[key] !== '';
     }).length;
@@ -191,7 +219,12 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
     } else if (key === 'doorsRange') {
       return `${value[0]} - ${value[1]} doors`;
     } else if (key === 'availableFrom' || key === 'availableTo') {
-      return new Date(value).toLocaleDateString();
+      // Only format if the value is a valid date string
+      try {
+          return dayjs(value).isValid() ? dayjs(value).format('YYYY-MM-DD') : value;
+      } catch (e) {
+          return value; // Return raw value if dayjs parsing fails
+      }
     } else if (key === 'carType') { // Added carType display value
       return value;
     }
@@ -262,16 +295,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         '&:hover': {
           boxShadow: isMobile ? '0 15px 35px rgba(0,0,0,0.2)' : '0 15px 35px rgba(0,0,0,0.12)',
         },
-        ...(!isMobile && { 
-          maxWidth: 300, 
-          minWidth: 280, 
+        ...(!isMobile && {
+          maxWidth: 300,
+          minWidth: 280,
           margin: '0 auto',
         })
       }}
     >
       {/* Header with gradient background */}
-      <Box sx={{ 
-        p: 1.5, 
+      <Box sx={{
+        p: 1.5,
         background: 'linear-gradient(135deg, #455a64 0%, #37474f 100%)',
         color: 'white',
         position: 'relative',
@@ -283,21 +316,21 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       }}>
         <Box sx={{ position: 'absolute', top: -15, right: -15, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', zIndex: 0 }} />
         <Box sx={{ position: 'absolute', bottom: -20, left: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', zIndex: 0 }} />
-        
+
         <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center' }}>
           <FilterAltIcon sx={{ mr: 1, fontSize: 20 }} />
           <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem' }}>
             Filters
           </Typography>
         </Box>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           {activeFilterCount > 0 && (
-            <Chip 
-              label={activeFilterCount} 
-              size="small" 
-              sx={{ 
-                fontWeight: 700, 
+            <Chip
+              label={activeFilterCount}
+              size="small"
+              sx={{
+                fontWeight: 700,
                 bgcolor: 'rgba(255,255,255,0.2)',
                 color: 'white',
                 border: '2px solid rgba(255,255,255,0.3)',
@@ -306,15 +339,15 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 '& .MuiChip-label': {
                   px: 1
                 }
-              }} 
+              }}
             />
           )}
-          
+
           {isMobile && (
-            <IconButton 
-              size="small" 
+            <IconButton
+              size="small"
               onClick={onClose}
-              sx={{ 
+              sx={{
                 ml: 1,
                 color: 'white',
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
@@ -325,12 +358,12 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           )}
         </Box>
       </Box>
-      
+
       {/* Active Filters Section */}
       {hasActiveFilters && (
-        <Box sx={{ 
-          px: 2, 
-          py: 1.5, 
+        <Box sx={{
+          px: 2,
+          py: 1.5,
           borderBottom: '1px solid #e2e8f0',
           bgcolor: 'rgba(241, 245, 249, 0.5)',
           flexShrink: 0
@@ -339,17 +372,121 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             <FilterAltIcon sx={{ mr: 0.5, fontSize: 16 }} />
             Active Filters
           </Typography>
-          
+
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
             {Object.entries(pendingFilters).map(([key, value]) => {
               // Skip empty values or default ranges
-              if (!value || 
+              if (!value ||
                   (key === 'priceRange' && value[0] === 0 && value[1] === 100000) ||
                   (key === 'seatsRange' && value[0] === 2 && value[1] === 9) ||
                   (key === 'doorsRange' && value[0] === 2 && value[1] === 5)) {
                 return null;
               }
-              
+
+              // Special handling for availability dates to show both if one is set
+              if (key === 'availableFrom' && !pendingFilters.availableTo) {
+                  return (
+                      <Chip
+                          key={key}
+                          icon={getFilterIcon(key)}
+                          label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, value)}`}
+                          onDelete={() => handleRemoveFilter(key)}
+                          size="small"
+                          sx={{
+                              bgcolor: '#fff',
+                              border: '1px solid #cbd5e1',
+                              color: '#455a64',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24,
+                              '& .MuiChip-deleteIcon': {
+                                  color: '#94a3b8',
+                                  fontSize: '0.9rem',
+                                  '&:hover': {
+                                      color: '#f43f5e'
+                                  }
+                              },
+                              '& .MuiChip-icon': {
+                                  color: '#455a64',
+                                  fontSize: '0.9rem',
+                                  marginLeft: '4px'
+                              }
+                          }}
+                      />
+                  );
+              }
+              if (key === 'availableTo' && !pendingFilters.availableFrom) {
+                   return (
+                      <Chip
+                          key={key}
+                          icon={getFilterIcon(key)}
+                          label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, value)}`}
+                          onDelete={() => handleRemoveFilter(key)}
+                          size="small"
+                          sx={{
+                              bgcolor: '#fff',
+                              border: '1px solid #cbd5e1',
+                              color: '#455a64',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24,
+                              '& .MuiChip-deleteIcon': {
+                                  color: '#94a3b8',
+                                  fontSize: '0.9rem',
+                                  '&:hover': {
+                                      color: '#f43f5e'
+                                  }
+                              },
+                              '& .MuiChip-icon': {
+                                  color: '#455a64',
+                                  fontSize: '0.9rem',
+                                  marginLeft: '4px'
+                              }
+                          }}
+                      />
+                  );
+              }
+              // If both are set, show a single chip for the range
+              if (key === 'availableFrom' && pendingFilters.availableTo) {
+                  return (
+                      <Chip
+                          key="availabilityRange"
+                          icon={getFilterIcon(key)}
+                          label={`Available: ${getFilterDisplayValue('availableFrom', pendingFilters.availableFrom)} to ${getFilterDisplayValue('availableTo', pendingFilters.availableTo)}`}
+                          onDelete={() => {
+                              handleRemoveFilter('availableFrom');
+                              handleRemoveFilter('availableTo');
+                          }}
+                          size="small"
+                          sx={{
+                              bgcolor: '#fff',
+                              border: '1px solid #cbd5e1',
+                              color: '#455a64',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24,
+                              '& .MuiChip-deleteIcon': {
+                                  color: '#94a3b8',
+                                  fontSize: '0.9rem',
+                                  '&:hover': {
+                                      color: '#f43f5e'
+                                  }
+                              },
+                              '& .MuiChip-icon': {
+                                  color: '#455a64',
+                                  fontSize: '0.9rem',
+                                  marginLeft: '4px'
+                              }
+                          }}
+                      />
+                  );
+              }
+              // Skip availableTo if availableFrom is already handled
+              if (key === 'availableTo' && pendingFilters.availableFrom) {
+                  return null;
+              }
+
+
               return (
                 <Chip
                   key={key}
@@ -381,7 +518,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               );
             })}
           </Box>
-          
+
           {hasActiveFilters && (
             <Button
               size="small"
@@ -405,10 +542,10 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           )}
         </Box>
       )}
-      
+
       {/* Filter content - Scrollable */}
-      <Box sx={{ 
-        p: 1.5, 
+      <Box sx={{
+        p: 1.5,
         overflowY: 'auto',
         flex: 1,
         '&::-webkit-scrollbar': {
@@ -427,8 +564,8 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         }
       }}>
         {/* Brand Section */}
-        <FilterSection 
-          title="Brand" 
+        <FilterSection
+          title="Brand"
           icon={<BrandingWatermarkIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
         >
           <Box sx={{ position: 'relative' }}>
@@ -438,13 +575,13 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               value={pendingFilters.brand || null}
               onChange={(e, value) => handleChange({ target: { name: 'brand', value } })}
               renderInput={(params) => (
-                <TextField 
-                  {...params} 
-                  label="Select Brand" 
+                <TextField
+                  {...params}
+                  label="Select Brand"
                   variant="outlined"
                   fullWidth
                   size="small"
-                  sx={{ 
+                  sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
                       height: 40,
@@ -464,16 +601,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 </li>
               )}
             />
-            
+
             {pendingFilters.brand && (
               <Fade in={true}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleRemoveFilter('brand')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
+                  sx={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -8,
                     bgcolor: '#f1f5f9',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
@@ -497,23 +634,23 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             )}
           </Box>
         </FilterSection>
-        
+
         {/* Energy Type Section */}
-        <FilterSection 
-          title="Energy Type" 
+        <FilterSection
+          title="Energy Type"
           icon={<LocalGasStationIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
         >
           <Box sx={{ position: 'relative' }}>
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(2, 1fr)', 
-              gap: 1 
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 1
             }}>
-              <ToggleButton 
+              <ToggleButton
                 value="Gasoline"
                 selected={pendingFilters.energy === 'Gasoline'}
                 onChange={() => handleChange({ target: { name: 'energy', value: 'Gasoline' } })}
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
@@ -548,12 +685,12 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   Gasoline
                 </Box>
               </ToggleButton>
-              
-              <ToggleButton 
+
+              <ToggleButton
                 value="Diesel"
                 selected={pendingFilters.energy === 'Diesel'}
                 onChange={() => handleChange({ target: { name: 'energy', value: 'Diesel' } })}
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
@@ -588,12 +725,12 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   Diesel
                 </Box>
               </ToggleButton>
-              
-              <ToggleButton 
+
+              <ToggleButton
                 value="Hybrid"
                 selected={pendingFilters.energy === 'Hybrid'}
                 onChange={() => handleChange({ target: { name: 'energy', value: 'Hybrid' } })}
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
@@ -628,12 +765,12 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   Hybrid
                 </Box>
               </ToggleButton>
-              
-              <ToggleButton 
+
+              <ToggleButton
                 value="Electric"
                 selected={pendingFilters.energy === 'Electric'}
                 onChange={() => handleChange({ target: { name: 'energy', value: 'Electric' } })}
-                sx={{ 
+                sx={{
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
@@ -669,16 +806,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 </Box>
               </ToggleButton>
             </Box>
-            
+
             {pendingFilters.energy && (
               <Fade in={true}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleRemoveFilter('energy')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
+                  sx={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -8,
                     bgcolor: '#f1f5f9',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
@@ -702,10 +839,10 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             )}
           </Box>
         </FilterSection>
-        
+
         {/* Transmission Section */}
-        <FilterSection 
-          title="Transmission" 
+        <FilterSection
+          title="Transmission"
           icon={<SettingsIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
         >
           <Box sx={{ position: 'relative' }}>
@@ -716,7 +853,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               aria-label="transmission"
               size="small"
               fullWidth
-              sx={{ 
+              sx={{
                 display: 'flex',
                 '& .MuiToggleButtonGroup-grouped': {
                   flex: 1,
@@ -763,16 +900,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 </Box>
               </ToggleButton>
             </ToggleButtonGroup>
-            
+
             {pendingFilters.transmission && (
               <Fade in={true}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleRemoveFilter('transmission')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
+                  sx={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -8,
                     bgcolor: '#f1f5f9',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
@@ -796,10 +933,10 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             )}
           </Box>
         </FilterSection>
-        
+
         {/* Location Section */}
-        <FilterSection 
-          title="Location" 
+        <FilterSection
+          title="Location"
           icon={<LocationOnIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
         >
           <Box sx={{ position: 'relative' }}>
@@ -809,13 +946,13 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               value={pendingFilters.wilaya || null}
               onChange={(e, value) => handleChange({ target: { name: 'wilaya', value } })}
               renderInput={(params) => (
-                <TextField 
-                  {...params} 
-                  label="Select Wilaya" 
+                <TextField
+                  {...params}
+                  label="Select Wilaya"
                   variant="outlined"
                   fullWidth
                   size="small"
-                  sx={{ 
+                  sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
                       height: 40,
@@ -835,16 +972,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 </li>
               )}
             />
-            
+
             {pendingFilters.wilaya && (
               <Fade in={true}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleRemoveFilter('wilaya')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
+                  sx={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -8,
                     bgcolor: '#f1f5f9',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
@@ -868,10 +1005,10 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             )}
           </Box>
         </FilterSection>
-        
+
         {/* Car Type Section */}
-        <FilterSection 
-          title="Car Type" 
+        <FilterSection
+          title="Car Type"
           icon={<DirectionsCarIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
         >
           <Box sx={{ position: 'relative' }}>
@@ -882,7 +1019,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               aria-label="car type"
               size="small"
               fullWidth
-              sx={{ 
+              sx={{
                 display: 'flex', // Changed to flex
                 flexWrap: 'wrap', // Added flexWrap
                 gap: 1,
@@ -928,16 +1065,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 </ToggleButton>
               ))}
             </ToggleButtonGroup>
-            
+
             {pendingFilters.carType && (
               <Fade in={true}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleRemoveFilter('carType')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
+                  sx={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -8,
                     bgcolor: '#f1f5f9',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
@@ -961,7 +1098,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             )}
           </Box>
         </FilterSection>
-        
+
         {/* Seats Section */}
         <FilterSection 
           title="Seats Range" 
@@ -976,7 +1113,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 Max: {pendingFilters.seatsRange?.[1] || 9}
               </Typography>
             </Box>
-            
+
             <Slider
               value={pendingFilters.seatsRange || [2, 9]}
               onChange={handleSliderChange('seatsRange')}
@@ -984,7 +1121,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               min={2}
               max={9}
               step={1}
-              sx={{ 
+              sx={{
                 color: '#455a64',
                 '& .MuiSlider-thumb': {
                   height: 16,
@@ -1001,17 +1138,17 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 }
               }}
             />
-            
-            {pendingFilters.seatsRange && 
+
+            {pendingFilters.seatsRange &&
              (pendingFilters.seatsRange[0] !== 2 || pendingFilters.seatsRange[1] !== 9) && (
               <Fade in={true}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleRemoveFilter('seatsRange')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
+                  sx={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -8,
                     bgcolor: '#f1f5f9',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
@@ -1035,7 +1172,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             )}
           </Box>
         </FilterSection>
-        
+
         {/* Doors Section */}
         <FilterSection 
           title="Doors Range" 
@@ -1050,7 +1187,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 Max: {pendingFilters.doorsRange?.[1] || 5}
               </Typography>
             </Box>
-            
+
             <Slider
               value={pendingFilters.doorsRange || [2, 5]}
               onChange={handleSliderChange('doorsRange')}
@@ -1058,7 +1195,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               min={2}
               max={5}
               step={1}
-              sx={{ 
+              sx={{
                 color: '#455a64',
                 '& .MuiSlider-thumb': {
                   height: 16,
@@ -1075,17 +1212,17 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 }
               }}
             />
-            
-            {pendingFilters.doorsRange && 
+
+            {pendingFilters.doorsRange &&
              (pendingFilters.doorsRange[0] !== 2 || pendingFilters.doorsRange[1] !== 5) && (
               <Fade in={true}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleRemoveFilter('doorsRange')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
+                  sx={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -8,
                     bgcolor: '#f1f5f9',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
@@ -1109,10 +1246,10 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             )}
           </Box>
         </FilterSection>
-        
+
         {/* Price Range Section */}
-        <FilterSection 
-          title="Price Range" 
+        <FilterSection
+          title="Price Range"
           icon={<AttachMoneyIcon sx={{ fontSize: '1.1rem', color: '#607d8b' }} />}
           defaultOpen={true}
         >
@@ -1146,12 +1283,12 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               }
             }}
           />
-          
+
         </FilterSection>
-        
+
         {/* Availability Section */}
-        <FilterSection 
-          title="Availability" 
+        <FilterSection
+          title="Availability"
           icon={<CalendarMonthIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
           defaultOpen={false}
         >
@@ -1164,7 +1301,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               size="small"
               value={pendingFilters.availableFrom || ''}
               onChange={handleDateChange}
-              sx={{ 
+              sx={{
                 mb: 2,
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
@@ -1182,16 +1319,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               }}
               InputLabelProps={{ shrink: true }}
             />
-            
+
             {pendingFilters.availableFrom && (
               <Fade in={true}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleRemoveFilter('availableFrom')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
+                  sx={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -8,
                     bgcolor: '#f1f5f9',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
@@ -1214,7 +1351,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               </Fade>
             )}
           </Box>
-          
+
           <Box sx={{ position: 'relative' }}>
             <TextField
               fullWidth
@@ -1224,7 +1361,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               size="small"
               value={pendingFilters.availableTo || ''}
               onChange={handleDateChange}
-              sx={{ 
+              sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
                   height: 40,
@@ -1241,16 +1378,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               }}
               InputLabelProps={{ shrink: true }}
             />
-            
+
             {pendingFilters.availableTo && (
               <Fade in={true}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleRemoveFilter('availableTo')}
-                  sx={{ 
-                    position: 'absolute', 
-                    right: -8, 
-                    top: -8, 
+                  sx={{
+                    position: 'absolute',
+                    right: -8,
+                    top: -8,
                     bgcolor: '#f1f5f9',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
@@ -1274,15 +1411,15 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             )}
           </Box>
         </FilterSection>
-        
+
         {/* Add some bottom padding to ensure content doesn't get hidden behind fixed buttons */}
         <Box sx={{ height: 80 }} />
       </Box>
-      
+
       {/* Fixed Action Buttons */}
-      <Box 
-        sx={{ 
-          p: 1.5, 
+      <Box
+        sx={{
+          p: 1.5,
           borderTop: '1px solid #e2e8f0',
           bgcolor: '#fff',
           position: 'sticky',
@@ -1297,9 +1434,9 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         }}
       >
         <Box sx={{ position: 'relative' }}>
-          <Button 
-            variant="contained" 
-            fullWidth 
+          <Button
+            variant="contained"
+            fullWidth
             onClick={handleApply}
             startIcon={<FilterAltIcon />}
             sx={{
@@ -1323,32 +1460,32 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           >
             Apply Filters
             {activeFilterCount > 0 && (
-              <Chip 
-                label={activeFilterCount} 
-                size="small" 
-                sx={{ 
+              <Chip
+                label={activeFilterCount}
+                size="small"
+                sx={{
                   ml: 1,
-                  height: 20, 
+                  height: 20,
                   fontSize: '0.7rem',
                   fontWeight: 700,
                   bgcolor: 'rgba(255,255,255,0.2)',
                   border: '1px solid rgba(255,255,255,0.3)',
                   color: 'white',
-                }} 
+                }}
               />
             )}
           </Button>
-          
+
           {showApplyEffect && (
             <Fade in={showApplyEffect} timeout={300} onExited={() => setShowApplyEffect(false)}>
-              <Box sx={{ 
-                position: 'absolute', 
-                top: 0, 
-                left: 0, 
-                right: 0, 
-                bottom: 0, 
-                display: 'flex', 
-                alignItems: 'center', 
+              <Box sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
                 bgcolor: 'rgba(255,255,255,0.9)',
                 borderRadius: 2,
@@ -1362,11 +1499,11 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
             </Fade>
           )}
         </Box>
-        
+
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            variant="outlined" 
-            fullWidth 
+          <Button
+            variant="outlined"
+            fullWidth
             onClick={handleReset}
             startIcon={<RestartAltIcon />}
             sx={{
@@ -1391,11 +1528,11 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
           >
             Reset
           </Button>
-          
+
           {isMobile && (
-            <Button 
-              variant="outlined" 
-              fullWidth 
+            <Button
+              variant="outlined"
+              fullWidth
               onClick={onClose}
               sx={{
                 borderColor: '#cbd5e1',

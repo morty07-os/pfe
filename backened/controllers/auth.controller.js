@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs';
 import { generateTokenAndSetCookie } from '../lib/utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import sendVerificationEmail from '../utils/email.utils.js';
+import sendEmail from '../utils/email.utils.js'; // Renamed import for clarity
+import { uploadImageToCloudinary, deleteImageFromCloudinary } from "../utils/cloudinary.js";
 
 
 
@@ -50,11 +51,7 @@ export const signup = async (req, res) => {
         // Set expiration time for the verification code (e.g., 10 minutes)
         const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); 
 
-        // Hash the password before creating the user
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Create a new user with the hashed password
+        // Create a new user with the plain password (it will be hashed by the pre-save hook)
         const newUser = new User({
             firstName,
             lastName,
@@ -62,7 +59,7 @@ export const signup = async (req, res) => {
             phone,
             residence,
             email: email.toLowerCase(),
-            password: hashedPassword,
+            password: password,
             licenceFront,
             licenceBack,
             verificationToken: hashedVerificationCode,
@@ -75,7 +72,17 @@ export const signup = async (req, res) => {
 
         // Send verification email
         try {
-            await sendVerificationEmail(newUser.email, verificationCode);
+            await sendEmail(newUser.email, 'Email Verification', `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2 style="color: #475569;">Email Verification</h2>
+                    <p>Thank you for signing up for the Car Rental Website!</p>
+                    <p>Please use the following 6-digit code to verify your email address:</p>
+                    <h3 style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; display: inline-block; letter-spacing: 2px;">${verificationCode}</h3>
+                    <p>This code is valid for 10 minutes.</p>
+                    <p>If you did not sign up for this service, please ignore this email.</p>
+                    <p>Best regards,<br>The Car Rental Team</p>
+                </div>
+            `);
             console.log("Verification email sent successfully");
         } catch (emailError) {
             console.error("Error sending verification email:", emailError);
@@ -95,6 +102,164 @@ export const signup = async (req, res) => {
     }
 };
 
+// Handles requesting a password reset code
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: "Email is required" });
+        }
+
+        console.log(`Forgot password request for email: ${email}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Generate 6-digit reset code
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedResetCode = await bcrypt.hash(resetCode, 10);
+
+        // Set expiration time for the reset code (e.g., 15 minutes)
+        const resetCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+        user.resetPasswordToken = hashedResetCode;
+        user.resetPasswordExpire = resetCodeExpires;
+        await user.save();
+        console.log(`Password reset code generated for user: ${user._id}`);
+
+        // Send password reset email
+        try {
+            await sendEmail(user.email, 'Password Reset Request', `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2 style="color: #475569;">Password Reset Request</h2>
+                    <p>You have requested to reset the password for your Car Rental Website account.</p>
+                    <p>Please use the following 6-digit code to reset your password:</p>
+                    <h3 style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; display: inline-block; letter-spacing: 2px;">${resetCode}</h3>
+                    <p>This code is valid for 15 minutes.</p>
+                    <p>If you did not request a password reset, please ignore this email.</p>
+                    <p>Best regards,<br>The Car Rental Team</p>
+                </div>
+            `);
+            console.log(`Password reset email sent to: ${user.email}`);
+        } catch (emailError) {
+            console.error(`Error sending password reset email: ${emailError.message}`);
+            // Don't fail the request if email fails, just log it and inform the user
+            return res.status(500).json({ error: "Failed to send password reset email. Please try again later." });
+        }
+
+        res.status(200).json({ message: "Password reset code sent to your email." });
+    } catch (error) {
+        console.error("Error in forgotPassword controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles verifying the password reset code
+export const verifyResetCode = async (req, res) => {
+    try {
+        const { email, verificationCode } = req.body;
+
+        if (!email || !verificationCode) {
+            return res.status(400).json({ error: "Email and verification code are required" });
+        }
+
+        console.log(`Verify reset code attempt for email: ${email} with code: ${verificationCode}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (!user.resetPasswordToken || !user.resetPasswordExpire) {
+            console.log(`No reset token found for user: ${user._id}`);
+            return res.status(400).json({ error: "No reset code found or it has expired. Please request a new one." });
+        }
+
+        if (user.resetPasswordExpire < Date.now()) {
+            console.log(`Reset token expired for user: ${user._id}`);
+            // Clear expired token fields
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpire = undefined;
+            await user.save();
+            return res.status(400).json({ error: "Reset code has expired. Please request a new one." });
+        }
+
+        const isCodeValid = await bcrypt.compare(verificationCode, user.resetPasswordToken);
+
+        if (!isCodeValid) {
+            console.log(`Invalid reset code for user: ${user._id}`);
+            return res.status(400).json({ error: "Invalid reset code" });
+        }
+
+        // Code is valid, proceed to password reset step (frontend handles this state change)
+        // We don't clear the token here, it's needed for the actual password reset
+        res.status(200).json({ message: "Code verified successfully. You can now reset your password." });
+    } catch (error) {
+        console.error("Error in verifyResetCode controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Handles resetting the password
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, verificationCode, newPassword } = req.body;
+
+        if (!email || !verificationCode || !newPassword) {
+            return res.status(400).json({ error: "Email, verification code, and new password are required" });
+        }
+
+        console.log(`Reset password attempt for email: ${email}`);
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            console.log(`User not found for email: ${email}`);
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (!user.resetPasswordToken || !user.resetPasswordExpire) {
+            console.log(`No reset token found for user: ${user._id}`);
+            return res.status(400).json({ error: "No reset code found or it has expired. Please request a new one." });
+        }
+
+        if (user.resetPasswordExpire < Date.now()) {
+            console.log(`Reset token expired for user: ${user._id}`);
+            // Clear expired token fields
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpire = undefined;
+            await user.save();
+            return res.status(400).json({ error: "Reset code has expired. Please request a new one." });
+        }
+
+        const isCodeValid = await bcrypt.compare(verificationCode, user.resetPasswordToken);
+
+        if (!isCodeValid) {
+            console.log(`Invalid reset code for user: ${user._id}`);
+            return res.status(400).json({ error: "Invalid reset code" });
+        }
+
+        // Code is valid and not expired, reset the password
+        user.password = newPassword; // The pre-save hook will hash this
+        user.resetPasswordToken = undefined; // Clear reset token fields
+        user.resetPasswordExpire = undefined;
+        await user.save();
+        console.log(`Password reset successfully for user: ${user._id}`);
+
+        res.status(200).json({ message: "Password reset successfully. You can now log in." });
+    } catch (error) {
+        console.error("Error in resetPassword controller:", error.message);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
 // Handles user login
 export const login = async (req, res) => {
     try {
@@ -109,6 +274,7 @@ export const login = async (req, res) => {
 
         // Find the user by email (case insensitive)
         const user = await User.findOne({ email: email.toLowerCase() });
+        console.log('User fetched from DB:', user ? user.email : 'null', 'Role:', user ? user.role : 'undefined'); // Log user and role after fetch
         if (!user) {
             console.log('User not found for email:', email);
             return res.status(401).json({ error: 'Invalid email or password' });
@@ -141,6 +307,26 @@ export const login = async (req, res) => {
 
         console.log('Login successful for user:', user._id);
 
+        // Generate Refresh Token
+        const refreshToken = crypto.randomBytes(32).toString('hex');
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+        // Save hashed refresh token to user document
+        user.refreshToken = hashedRefreshToken;
+        await user.save();
+
+        // Set Refresh Token as HTTP-only cookie
+        const refreshTokenCookieOptions = {
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days expiration for refresh token
+            httpOnly: true,
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/api/auth/refresh-token' // Set path to the refresh token endpoint
+        };
+        res.cookie('refreshToken', refreshToken, refreshTokenCookieOptions);
+        console.log('Refresh token cookie set for user:', user._id);
+
+
         // Return user data without sensitive information
         const userResponse = {
             _id: user._id,
@@ -150,17 +336,18 @@ export const login = async (req, res) => {
             phone: user.phone,
             residence: user.residence,
             isVerified: user.isVerified,
+            role: user.role, // Include the user's role
             createdAt: user.createdAt
         };
 
         res.status(200).json({
             message: 'Login successful',
-            token,
+            token, // This is the access token (JWT)
             user: userResponse
         });
     } catch (error) {
         console.error('Error in login controller:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'An error occurred during login',
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
@@ -283,7 +470,17 @@ export const resendVerificationCode = async (req, res) => {
 
         // Send the new verification email
         try {
-            await sendVerificationEmail(user.email, newVerificationCode);
+             await sendEmail(user.email, 'Email Verification', `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2 style="color: #475569;">Email Verification</h2>
+                    <p>You requested a new verification code for your Car Rental Website account.</p>
+                    <p>Please use the following 6-digit code to verify your email address:</p>
+                    <h3 style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; display: inline-block; letter-spacing: 2px;">${newVerificationCode}</h3>
+                    <p>This code is valid for 10 minutes.</p>
+                    <p>If you did not request this, please ignore this email.</p>
+                    <p>Best regards,<br>The Car Rental Team</p>
+                </div>
+            `);
             console.log(`Verification email sent to: ${user.email}`);
         } catch (emailError) {
             console.error(`Error sending verification email: ${emailError.message}`);
@@ -298,9 +495,24 @@ export const resendVerificationCode = async (req, res) => {
 };
 
 // Handles user logout
-export const logout = (req, res) => {
+export const logout = async (req, res) => {
     try {
+        // Clear the access token cookie
         res.cookie("jwt", "", { maxAge: 0 });
+
+        // Clear the refresh token cookie
+        res.cookie("refreshToken", "", { maxAge: 0, path: '/api/auth/refresh-token' }); // Ensure path matches the one set in login
+
+        // Invalidate the refresh token in the database
+        if (req.user && req.user.userId) {
+            const user = await User.findById(req.user.userId);
+            if (user) {
+                user.refreshToken = undefined; // Remove the refresh token
+                await user.save();
+                console.log(`Refresh token invalidated for user: ${req.user.userId}`);
+            }
+        }
+
         res.status(200).json({ message: "User logged out successfully" });
     } catch (error) {
         console.error("Error in logout controller:", error.message);
@@ -354,19 +566,156 @@ export const refreshToken = async (req, res) => {
             return res.status(401).json({ error: "No refresh token provided" });
         }
 
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        // Find user by comparing the refresh token with the hashed token in the database
+        const user = await User.findOne({}); // Need to find user based on hashed refresh token
 
-        res.cookie("jwt", newToken, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,
+        // Iterate through users to find a match for the refresh token
+        // This is inefficient for large number of users, consider adding an index on hashed refresh token if possible
+        // Or a different approach for refresh token storage/validation
+        const users = await User.find({}); // Fetch all users (inefficient)
+        let foundUser = null;
+        for (const u of users) {
+            if (u.refreshToken && await bcrypt.compare(refreshToken, u.refreshToken)) {
+                foundUser = u;
+                break;
+            }
+        }
+
+        if (!foundUser) {
+             console.log("Invalid or expired refresh token - user not found");
+            return res.status(401).json({ error: "Invalid or expired refresh token" });
+        }
+
+        // Generate a new access token (JWT)
+        const newToken = jwt.sign({ userId: foundUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        // Set the new access token as an HTTP-only cookie
+        const accessTokenCookieOptions = {
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days expiration for access token
             httpOnly: true,
-            sameSite: "strict",
-            secure: process.env.NODE_ENV !== "development",
-        });
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Consistent sameSite
+            secure: process.env.NODE_ENV === 'production',
+            path: '/' // Consistent path
+        };
+        res.cookie("jwt", newToken, accessTokenCookieOptions);
+        console.log('New access token generated and cookie set for user:', foundUser._id);
 
-        res.status(200).json({ message: "Token refreshed successfully" });
+
+        // Optionally, generate and set a new refresh token and invalidate the old one
+        // This adds complexity but improves security by rotating refresh tokens
+        // const newRefreshToken = crypto.randomBytes(32).toString('hex');
+        // const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+        // foundUser.refreshToken = hashedNewRefreshToken;
+        // await foundUser.save();
+        // const newRefreshTokenCookieOptions = { ...refreshTokenCookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 }; // Longer expiration
+        // res.cookie('refreshToken', newRefreshToken, newRefreshTokenCookieOptions);
+
+
+        res.status(200).json({ message: "Token refreshed successfully", token: newToken });
     } catch (error) {
         console.error("Error refreshing token:", error.message);
         res.status(401).json({ error: "Invalid or expired refresh token" });
+    }
+};
+
+export const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.userId; // Get user ID from ProtectedRoute
+        const { phone, currentPassword, newPassword } = req.body;
+        const files = req.files; // Access uploaded files
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Update phone number if provided
+        if (phone !== undefined) {
+            user.phone = phone;
+        }
+
+        // Handle license file uploads
+        if (files && files.licenceFront) {
+            // Upload new licenceFront
+            const licenceFrontResult = await uploadImageToCloudinary(files.licenceFront[0].path);
+            if (licenceFrontResult && licenceFrontResult.secure_url) {
+                // Optionally delete old licenceFront from Cloudinary
+                if (user.licenceFront) {
+                    // Extract public ID from the old URL and delete
+                    const oldPublicId = user.licenceFront.split('/').pop().split('.')[0];
+                    await deleteImageFromCloudinary(oldPublicId);
+                }
+                user.licenceFront = licenceFrontResult.secure_url;
+            } else {
+                return res.status(500).json({ error: "Failed to upload licence front image" });
+            }
+        }
+
+        if (files && files.licenceBack) {
+            // Upload new licenceBack
+            const licenceBackResult = await uploadImageToCloudinary(files.licenceBack[0].path);
+            if (licenceBackResult && licenceBackResult.secure_url) {
+                 // Optionally delete old licenceBack from Cloudinary
+                if (user.licenceBack) {
+                    // Extract public ID from the old URL and delete
+                    const oldPublicId = user.licenceBack.split('/').pop().split('.')[0];
+                    await deleteImageFromCloudinary(oldPublicId);
+                }
+                user.licenceBack = licenceBackResult.secure_url;
+            } else {
+                return res.status(500).json({ error: "Failed to upload licence back image" });
+            }
+        }
+
+
+        // Update password if newPassword is provided
+        if (newPassword) {
+            console.log("Attempting password change for user:", userId);
+            console.log("Received currentPassword:", currentPassword ? "Provided" : "Not Provided");
+            console.log("Received newPassword:", newPassword ? "Provided" : "Not Provided");
+
+            if (!currentPassword) {
+                console.log("Current password not provided for password change");
+                return res.status(400).json({ error: "Current password is required to change password" });
+            }
+
+            const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+            if (!isPasswordValid) {
+                console.log("Incorrect current password for user:", userId);
+                return res.status(401).json({ error: "Incorrect current password" });
+            }
+            console.log("Current password validated for user:", userId);
+
+            try {
+                // Assign the new password (pre-save hook will hash it)
+                user.password = newPassword;
+                console.log("New password assigned for user:", userId);
+            } catch (assignError) {
+                console.error("Error assigning new password for user:", userId, assignError);
+                return res.status(500).json({ error: "Failed to process new password" });
+            }
+        }
+
+        try {
+            await user.save();
+            console.log("User profile saved successfully for user:", userId);
+        } catch (saveError) {
+            console.error("Error saving user profile for user:", userId, saveError);
+            return res.status(500).json({ error: "Failed to save profile changes" });
+        }
+
+
+        // Return updated user data (excluding password)
+        const updatedUser = await User.findById(userId).select("-password");
+
+        res.status(200).json({
+            message: "Profile updated successfully",
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.error("Error in updateProfile controller:", error.message);
+        res.status(500).json({ error: "Server error" });
     }
 };

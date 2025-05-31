@@ -1,7 +1,8 @@
 import express from "express";
 import multer from "multer";
-import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode } from "../controllers/auth.controller.js";
+import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword, updateProfile } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
+import { adminAuth } from "../midleware/adminAuth.js"; // Import adminAuth middleware
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
 
 //import { processPayment } from "../controllers/payment.controller.js";
@@ -41,7 +42,11 @@ router.use((req, res, next) => {
 // User routes
 router.get("/me", ProtectedRoute(), getMe);
 router.get("/profile", ProtectedRoute(), getMe);
-router.post("/signup", 
+router.put("/profile", ProtectedRoute(), upload.fields([
+  { name: "licenceFront", maxCount: 1 },
+  { name: "licenceBack", maxCount: 1 }
+]), updateProfile); // New route for profile updates
+router.post("/signup",
   upload.fields([
     { name: "licenceFront", maxCount: 1 }, 
     { name: "licenceBack", maxCount: 1 }
@@ -54,12 +59,21 @@ router.post("/refresh-token", refreshToken);
 router.post("/verify-email", verifyEmail);
 router.post("/resend-verification-code", resendVerificationCode);
 
+// Forgot Password routes
+router.post("/forgot-password", forgotPassword); // New route to request reset code
+router.post("/verify-reset-code", verifyResetCode); // New route to verify reset code
+router.post("/reset-password", resetPassword); // New route to reset password
+
 // Car routes
 router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload
 router.get("/listcars", ProtectedRoute, getCars); // Get a list of cars
 router.put("/updatecars/:id", ProtectedRoute, updateCar); // Update car details
 router.delete("/deletecars/:id", ProtectedRoute, deleteCar); // Delete a car
 
+// Admin routes (placeholder)
+router.get("/admin/dashboard", ProtectedRoute(), adminAuth(), (req, res) => {
+    res.status(200).json({ message: "Welcome to the admin dashboard!" });
+});
 
 
 // Payment route

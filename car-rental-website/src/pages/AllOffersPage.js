@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
-// Assuming you have an AuthContext or similar to get user info
-// import { AuthContext } from '../context/AuthContext'; // Example
 import QuickSearch from '../components/QuickSearch';
 import {
   Box,
@@ -182,9 +180,36 @@ export default function AllOffersPage() {
     }
   };
 
-  // Extract category from query parameters
+  // Extract parameters from query parameters
   const queryParams = React.useMemo(() => new URLSearchParams(locationObj.search), [locationObj.search]);
   const categoryFilter = queryParams.get('category');
+  const startDate = queryParams.get('startDate');
+  const endDate = queryParams.get('endDate');
+  const wilayaParam = queryParams.get('wilaya');
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const newFilters = { ...sidebarFilters };
+    
+    // Set availability dates if they exist in URL
+    if (startDate) {
+      newFilters.availableFrom = startDate;
+    }
+    
+    if (endDate) {
+      newFilters.availableTo = endDate;
+    }
+    
+    // Set wilaya if it exists in URL
+    if (wilayaParam) {
+      newFilters.wilaya = wilayaParam;
+    }
+    
+    // Only update if we have new filters to add
+    if (startDate || endDate || wilayaParam) {
+      setSidebarFilters(newFilters);
+    }
+  }, [locationObj.search]); // Only run when URL changes
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -254,8 +279,6 @@ export default function AllOffersPage() {
             ...car,
             features,
             location: car.location || locationData,
-            // Assuming car data has a 'category' field, if not, this needs to be derived
-            // category: car.category || 'Unknown' // Example, adjust as per your data structure
           };
         });
 
@@ -307,29 +330,69 @@ export default function AllOffersPage() {
     }
 
     // Apply sidebar filters
-    tempOffers = tempOffers.filter(offer =>
-      (!sidebarFilters.brand || offer.brand === sidebarFilters.brand) &&
-      (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
-      (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
-      (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) &&
-      (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) && // Added carType filter
-      (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
-      (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
-      (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1])) &&
-      (!sidebarFilters.availableFrom || dayjs(offer.availabilityStart || offer.availableFrom).isSameOrAfter(dayjs(sidebarFilters.availableFrom), 'day')) &&
-      (!sidebarFilters.availableTo || dayjs(offer.availabilityEnd || offer.availableTo).isSameOrBefore(dayjs(sidebarFilters.availableTo), 'day'))
-    );
+    tempOffers = tempOffers.filter(offer => {
+      // Basic filters
+      const basicFiltersMatch = 
+        (!sidebarFilters.brand || offer.brand === sidebarFilters.brand) &&
+        (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
+        (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
+        (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) &&
+        (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) &&
+        (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
+        (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
+        (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1]));
+      
+      // Availability filter
+      let availabilityMatch = true;
+      if (sidebarFilters.availableFrom || sidebarFilters.availableTo) {
+        // Get car availability dates
+        const carFrom = offer.availabilityStart || offer.availableFrom;
+        const carTo = offer.availabilityEnd || offer.availableTo;
+        
+        // Check if car is available during the selected period
+        availabilityMatch = isDateRangeOverlap(
+          carFrom, 
+          carTo, 
+          sidebarFilters.availableFrom, 
+          sidebarFilters.availableTo
+        );
+      }
+      
+      return basicFiltersMatch && availabilityMatch;
+    });
 
     return tempOffers;
-  }, [offers, search, sidebarFilters, categoryFilter]); // Added categoryFilter to dependency array
+  }, [offers, search, sidebarFilters, categoryFilter]);
 
   function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
-    if (!selectedFrom || !selectedTo) return true;
+    // If car doesn't have availability dates, it can't match
+    if (!offerFrom || !offerTo) return false;
+    
+    // If no filter dates are provided, consider it a match
+    if (!selectedFrom && !selectedTo) return true;
+    
     const offerStart = dayjs(offerFrom);
     const offerEnd = dayjs(offerTo);
+    
+    // Handle cases where only one date is provided
+    if (selectedFrom && !selectedTo) {
+      // Car must be available on or after the selected start date
+      return offerEnd.isAfter(dayjs(selectedFrom)) || offerEnd.isSame(dayjs(selectedFrom), 'day');
+    }
+    
+    if (!selectedFrom && selectedTo) {
+      // Car must be available on or before the selected end date
+      return offerStart.isBefore(dayjs(selectedTo)) || offerStart.isSame(dayjs(selectedTo), 'day');
+    }
+    
+    // Both dates provided - check for overlap
     const selStart = dayjs(selectedFrom);
     const selEnd = dayjs(selectedTo);
-    return offerEnd.isAfter(selStart) && offerStart.isBefore(selEnd);
+    
+    // Check if the ranges overlap:
+    // Car starts before or on filter end AND car ends after or on filter start
+    return (offerStart.isBefore(selEnd) || offerStart.isSame(selEnd, 'day')) && 
+           (offerEnd.isAfter(selStart) || offerEnd.isSame(selStart, 'day'));
   }
 
   const getFilterLabel = (key) => {
@@ -338,7 +401,7 @@ export default function AllOffersPage() {
       energy: 'Energy',
       transmission: 'Transmission',
       wilaya: 'Location',
-      carType: 'Car Type', // Added carType label
+      carType: 'Car Type',
       seats: 'Seats',
       doors: 'Doors',
       priceRange: 'Price',
@@ -368,7 +431,7 @@ export default function AllOffersPage() {
       case 'wilaya':
         return <LocationOnIcon fontSize="small" />;
       case 'carType':
-        return <DirectionsCarIcon fontSize="small" />; // Icon for car type
+        return <DirectionsCarIcon fontSize="small" />;
       case 'seats':
         return <AirlineSeatReclineNormalIcon fontSize="small" />;
       case 'doors':
@@ -427,17 +490,26 @@ export default function AllOffersPage() {
           display: 'flex',
           justifyContent: 'center'
         }}>
-          <QuickSearch noBackground sx={{ 
-            mt: 0, 
-            mb: 2,
-            bgcolor: 'none', 
-            background: 'none',
-            maxWidth: '1200px',
-            width: '100%',
-            mx: 'auto',
-            transform: 'translateY(-15px)',
-            position: 'relative',
-            '&::before': {
+          <QuickSearch 
+            noBackground 
+            onFilterChange={(newFilters) => {
+              // Merge with existing filters
+              setSidebarFilters(prevFilters => ({
+                ...prevFilters,
+                ...newFilters
+              }));
+            }}
+            sx={{ 
+              mt: 0, 
+              mb: 2,
+              bgcolor: 'none', 
+              background: 'none',
+              maxWidth: '1200px',
+              width: '100%',
+              mx: 'auto',
+              transform: 'translateY(-15px)',
+              position: 'relative',
+              '&::before': {
               content: '""',
               position: 'absolute',
               top: 0,
@@ -985,18 +1057,15 @@ export default function AllOffersPage() {
                   </Box>
                 </Grid>
               ) : (
-                // Pagination logic
                 filteredOffers
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((offer) => {
-                    // Check if the current offer belongs to the logged-in user
                     const isOwnOffer = currentUser && offer.owner && (
                       console.log('Owner ID:', offer.owner),
                       console.log('Current User ID:', currentUser._id),
                       offer.owner.toString() === currentUser._id.toString()
                     );
 
-                    // Add a console log to debug the car data
                     if (isOwnOffer) {
                       console.log('Found user car:', offer);
                     }
@@ -1031,7 +1100,6 @@ export default function AllOffersPage() {
                             borderRadius: '2px 0 0 2px',
                             opacity: 0.85
                           },
-                          // Add a subtle gradient overlay at the top
                           '&::after': {
                             content: '""',
                             position: 'absolute',
@@ -1089,7 +1157,6 @@ export default function AllOffersPage() {
                             position: 'relative',
                             borderRadius: 1.25,
                             overflow: 'hidden',
-                            // Add a subtle shadow container for the image
                             '&::before': {
                               content: '""',
                               position: 'absolute',
@@ -1098,7 +1165,6 @@ export default function AllOffersPage() {
                               borderRadius: 'inherit',
                               zIndex: -1
                             },
-                            // Add a subtle gradient overlay
                             '&::after': {
                               content: '""',
                               position: 'absolute',
@@ -1109,8 +1175,11 @@ export default function AllOffersPage() {
                           }}>
                             <CardMedia
                               component="img"
-                              image={offer.images?.[0] ? `${process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com'}/uploads/${offer.images[0]}` : '/placeholder.jpg'}
+                              image={offer.images?.[0] || '/placeholder.jpg'}
                               alt={offer.carName || offer.title || 'Car image'}
+                              onError={(e) => {
+                                e.target.src = '/placeholder.jpg';
+                              }}
                               sx={{
                                 objectFit: 'cover',
                                 width: '100%',
@@ -1148,7 +1217,7 @@ export default function AllOffersPage() {
                                     color="error"
                                     size="small"
                                     sx={{
-                                      display: { md: 'none' }, // Only show on mobile when top-right badge might be hidden
+                                      display: { md: 'none' },
                                       bgcolor: '#ef4444',
                                       color: 'white',
                                       fontWeight: 600,
@@ -1168,7 +1237,6 @@ export default function AllOffersPage() {
                                     letterSpacing: '-0.01em',
                                     position: 'relative',
                                     textShadow: '0 1px 1px rgba(15, 23, 42, 0.05)',
-                                    // Underline effect
                                     '&::after': {
                                       content: '""',
                                       position: 'absolute',
@@ -1347,7 +1415,6 @@ export default function AllOffersPage() {
                                     lng = algeriaWilayaCoordinates[wilaya].lng;
                                     console.log('Using wilaya coordinates:', wilaya, lat, lng);
                                   } else {
-                                    // Default to Algeria center if no coordinates are found
                                     lat = 36.7372;
                                     lng = 3.0865;
                                     console.log('Using default Algeria coordinates');
@@ -1358,6 +1425,10 @@ export default function AllOffersPage() {
                                   
                                   // Navigate to internal MapPage with URL parameters
                                   window.location.href = `/map?carId=${offer._id}&lat=${lat}&lng=${lng}&wilaya=${encodeURIComponent(wilaya)}`;
+                                  
+                                  // Alternative: Open in Google Maps (uncomment to use)
+                                  // window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+                                
                                 }}
                                 sx={{ 
                                   display: 'flex', 
@@ -1623,7 +1694,6 @@ export default function AllOffersPage() {
                               />
                             </Box>
 
-                            {/* Car Features */}
                             {offer.features && Object.keys(offer.features).length > 0 && (
                               <Box sx={{ mb: 2 }}>
                                 <Typography variant="body2" sx={{ 
@@ -1648,7 +1718,6 @@ export default function AllOffersPage() {
                                   {Object.entries(offer.features)
                                     .filter(([key, value]) => value === true)
                                     .map(([featureId]) => {
-                                      // Find the feature in carFeatures array
                                       const feature = carFeatures.find(f => f.id === featureId);
                                       if (!feature) return null;
 
@@ -1714,7 +1783,6 @@ export default function AllOffersPage() {
                 }))}
             </Grid>
             
-            {/* Pagination Controls */}
             {filteredOffers.length > 0 && (
               <Box sx={{ 
                 mt: 5, 
@@ -1722,7 +1790,6 @@ export default function AllOffersPage() {
                 position: 'relative',
                 overflow: 'visible'
               }}>
-                {/* Shadow effect */}
                 <Box sx={{
                   position: 'absolute',
                   width: '90%',
@@ -1733,7 +1800,7 @@ export default function AllOffersPage() {
                   background: 'linear-gradient(135deg, #334155, #1e293b)',
                   opacity: 0.2,
                   filter: 'blur(20px)',
-                  transform: 'translateZ(0)', // Force GPU acceleration
+                  transform: 'translateZ(0)',
                   zIndex: 0
                 }} />
                 
@@ -1816,7 +1883,6 @@ export default function AllOffersPage() {
                         onChange={(e) => {
                           setRowsPerPage(parseInt(e.target.value, 10));
                           setPage(0);
-                          // Scroll to top when changing items per page
                           if (offersTopRef.current) {
                             offersTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
                           }
@@ -1852,7 +1918,6 @@ export default function AllOffersPage() {
                     page={page + 1}
                     onChange={(event, newPage) => {
                       setPage(newPage - 1);
-                      // Scroll to top of offers section when changing pages
                       if (offersTopRef.current) {
                         offersTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }

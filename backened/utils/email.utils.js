@@ -11,7 +11,7 @@ const __dirname = dirname(__filename);
 // Load environment variables from the .env file
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const sendVerificationEmail = async (email, verificationCode) => {
+const sendEmail = async (to, subject, htmlContent) => {
     try {
         // Log email configuration for debugging
         console.log('Email Configuration:');
@@ -43,32 +43,22 @@ const sendVerificationEmail = async (email, verificationCode) => {
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Car Rental Website - Email Verification',
-            html: `
-                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <h2 style="color: #475569;">Email Verification</h2>
-                    <p>Thank you for signing up for the Car Rental Website!</p>
-                    <p>Please use the following 6-digit code to verify your email address:</p>
-                    <h3 style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; display: inline-block; letter-spacing: 2px;">${verificationCode}</h3>
-                    <p>This code is valid for 10 minutes.</p>
-                    <p>If you did not sign up for this service, please ignore this email.</p>
-                    <p>Best regards,<br>The Car Rental Team</p>
-                </div>
-            `,
+            to: to,
+            subject: subject,
+            html: htmlContent,
         };
 
         await transporter.sendMail(mailOptions);
-        console.log('Verification email sent successfully');
+        console.log(`Email sent successfully to ${to} with subject "${subject}"`);
     } catch (error) {
-        console.error('Error sending verification email:', error);
+        console.error('Error sending email:', error);
         // Provide more detailed error information
         const errorMessage = error.message || 'Unknown error';
         const errorCode = error.code || 'UNKNOWN';
         console.error(`Email error details - Code: ${errorCode}, Message: ${errorMessage}`);
         
-        throw new Error(`Failed to send verification email: ${errorMessage} (${errorCode})`);
+        throw new Error(`Failed to send email: ${errorMessage} (${errorCode})`);
     }
 };
 
-export default sendVerificationEmail;
+export default sendEmail;

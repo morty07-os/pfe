@@ -23,6 +23,8 @@ import ReviewsPage from './pages/ReviewsPage';
 import AddCarPage from './pages/AddCarPage';
 import VerificationPage from './pages/VerificationPage';
 import MapPage from './pages/MapPage';
+import EditProfilePage from './pages/EditProfilePage';
+import AdminWelcomePage from './pages/AdminWelcomePage'; // Import AdminWelcomePage
 
 function App() {
   return (
@@ -42,6 +44,7 @@ function App() {
             <Route path="/offers" element={<AllOffersPage />} />
             <Route path="/offer/:offerId" element={<OfferDetailsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/edit-profile" element={<EditProfilePage />} />
             <Route path="/car-details/:carId" element={<CarDetailsPage />} />
             <Route path="/booking/:carId" element={<BookingPage />} />
             <Route path="/conversation/:carId/:ownerId" element={<ConversationPage />} />
@@ -55,6 +58,7 @@ function App() {
             <Route path="/add-car" element={<AddCarPage />} />
             <Route path="/verify-email" element={<VerificationPage />} />
             <Route path="/map" element={<MapPage />} />
+            <Route path="/admin" element={<AdminWelcomePage />} /> {/* Add Admin route */}
           </Routes>
         </div>
       </BrowserRouter>

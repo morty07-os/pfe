@@ -377,6 +377,7 @@ const ProfilePage = () => {
                     '&:hover': { bgcolor: 'rgba(226, 232, 240, 0.2)' },
                     backdropFilter: 'blur(5px)'
                   }}
+                  onClick={() => navigate('/edit-profile')}
                 >
                   Edit Profile
                 </Button>
@@ -610,9 +611,9 @@ const ProfilePage = () => {
                                   overflow: 'hidden',
                                   flexShrink: 0
                                 }}
-                              >
+                                >
                                 <img
-                                  src={car.images?.[0] ? `${process.env.REACT_APP_API_URL}/${car.images[0]}` : '/placeholder.jpg'}
+                                  src={car.images?.[0] || '/placeholder.jpg'}
                                   alt={car.carName}
                                   style={{
                                     width: '100%',
@@ -637,7 +638,7 @@ const ProfilePage = () => {
                                     }}
                                   />
                                   <Chip
-                                    label={`€${car.price}/day`}
+                                    label={`DZD${car.price}/day`}
                                     size="small"
                                     sx={{
                                       bgcolor: '#f1f5f9',
@@ -862,7 +863,7 @@ const ProfilePage = () => {
                                 }}
                               >
                                 <img
-                                  src={car.images?.[0] ? `${process.env.REACT_APP_API_URL}/${car.images[0]}` : '/placeholder.jpg'}
+                                  src={car.images?.[0] || '/placeholder.jpg'}
                                   alt={car.carName}
                                   style={{
                                     width: '100%',
@@ -887,7 +888,7 @@ const ProfilePage = () => {
                                     }}
                                   />
                                   <Chip
-                                    label={`€${car.price}/day`}
+                                    label={`DZD${car.price}/day`}
                                     size="small"
                                     sx={{
                                       bgcolor: '#f1f5f9',

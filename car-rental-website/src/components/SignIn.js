@@ -18,7 +18,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import { useNavigate } from 'react-router-dom';
-import ForgotPasswordDialog from './ForgotPasswordDialog';
+import ForgetPasswordDialog from './ForgetPasswordDialog';
 import { endpoints, fetchOptions } from '../utils/apiConfig';
 
 const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
@@ -81,12 +81,24 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       localStorage.setItem('token', result.token);
       localStorage.setItem('userId', result.user._id);
       localStorage.setItem('userEmail', result.user.email);
-      onClose();
-      const userName = result.user?.firstName || 'User';
-      if (onSuccess) {
-        onSuccess(userName);
+
+      console.log("Logged in user role:", result.user.role); // Log the user's role
+
+      // Check user role and redirect
+      if (result.user.role === 'admin') {
+        console.log("Admin login successful, redirecting to admin page");
+        onClose(); // Close the sign-in dialog
+        navigate('/admin'); // Redirect to the admin page
+      } else {
+        console.log("User login successful, proceeding with normal flow");
+        onClose(); // Close the sign-in dialog
+        const userName = result.user?.firstName || 'User';
+        if (onSuccess) {
+          onSuccess(userName);
+        }
+        window.dispatchEvent(new Event('loginStateChanged'));
       }
-      window.dispatchEvent(new Event('loginStateChanged'));
+
     } catch (error) {
       setMessage(error.message || 'Sign in failed');
       console.error("Error during sign in:", error);
@@ -351,13 +363,9 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
         </DialogActions>
       </form>
 
-      <ForgotPasswordDialog
+      <ForgetPasswordDialog
         open={showForgotPassword}
         onClose={() => setShowForgotPassword(false)}
-        onSwitchToSignIn={() => {
-          setShowForgotPassword(false);
-          onClose();
-        }}
       />
     </Dialog>
   );

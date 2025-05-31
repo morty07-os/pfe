@@ -480,7 +480,7 @@ export default function CarDetailsPage() {
                     <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
                       <CardMedia
                         component="img"
-                        image={`${apiUrl}/${car.images?.[selectedImageIndex] || car.images?.[0]}`}
+                        image={car.images?.[selectedImageIndex] || car.images?.[0] || '/placeholder.jpg'}
                         alt={car.carName}
                         sx={{
                           borderRadius: 2,
@@ -568,7 +568,7 @@ export default function CarDetailsPage() {
                           >
                             <CardMedia
                               component="img"
-                              image={`${apiUrl}/${img}`}
+                              image={img || '/placeholder.jpg'}
                               alt={`Car image ${index + 1}`}
                               sx={{
                                 width: 70,
@@ -586,9 +586,9 @@ export default function CarDetailsPage() {
                       </Box>
                     )}
                     
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
+                    <Box sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
                       mt: 3,
                       p: { xs: 2, sm: 3 },
@@ -598,16 +598,16 @@ export default function CarDetailsPage() {
                     }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AttachMoneyIcon sx={{ color: '#1e293b', fontSize: { xs: 24, sm: 28 } }} />
-                        <Typography
-                          variant="h5"
-                          sx={{
-                            fontWeight: 800,
-                            color: '#1e293b',
-                            fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                          }}
-                        >
-                          €{car.price}/day
-                        </Typography>
+                          <Typography
+                            variant="h5"
+                            sx={{
+                              fontWeight: 800,
+                              color: '#1e293b',
+                              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                            }}
+                          >
+                            DZD{car.price}/day
+                          </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', gap: 2 }}>
                         <Tooltip 
@@ -618,7 +618,7 @@ export default function CarDetailsPage() {
                             <Button
                               variant="contained"
                               onClick={() => navigate(`/booking/${carId}`)}
-                              disabled={isOwnCar}
+                              disabled={isOwnCar || !currentUser}
                               sx={{
                                 borderRadius: 99,
                                 background: isOwnCar 
@@ -641,7 +641,7 @@ export default function CarDetailsPage() {
                                 cursor: isOwnCar ? 'not-allowed' : 'pointer',
                               }}
                             >
-                              {isOwnCar ? "Your Own Car" : "Book Now"}
+                              {isOwnCar ? "Your Own Car" : currentUser ? "Book Now" : "You have to sign in to continue booking"}
                             </Button>
                           </span>
                         </Tooltip>

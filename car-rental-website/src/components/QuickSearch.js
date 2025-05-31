@@ -15,17 +15,26 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import dayjs from 'dayjs';
+import { useLocation } from 'react-router-dom';
 
 // Limited list of Algerian wilayas
 const wilayas = [
   "Annaba", "Alger", "Oran", "Setif", "Constantine", "Bejaia"
 ];
 
-const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
-  const [startDate, setStartDate] = useState(dayjs());
-  const [endDate, setEndDate] = useState(dayjs().add(3, 'day'));
-  const [location, setLocation] = useState(null);
-  const [locationInput, setLocationInput] = useState('');
+const QuickSearch = ({ noBackground = false, isLoggedIn, onFilterChange }) => {
+  // Get URL parameters
+  const locationObj = useLocation();
+  const queryParams = new URLSearchParams(locationObj.search);
+  const startDateParam = queryParams.get('startDate');
+  const endDateParam = queryParams.get('endDate');
+  const wilayaParam = queryParams.get('wilaya');
+
+  // Initialize state with URL parameters if available
+  const [startDate, setStartDate] = useState(startDateParam ? dayjs(startDateParam) : dayjs());
+  const [endDate, setEndDate] = useState(endDateParam ? dayjs(endDateParam) : dayjs().add(3, 'day'));
+  const [location, setLocation] = useState(wilayaParam || null);
+  const [locationInput, setLocationInput] = useState(wilayaParam || '');
   const [isDateInvalid, setIsDateInvalid] = useState(false);
 
   useEffect(() => {
@@ -205,11 +214,24 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
               if (!startDate || !endDate) return;
               const start = startDate.format('YYYY-MM-DD');
               const end = endDate.format('YYYY-MM-DD');
-              let url = `/offers?startDate=${start}&endDate=${end}`;
-              if (location) {
-                url += `&wilaya=${encodeURIComponent(location)}`;
+              
+              // Apply filters directly if onFilterChange is provided
+              if (onFilterChange) {
+                const newFilters = {};
+                newFilters.availableFrom = start;
+                newFilters.availableTo = end;
+                if (location) {
+                  newFilters.wilaya = location;
+                }
+                onFilterChange(newFilters);
+              } else {
+                // Fall back to URL navigation if no filter handler is provided
+                let url = `/offers?startDate=${start}&endDate=${end}`;
+                if (location) {
+                  url += `&wilaya=${encodeURIComponent(location)}`;
+                }
+                window.location.href = url;
               }
-              window.location.href = url;
             }}
           >
             Find Cars
