@@ -24,7 +24,7 @@ import AddCarPage from './pages/AddCarPage';
 import VerificationPage from './pages/VerificationPage';
 import EditProfilePage from './pages/EditProfilePage';
 import AdminDashboardPage from './pages/AdminDashboardPage'; // Import AdminDashboardPage
-import { useAuthContext } from './contexts/AuthContext'; // Import useAuthContext
+import { useAuthContext } from './context/AuthContext'; // Import useAuthContext
 
 function App() {
   const { authUser } = useAuthContext(); // Get authUser from context
