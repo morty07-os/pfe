@@ -24,6 +24,7 @@ import AddCarPage from './pages/AddCarPage';
 import VerificationPage from './pages/VerificationPage';
 import EditProfilePage from './pages/EditProfilePage';
 import AdminWelcomePage from './pages/AdminWelcomePage'; // Import AdminWelcomePage
+import PendingApprovalPage from './pages/PendingApprovalPage'; // Import PendingApprovalPage
 
 function App() {
   return (
