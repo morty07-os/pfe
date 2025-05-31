@@ -73,6 +73,23 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
 
       console.log("Login successful:", result);
       setMessage('Sign in successful');
+
+      // Check user status after successful login and email verification
+      if (result.user.status === 'pending') {
+        console.log("User account pending approval, redirecting to pending page");
+        onClose(); // Close the sign-in dialog
+        navigate('/pending-approval'); // Redirect to the pending approval page
+        return; // Stop further execution
+      }
+
+      if (result.user.status === 'rejected') {
+        console.log("User account rejected");
+        setMessage('Your account has been rejected. Please contact support or sign up again.');
+        // Do not store token or user data for rejected users
+        return; // Stop further execution
+      }
+
+      // If status is 'approved' or admin, proceed with normal login/admin redirect
       // Clear any previous user info from localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
@@ -100,7 +117,15 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       }
 
     } catch (error) {
-      setMessage(error.message || 'Sign in failed');
+      // Handle specific backend errors for status
+      if (error.message.includes('Account pending approval')) {
+         setMessage('Your account is pending administrator approval.');
+      } else if (error.message.includes('Account rejected')) {
+         setMessage('Your account has been rejected. Please contact support or sign up again.');
+      }
+      else {
+        setMessage(error.message || 'Sign in failed');
+      }
       console.error("Error during sign in:", error);
     }
   };

@@ -4,11 +4,11 @@ import { adminAuth } from '../midleware/adminAuth.js'; // Assuming this is the c
 
 const router = express.Router();
 
+// GET /api/admin/pending-users - Get all pending users (temporarily public for debugging)
+router.get('/pending-users', getPendingUsers);
+
 // Protect admin routes with adminAuth middleware
 router.use(adminAuth);
-
-// GET /api/admin/pending-users - Get all pending users
-router.get('/pending-users', getPendingUsers);
 
 // PUT /api/admin/approve-user/:userId - Approve a user
 router.put('/approve-user/:userId', approveUser);
