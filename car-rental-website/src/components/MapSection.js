@@ -69,11 +69,12 @@ const MapSection = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
   
-  // Map functionality has been completely disabled as requested
+  // Navigate to map page with selected wilaya
   const handleShowMap = () => {
-    // Function intentionally left empty - map functionality is disabled
-    console.log('Map functionality is disabled');
-    // No navigation occurs
+    if (!selectedCity) return;
+    
+    // Navigate to map page with the selected wilaya as a parameter
+    navigate(`/map?wilaya=${selectedCity}`);
   };
 
   // This would be replaced with actual map integration
@@ -267,21 +268,7 @@ const MapSection = () => {
                         sx={{
                           bgcolor: '#475569',
                           '&:hover': {
-                            bgcolor: '#334155',
-                            '&::after': {
-                              content: '"Unavailable"',
-                              position: 'absolute',
-                              top: '-40px',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                              color: 'white',
-                              padding: '5px 10px',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              whiteSpace: 'nowrap',
-                              zIndex: 1000
-                            }
+                            bgcolor: '#334155'
                           },
                           '&.Mui-disabled': {
                             bgcolor: '#94a3b8',

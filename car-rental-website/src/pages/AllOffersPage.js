@@ -312,9 +312,12 @@ export default function AllOffersPage() {
 
     // Apply category filter from URL query param first
     if (categoryFilter) {
-      tempOffers = tempOffers.filter(offer =>
-        offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase()
-      );
+      tempOffers = tempOffers.filter(offer => {
+        // Check both category and carType properties with case-insensitive matching
+        const categoryMatch = offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase();
+        const carTypeMatch = offer.carType && offer.carType.toLowerCase() === categoryFilter.toLowerCase();
+        return categoryMatch || carTypeMatch;
+      });
     }
 
     // Apply search term filter (now handled by backend, but keep as fallback)
