@@ -61,18 +61,11 @@ const VerificationPage = () => {
       const result = await response.json();
       console.log('Verification response:', result);
       if (response.ok) {
-        // Clear any previous user info from localStorage
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('userEmail');
-        // Store user data in localStorage
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('userId', result.user._id);
-        localStorage.setItem('userEmail', result.user.email);
+        // Email verified successfully, but user is now in pending state
         setMessage({ type: 'success', text: result.message });
-        window.dispatchEvent(new Event('loginStateChanged'));
+        // Redirect to pending approval page
         setTimeout(() => {
-          navigate('/');
+          navigate('/pending-approval', { state: { email: email } }); // Pass email for potential display on pending page
         }, 2000);
       } else {
         setMessage({ type: 'error', text: result.error || 'Verification failed' });

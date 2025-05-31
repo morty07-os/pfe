@@ -56,6 +56,7 @@ function App() {
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/add-car" element={<AddCarPage />} />
             <Route path="/verify-email" element={<VerificationPage />} />
+            <Route path="/pending-approval" element={<PendingApprovalPage />} /> {/* Add Pending Approval route */}
             <Route path="/admin" element={<AdminWelcomePage />} /> {/* Add Admin route */}
           </Routes>
         </div>

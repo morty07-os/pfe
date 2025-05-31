@@ -394,38 +394,25 @@ export const verifyEmail = async (req, res) => {
             return res.status(400).json({ error: "Invalid verification code" });
         }
 
-        // Update user verification status
+        // Update user verification status and set status to pending
         user.isVerified = true;
+        user.status = 'pending'; // Set status to pending
         user.verificationToken = undefined;
         user.verificationTokenExpires = undefined;
-        
+
         await user.save();
-        console.log(`User ${user._id} verified successfully`);
+        console.log(`User ${user._id} verified email successfully and set to pending status`);
 
-        // Generate token and set it in the cookie after successful verification
-        const token = generateTokenAndSetCookie(user._id, res);
-        
-        if (!token) {
-            console.error('Failed to generate token after email verification');
-            return res.status(500).json({ error: 'Failed to generate authentication token after verification' });
-        }
-
-        // Return complete user data (without sensitive information)
-        const userResponse = {
-            _id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            phone: user.phone,
-            residence: user.residence,
-            isVerified: user.isVerified,
-            createdAt: user.createdAt
-        };
+        // Do NOT generate token and log in the user yet.
+        // User needs admin approval first.
 
         res.status(200).json({
-            message: "Email verified successfully. You are now logged in.",
-            token,
-            user: userResponse
+            message: "Email verified successfully. Your account is awaiting admin approval.",
+            user: { // Return minimal user data
+                _id: user._id,
+                email: user.email,
+                status: user.status
+            }
         });
     } catch (error) {
         console.error("Error in verifyEmail controller:", error.message);
