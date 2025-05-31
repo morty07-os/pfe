@@ -287,38 +287,19 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Check user status
-        if (user.status === 'pending') {
-            console.log('User account pending approval:', email);
-            return res.status(403).json({
-                error: 'Your account is pending administrator approval.',
-                status: 'pending'
-            });
-        }
-
-        if (user.status === 'rejected') {
-            console.log('User account rejected:', email);
-            return res.status(403).json({
-                error: 'Your account was rejected by the administrator. Please contact support or re-register.',
-                status: 'rejected'
-            });
-        }
-
-        // Check if user is verified (should be true if status is approved)
+        // Check if user is verified
         if (!user.isVerified) {
-             console.log('User not verified despite approved status (unexpected state):', email);
-             // This case should ideally not happen if the flow is correct, but handle defensively
-             return res.status(403).json({
-                 error: 'Email not verified',
-                 needsVerification: true,
-                 email: user.email
-             });
-         }
-
+            console.log('User not verified:', email);
+            return res.status(403).json({ 
+                error: 'Email not verified', 
+                needsVerification: true,
+                email: user.email
+            });
+        }
 
         // Generate token and set it in the cookie
         const token = generateTokenAndSetCookie(user._id, res);
-
+        
         if (!token) {
             console.error('Failed to generate token');
             return res.status(500).json({ error: 'Failed to generate authentication token' });
