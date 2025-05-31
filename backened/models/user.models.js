@@ -52,6 +52,11 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
     role: {
         type: String,
         enum: ['user', 'admin'],
