@@ -641,7 +641,7 @@ export default function CarDetailsPage() {
                                 cursor: isOwnCar ? 'not-allowed' : 'pointer',
                               }}
                             >
-                              {isOwnCar ? "Your Own Car" : "Book Now"}
+                              {isOwnCar ? "Your Own Car" : currentUser ? "Book Now" : "You have to sign in to continue booking"}
                             </Button>
                           </span>
                         </Tooltip>
