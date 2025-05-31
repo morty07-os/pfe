@@ -24,7 +24,7 @@ router.put("/update/:id", ProtectedRoute(), upload.single("image"), updateCar);
 router.delete("/delete/:id", ProtectedRoute(), deleteCar);
 
 // Route to post a car with Cloudinary uploads
-router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCount: 5 }]), async (req, res) => {
+router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCount: 5 }, { name: 'documentationImages', maxCount: 5 }]), async (req, res) => {
   try {
     console.log("Request body:", req.body);
     console.log("Uploaded files:", req.files);
@@ -54,7 +54,7 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
       return res.status(400).json({ error: "No images uploaded" });
     }
 
-    // Upload images to Cloudinary using the unsigned preset
+    // Upload car images to Cloudinary using the unsigned preset
     const uploadImagePromises = images.map((file) =>
       new Promise((resolve, reject) => {
         cloudinary.v2.uploader
@@ -62,10 +62,11 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
             {
               resource_type: "image",
               upload_preset: "unsigned_preset",
+              folder: "car_images", // Optional: specify a folder for car images
             },
             (error, result) => {
               if (error) {
-                console.error("Cloudinary image upload error:", error);
+                console.error("Cloudinary car image upload error:", error);
                 reject(error);
               } else {
                 resolve(result.secure_url);
@@ -77,6 +78,36 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
     );
 
     const imageUrls = await Promise.all(uploadImagePromises);
+
+    const documentationImages = files.documentationImages;
+    let documentationImageUrls = [];
+
+    // Upload documentation images to Cloudinary if provided
+    if (documentationImages && documentationImages.length > 0) {
+      const uploadDocumentationImagePromises = documentationImages.map((file) =>
+        new Promise((resolve, reject) => {
+          cloudinary.v2.uploader
+            .upload_stream(
+              {
+                resource_type: "image",
+                upload_preset: "unsigned_preset",
+                folder: "car_documentation_images", // Optional: specify a folder for documentation images
+              },
+              (error, result) => {
+                if (error) {
+                  console.error("Cloudinary documentation image upload error:", error);
+                  reject(error);
+                } else {
+                  resolve(result.secure_url);
+                }
+              }
+            )
+            .end(file.buffer);
+            })
+          );
+      documentationImageUrls = await Promise.all(uploadDocumentationImagePromises);
+    }
+
 
     // Get user information for owner details
     const User = (await import("../models/user.models.js")).default;

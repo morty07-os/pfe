@@ -667,6 +667,7 @@ function PostCarDialog({ open, onClose }) {
     energy: "",
     transmission: "",
     images: [],
+    documentationImages: [], // Add state for documentation images
     location: null,
     locationValid: false, // Track if location is in a valid wilaya
     detectedWilaya: null, // Store the detected wilaya from location
@@ -678,6 +679,7 @@ function PostCarDialog({ open, onClose }) {
     location: false
   });
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [documentationImagePreviews, setDocumentationImagePreviews] = useState([]); // Add state for documentation image previews
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -945,6 +947,10 @@ function PostCarDialog({ open, onClose }) {
         dataToSend.append("images", imageFile);
       });
 
+      formData.documentationImages.forEach((imageFile) => {
+        dataToSend.append("documentationImages", imageFile);
+      });
+
       const apiUrl = process.env.REACT_APP_API_URL || "https://pfe-uhbw.onrender.com";
       const response = await fetch(`${apiUrl}/api/cars/addcars`, {
         method: "POST",
@@ -1104,6 +1110,117 @@ function PostCarDialog({ open, onClose }) {
                       <IconButton
                         size="small"
                         onClick={() => handleRemoveImage(idx)}
+                        sx={{
+                          position: "absolute",
+                          top: 0,
+                          right: 0,
+                          color: "white",
+                          backgroundColor: "rgba(0, 0, 0, 0.5)",
+                          "&:hover": {
+                            backgroundColor: "rgba(0, 0, 0, 0.7)",
+                          },
+                          p: 0.5,
+                        }}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+              {/* Documentation Images Upload */}
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 1, color: "#334155", fontWeight: 600 }}
+                >
+                  Car Documentation (Images)
+                </Typography>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<AddPhotoAlternateIcon />}
+                  fullWidth
+                  sx={{
+                    mb: 1.5,
+                    textTransform: "none",
+                    justifyContent: "flex-start",
+                    borderRadius: 2,
+                    borderColor: "#475569",
+                    color: "#475569",
+                    bgcolor: "#f1f5f9",
+                    "&:hover": { borderColor: "#334155", bgcolor: "#e2e8f0" },
+                  }}
+                >
+                  Upload Documentation Images (max 5)
+                  <input
+                    type="file"
+                    accept="image/*"
+                    name="documentationImages"
+                    multiple
+                    hidden
+                    onChange={(e) => {
+                      const newImages = Array.from(e.target.files);
+                      setFormData((prev) => ({
+                        ...prev,
+                        documentationImages: [...prev.documentationImages, ...newImages].slice(0, 5), // Limit to 5 images
+                      }));
+                      setDocumentationImagePreviews((prev) => [
+                        ...prev,
+                        ...newImages.map((file) => URL.createObjectURL(file)),
+                      ].slice(0, 5));
+                    }}
+                  />
+                </Button>
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1.5,
+                    overflowX: "auto",
+                    mt: 1,
+                    p: 1,
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 2,
+                    bgcolor: "#f8fafc",
+                  }}
+                >
+                  {documentationImagePreviews.map((src, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        position: "relative",
+                        width: 72,
+                        height: 72,
+                        borderRadius: 3,
+                        overflow: "hidden",
+                        border: "2px solid #cbd5e1",
+                        bgcolor: "#fff",
+                        boxShadow: "0 2px 8px rgba(30,41,59,0.07)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={src}
+                        alt="documentation preview"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          borderRadius: 12,
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const newImages = [...formData.documentationImages];
+                          newImages.splice(idx, 1);
+                          setFormData((prev) => ({ ...prev, documentationImages: newImages }));
+
+                          const newPreviews = [...documentationImagePreviews];
+                          URL.revokeObjectURL(newPreviews[idx]);
+                          newPreviews.splice(idx, 1);
+                          setDocumentationImagePreviews(newPreviews);
+                        }}
                         sx={{
                           position: "absolute",
                           top: 0,
