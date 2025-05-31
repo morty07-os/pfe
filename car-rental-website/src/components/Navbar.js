@@ -326,13 +326,17 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
               </IconButton>
             </Tooltip>
             {/* Navigate to all offers page */}
-            <IconButton 
-              color="inherit" 
-              sx={{ color: '#fff' }}
-              onClick={() => navigate('/offers')}
-            >
-              <DirectionsCarIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
-            </IconButton>
+            <Tooltip title="Browse Cars" arrow placement="bottom">
+              <IconButton 
+                color="inherit" 
+                sx={{ color: '#fff' }}
+                onClick={() => navigate('/offers')}
+              >
+                <DirectionsCarIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
+              </IconButton>
+            </Tooltip>
+            
+            {/* Map icon removed as requested */}
             <Tooltip 
               title={isLoggedIn ? "Post a car" : "Sign in to post a car"} 
               arrow

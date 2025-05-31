@@ -16,9 +16,9 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import dayjs from 'dayjs';
 
-// List of all Algerian wilayas (from MapPage.js)
+// Limited list of Algerian wilayas
 const wilayas = [
-  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
+  "Annaba", "Alger", "Oran", "Setif", "Constantine", "Bejaia"
 ];
 
 const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
@@ -96,10 +96,12 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
             position: 'relative',
-            zIndex: 2
+            zIndex: 2,
+            minHeight: { md: '80px' },
+            overflow: 'visible'
           }}
         >
-          <Box sx={{ flex: 2 }}>
+          <Box sx={{ flex: 2, height: { md: '56px' }, width: { md: '250px' } }}>
             <Autocomplete
               fullWidth
               options={wilayas}
@@ -119,19 +121,35 @@ const QuickSearch = ({ noBackground = false, isLoggedIn }) => {
                         <LocationOnIcon sx={{ color: '#475569' }} />
                       </InputAdornment>
                     ),
+                    style: { height: '56px' }
                   }}
                 />
               )}
               sx={{ 
+                width: '100%',
                 '& .MuiOutlinedInput-root': { 
                   borderRadius: 2,
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                     borderColor: '#475569',
                   },
+                  width: { md: '250px' }
                 },
                 '& .MuiAutocomplete-popupIndicator': {
                   color: '#475569',
                 },
+                '& .MuiAutocomplete-inputRoot': {
+                  width: '100%',
+                  maxWidth: '100%',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                },
+                '& .MuiAutocomplete-endAdornment': {
+                  right: 8
+                },
+                '& .MuiAutocomplete-input': {
+                  width: { md: '160px' }
+                }
               }}
               filterOptions={(options, state) => {
                 // If no wilaya selected or input, show all wilayas

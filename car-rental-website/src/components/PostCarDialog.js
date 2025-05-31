@@ -34,14 +34,14 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// List of Algerian Wilayas
+// Limited list of available wilayas
 const wilayas = [
-  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira",
-  "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda",
-  "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla",
-  "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela",
-  "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar",
-  "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Meniaa"
+  "Annaba", "Alger", "Oran", "Setif", "Constantine", "Bejaia"
+];
+
+// List of valid wilayas for validation
+const validWilayas = [
+  "Annaba", "Alger", "Oran", "Setif", "Constantine", "Bejaia"
 ];
 
 // Create a custom search component that doesn't use useMap
@@ -461,7 +461,14 @@ function PostCarDialog({ open, onClose }) {
     transmission: '',
     images: [],
     location: null,
+    locationValid: false, // Track if location is in a valid wilaya
+    detectedWilaya: null, // Store the detected wilaya from location
     features: {}
+  });
+  
+  // Add form errors state to track validation errors
+  const [formErrors, setFormErrors] = useState({
+    location: false
   });
   const [imagePreviews, setImagePreviews] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -532,10 +539,40 @@ function PostCarDialog({ open, onClose }) {
     setMapDialogOpen(false);
   };
   
+  // Function to check if a location is in one of our valid wilayas
+  const isLocationInValidWilaya = async (latitude, longitude) => {
+    try {
+      // Use reverse geocoding to get the address from coordinates
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`);
+      const data = await response.json();
+      
+      // Check if the address contains any of our valid wilayas
+      const address = data.display_name || '';
+      
+      // Check for each valid wilaya in the address
+      for (const wilaya of validWilayas) {
+        // Check for both the exact wilaya name and variations (like Bejaia/Béjaïa)
+        if (
+          address.includes(wilaya) || 
+          (wilaya === 'Setif' && address.includes('Sétif')) ||
+          (wilaya === 'Bejaia' && address.includes('Béjaïa')) ||
+          (wilaya === 'Alger' && (address.includes('Algiers') || address.includes('Algier')))
+        ) {
+          return { valid: true, wilaya };
+        }
+      }
+      
+      return { valid: false, address };
+    } catch (error) {
+      console.error('Error checking location:', error);
+      return { valid: false, error: error.message };
+    }
+  };
+
   const handleUseCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const { latitude, longitude } = position.coords;
           
           // Update the map center to show the current location
@@ -543,17 +580,30 @@ function PostCarDialog({ open, onClose }) {
             mapRef.current.setView([latitude, longitude], 15);
           }
           
+          // Check if the location is in a valid wilaya
+          const locationCheck = await isLocationInValidWilaya(latitude, longitude);
+          
           // Set the location in form data
           setFormData(prev => ({
             ...prev,
-            location: { lat: latitude, lng: longitude }
+            location: { lat: latitude, lng: longitude },
+            locationValid: locationCheck.valid,
+            detectedWilaya: locationCheck.valid ? locationCheck.wilaya : null
           }));
           
-          setSnackbar({
-            open: true,
-            message: 'Current location detected and shown on map',
-            severity: 'success'
-          });
+          if (locationCheck.valid) {
+            setSnackbar({
+              open: true,
+              message: `Location detected in ${locationCheck.wilaya}`,
+              severity: 'success'
+            });
+          } else {
+            setSnackbar({
+              open: true,
+              message: 'Your location is not in one of our service areas. Please select a pickup location in Annaba, Alger, Oran, Setif, Constantine, or Bejaia.',
+              severity: 'error'
+            });
+          }
           
           // Don't close the dialog automatically
           // Let the user confirm the location by clicking the Confirm button
@@ -586,7 +636,32 @@ function PostCarDialog({ open, onClose }) {
         message: 'Please set a pickup location before submitting',
         severity: 'error'
       });
+      setFormErrors(prev => ({ ...prev, location: true }));
       return;
+    }
+    
+    // Check if the location is in a valid wilaya if not already validated
+    if (formData.location && !formData.locationValid) {
+      const locationCheck = await isLocationInValidWilaya(formData.location.lat, formData.location.lng);
+      
+      if (!locationCheck.valid) {
+        setSnackbar({
+          open: true,
+          message: 'Your location is not in one of our service areas. Please select a pickup location in Annaba, Alger, Oran, Setif, Constantine, or Bejaia.',
+          severity: 'error'
+        });
+        setFormErrors(prev => ({ ...prev, location: true }));
+        return;
+      } else {
+        // Location is valid, update form data
+        setFormData(prev => ({
+          ...prev,
+          locationValid: true,
+          detectedWilaya: locationCheck.wilaya,
+          wilaya: locationCheck.wilaya // Auto-set the wilaya based on detected location
+        }));
+        setFormErrors(prev => ({ ...prev, location: false }));
+      }
     }
     
     try {
@@ -926,36 +1001,72 @@ function PostCarDialog({ open, onClose }) {
               <TextField
                 fullWidth
                 onClick={handleOpenMapDialog}
-                value={formData.location ? 'Pickup Location Set ✓' : 'Click to set pickup location'}
+                value={formData.location ? 
+                  (formData.locationValid ? 'Pickup Location Set ✓' : 'Location not in service area! Click to change') : 
+                  'Click to set pickup location'
+                }
+                error={formData.location && !formData.locationValid || formErrors.location}
+                helperText={formData.location && !formData.locationValid ? 
+                  'Please select a location in Annaba, Alger, Oran, Setif, Constantine, or Bejaia' : ''
+                }
                 sx={{ 
                   cursor: 'pointer',
                   '& .MuiInputBase-input': { 
-                    color: formData.location ? '#334155' : '#64748b',
+                    color: formData.location ? 
+                      (formData.locationValid ? '#334155' : '#d32f2f') : 
+                      '#64748b',
                     fontWeight: formData.location ? 500 : 400
+                  },
+                  '& .MuiFormHelperText-root': {
+                    color: '#d32f2f',
+                    fontWeight: 500,
+                    fontSize: '0.75rem',
+                    marginLeft: 1,
+                    marginTop: 0.5
                   }
                 }}
                 InputProps={{
                   readOnly: true,
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LocationOnIcon sx={{ color: formData.location ? '#475569' : '#64748b' }} />
+                      <LocationOnIcon sx={{ 
+                        color: formData.location ? 
+                          (formData.locationValid ? '#475569' : '#d32f2f') : 
+                          '#64748b' 
+                      }} />
                     </InputAdornment>
                   ),
                   endAdornment: formData.location ? (
                     <InputAdornment position="end">
-                      <Typography variant="caption" sx={{ color: '#475569', fontWeight: 500, mr: 1 }}>
+                      <Typography variant="caption" sx={{ 
+                        color: formData.locationValid ? '#475569' : '#d32f2f', 
+                        fontWeight: 500, 
+                        mr: 1 
+                      }}>
                         Click to change
                       </Typography>
                     </InputAdornment>
                   ) : null,
                   sx: {
                     borderRadius: 2.5,
-                    bgcolor: formData.location ? '#e2e8f0' : '#f1f5f9',
-                    border: formData.location ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
-                    boxShadow: formData.location ? '0 2px 6px rgba(30,41,59,0.08)' : '0 1px 4px rgba(30,41,59,0.03)',
+                    bgcolor: formData.location ? 
+                      (formData.locationValid ? '#e2e8f0' : '#fee2e2') : 
+                      '#f1f5f9',
+                    border: formData.location ? 
+                      (formData.locationValid ? '1px solid #cbd5e1' : '1px solid #ef4444') : 
+                      '1px solid #e2e8f0',
+                    boxShadow: formData.location ? 
+                      (formData.locationValid ? '0 2px 6px rgba(30,41,59,0.08)' : '0 2px 6px rgba(239,68,68,0.2)') : 
+                      '0 1px 4px rgba(30,41,59,0.03)',
                     cursor: 'pointer',
-                    '&:hover': { bgcolor: '#e2e8f0', borderColor: '#cbd5e1' },
-                    '&.Mui-focused': { boxShadow: '0 0 0 2px #475569', borderColor: '#475569' },
+                    '&:hover': { 
+                      bgcolor: formData.locationValid ? '#e2e8f0' : '#fecaca', 
+                      borderColor: formData.locationValid ? '#cbd5e1' : '#ef4444' 
+                    },
+                    '&.Mui-focused': { 
+                      boxShadow: formData.locationValid ? '0 0 0 2px #475569' : '0 0 0 2px #ef4444', 
+                      borderColor: formData.locationValid ? '#475569' : '#ef4444' 
+                    },
                     height: 56,
                     pl: 2
                   }
@@ -1370,6 +1481,23 @@ function PostCarDialog({ open, onClose }) {
         </DialogTitle>
         
         <DialogContent sx={{ p: 0, position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {/* Service Area Warning Banner */}
+          <Box sx={{ 
+            bgcolor: '#475569', 
+            color: 'white',
+            p: 2,
+            borderBottom: '1px solid #334155',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+          }}>
+            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+              <strong>Important:</strong> We currently only offer service in Annaba, Alger, Oran, Setif, Constantine, and Bejaia.
+            </Typography>
+          </Box>
+          
           {/* Map */}
           <Box sx={{ flex: 1, position: 'relative' }}>
             <MapContainer

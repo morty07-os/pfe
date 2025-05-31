@@ -22,12 +22,13 @@ import {
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
-import AirlineSeatReclineNormalIcon from '@mui/icons-material/AirlineSeatReclineNormal';
-import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
+import AirlineSeatReclineExtraIcon from '@mui/icons-material/AirlineSeatReclineExtra';
+import DoorFrontIcon from '@mui/icons-material/DoorFront';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import SettingsIcon from '@mui/icons-material/Settings';
+import TuneIcon from '@mui/icons-material/Tune';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -50,7 +51,7 @@ const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
 const transmissions = ['Manual', 'Automatic'];
 const carTypes = ['SUV', 'VAN', 'STATIONWAGON', 'CITADINE', 'SEDAN']; // Added carTypes
 const wilayas = [
-  "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Algiers", "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma", "Constantine", "Médéa", "Mostaganem", "M'Sila", "Mascara", "Ouargla", "Oran", "El Bayadh", "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt", "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent", "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès", "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Menia"
+  "Annaba", "Alger", "Oran", "Setif", "Constantine", "Bejaia"
 ];
 
 // Collapsible section component
@@ -226,9 +227,9 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       case 'wilaya':
         return <LocationOnIcon fontSize="small" />;
       case 'seatsRange':
-        return <AirlineSeatReclineNormalIcon fontSize="small" />;
+        return <AirlineSeatReclineExtraIcon fontSize="small" />;
       case 'doorsRange':
-        return <MeetingRoomIcon fontSize="small" />;
+        return <DoorFrontIcon fontSize="small" />;
       case 'priceRange':
         return <AttachMoneyIcon fontSize="small" />;
       case 'availableFrom':
@@ -477,9 +478,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
                     p: 0.5,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#fee2e2',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(239, 68, 68, 0.2)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                     }
                   }}
                 >
@@ -513,15 +521,25 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   border: '1px solid #e2e8f0',
                   color: '#64748b',
                   py: 0.75,
+                  transition: 'all 0.3s ease',
                   '&.Mui-selected': {
-                    bgcolor: '#455a64',
+                    bgcolor: '#475569',
                     color: 'white',
+                    boxShadow: '0 4px 8px rgba(71, 85, 105, 0.2)',
                     '&:hover': {
                       bgcolor: '#37474f',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 6px 12px rgba(71, 85, 105, 0.3)'
                     }
                   },
                   '&:hover': {
                     bgcolor: 'rgba(203, 213, 225, 0.2)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 4px 8px rgba(100, 116, 139, 0.15)'
+                  },
+                  '&:active': {
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(100, 116, 139, 0.1)'
                   }
                 }}
               >
@@ -543,15 +561,25 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   border: '1px solid #e2e8f0',
                   color: '#64748b',
                   py: 0.75,
+                  transition: 'all 0.3s ease',
                   '&.Mui-selected': {
-                    bgcolor: '#455a64',
+                    bgcolor: '#475569',
                     color: 'white',
+                    boxShadow: '0 4px 8px rgba(71, 85, 105, 0.2)',
                     '&:hover': {
                       bgcolor: '#37474f',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 6px 12px rgba(71, 85, 105, 0.3)'
                     }
                   },
                   '&:hover': {
                     bgcolor: 'rgba(203, 213, 225, 0.2)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 4px 8px rgba(100, 116, 139, 0.15)'
+                  },
+                  '&:active': {
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(100, 116, 139, 0.1)'
                   }
                 }}
               >
@@ -573,15 +601,25 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   border: '1px solid #e2e8f0',
                   color: '#64748b',
                   py: 0.75,
+                  transition: 'all 0.3s ease',
                   '&.Mui-selected': {
-                    bgcolor: '#455a64',
+                    bgcolor: '#475569',
                     color: 'white',
+                    boxShadow: '0 4px 8px rgba(71, 85, 105, 0.2)',
                     '&:hover': {
                       bgcolor: '#37474f',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 6px 12px rgba(71, 85, 105, 0.3)'
                     }
                   },
                   '&:hover': {
                     bgcolor: 'rgba(203, 213, 225, 0.2)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 4px 8px rgba(100, 116, 139, 0.15)'
+                  },
+                  '&:active': {
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(100, 116, 139, 0.1)'
                   }
                 }}
               >
@@ -603,15 +641,25 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   border: '1px solid #e2e8f0',
                   color: '#64748b',
                   py: 0.75,
+                  transition: 'all 0.3s ease',
                   '&.Mui-selected': {
-                    bgcolor: '#455a64',
+                    bgcolor: '#475569',
                     color: 'white',
+                    boxShadow: '0 4px 8px rgba(71, 85, 105, 0.2)',
                     '&:hover': {
                       bgcolor: '#37474f',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 6px 12px rgba(71, 85, 105, 0.3)'
                     }
                   },
                   '&:hover': {
                     bgcolor: 'rgba(203, 213, 225, 0.2)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 4px 8px rgba(100, 116, 139, 0.15)'
+                  },
+                  '&:active': {
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(100, 116, 139, 0.1)'
                   }
                 }}
               >
@@ -635,9 +683,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
                     p: 0.5,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#fee2e2',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(239, 68, 68, 0.2)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                     }
                   }}
                 >
@@ -672,22 +727,32 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   border: '1px solid #e2e8f0',
                   color: '#64748b',
                   py: 0.75,
+                  transition: 'all 0.3s ease',
                   '&.Mui-selected': {
-                    bgcolor: '#455a64',
+                    bgcolor: '#475569',
                     color: 'white',
+                    boxShadow: '0 4px 8px rgba(71, 85, 105, 0.2)',
                     '&:hover': {
                       bgcolor: '#37474f',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 6px 12px rgba(71, 85, 105, 0.3)'
                     }
                   },
                   '&:hover': {
                     bgcolor: 'rgba(203, 213, 225, 0.2)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 4px 8px rgba(100, 116, 139, 0.15)'
+                  },
+                  '&:active': {
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(100, 116, 139, 0.1)'
                   }
                 }
               }}
             >
               <ToggleButton value="Manual">
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <SettingsIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
+                  <TuneIcon sx={{ mr: 0.5, fontSize: '0.9rem', transform: 'rotate(90deg)' }} />
                   Manual
                 </Box>
               </ToggleButton>
@@ -712,9 +777,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
                     p: 0.5,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#fee2e2',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(239, 68, 68, 0.2)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                     }
                   }}
                 >
@@ -777,9 +849,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
                     p: 0.5,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#fee2e2',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(239, 68, 68, 0.2)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                     }
                   }}
                 >
@@ -817,15 +896,25 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                   border: '1px solid #e2e8f0',
                   color: '#64748b',
                   py: 0.75,
+                  transition: 'all 0.3s ease',
                   '&.Mui-selected': {
-                    bgcolor: '#455a64',
+                    bgcolor: '#475569',
                     color: 'white',
+                    boxShadow: '0 4px 8px rgba(71, 85, 105, 0.2)',
                     '&:hover': {
                       bgcolor: '#37474f',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 6px 12px rgba(71, 85, 105, 0.3)'
                     }
                   },
                   '&:hover': {
                     bgcolor: 'rgba(203, 213, 225, 0.2)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 4px 8px rgba(100, 116, 139, 0.15)'
+                  },
+                  '&:active': {
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(100, 116, 139, 0.1)'
                   }
                 }
               }}
@@ -853,9 +942,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
                     p: 0.5,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#fee2e2',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(239, 68, 68, 0.2)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                     }
                   }}
                 >
@@ -869,7 +965,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         {/* Seats Section */}
         <FilterSection 
           title="Seats Range" 
-          icon={<AirlineSeatReclineNormalIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
+          icon={<AirlineSeatReclineExtraIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
         >
           <Box sx={{ px: 1, mt: 1, position: 'relative' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -920,9 +1016,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
                     p: 0.5,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#fee2e2',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(239, 68, 68, 0.2)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                     }
                   }}
                 >
@@ -936,7 +1039,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         {/* Doors Section */}
         <FilterSection 
           title="Doors Range" 
-          icon={<MeetingRoomIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
+          icon={<DoorFrontIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
         >
           <Box sx={{ px: 1, mt: 1, position: 'relative' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -987,9 +1090,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
                     p: 0.5,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#fee2e2',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(239, 68, 68, 0.2)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                     }
                   }}
                 >
@@ -1086,9 +1196,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
                     p: 0.5,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#fee2e2',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(239, 68, 68, 0.2)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                     }
                   }}
                 >
@@ -1138,9 +1255,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     color: '#64748b',
                     p: 0.5,
+                    transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#fee2e2',
-                      color: '#ef4444'
+                      color: '#ef4444',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(239, 68, 68, 0.2)'
+                    },
+                    '&:active': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.1)'
                     }
                   }}
                 >
@@ -1185,9 +1309,15 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               borderRadius: 2,
               py: 1,
               boxShadow: '0 4px 10px rgba(69, 90, 100, 0.2)',
+              transition: 'all 0.3s ease',
               '&:hover': {
-                boxShadow: '0 6px 15px rgba(69, 90, 100, 0.3)',
-                bgcolor: '#37474f'
+                boxShadow: '0 8px 20px rgba(69, 90, 100, 0.4)',
+                bgcolor: '#37474f',
+                transform: 'translateY(-3px)'
+              },
+              '&:active': {
+                transform: 'translateY(-1px)',
+                boxShadow: '0 5px 12px rgba(69, 90, 100, 0.3)'
               }
             }}
           >
@@ -1246,9 +1376,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               fontWeight: 600,
               borderRadius: 2,
               py: 1,
+              transition: 'all 0.3s ease',
               '&:hover': {
                 borderColor: '#94a3b8',
                 bgcolor: 'rgba(203, 213, 225, 0.1)',
+                transform: 'translateY(-3px)',
+                boxShadow: '0 4px 12px rgba(100, 116, 139, 0.15)'
+              },
+              '&:active': {
+                transform: 'translateY(-1px)',
+                boxShadow: '0 2px 8px rgba(100, 116, 139, 0.1)'
               }
             }}
           >
@@ -1267,9 +1404,16 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
                 fontWeight: 600,
                 borderRadius: 2,
                 py: 1,
+                transition: 'all 0.3s ease',
                 '&:hover': {
                   borderColor: '#94a3b8',
                   bgcolor: 'rgba(203, 213, 225, 0.1)',
+                  transform: 'translateY(-3px)',
+                  boxShadow: '0 4px 12px rgba(100, 116, 139, 0.15)'
+                },
+                '&:active': {
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 2px 8px rgba(100, 116, 139, 0.1)'
                 }
               }}
             >

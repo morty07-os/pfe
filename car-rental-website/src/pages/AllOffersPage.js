@@ -47,64 +47,12 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 // Algeria wilaya coordinates for map display
 const algeriaWilayaCoordinates = {
-  'Adrar': { lat: 27.8742, lng: -0.2939 },
-  'Chlef': { lat: 36.1691, lng: 1.3387 },
-  'Laghouat': { lat: 33.8085, lng: 2.8822 },
-  'Oum El Bouaghi': { lat: 35.8775, lng: 7.1136 },
-  'Batna': { lat: 35.5552, lng: 6.1742 },
-  'Béjaïa': { lat: 36.7515, lng: 5.0557 },
-  'Biskra': { lat: 34.8512, lng: 5.7282 },
-  'Béchar': { lat: 31.6182, lng: -2.2186 },
-  'Blida': { lat: 36.4703, lng: 2.8281 },
-  'Bouira': { lat: 36.3754, lng: 3.9002 },
-  'Tamanrasset': { lat: 22.7903, lng: 5.5229 },
-  'Tébessa': { lat: 35.4049, lng: 8.1204 },
-  'Tlemcen': { lat: 34.8884, lng: -1.3143 },
-  'Tiaret': { lat: 35.3707, lng: 1.3166 },
-  'Tizi Ouzou': { lat: 36.7002, lng: 4.0566 },
-  'Alger': { lat: 36.7538, lng: 3.0588 },
-  'Djelfa': { lat: 34.6703, lng: 3.2505 },
-  'Jijel': { lat: 36.8207, lng: 5.7698 },
-  'Sétif': { lat: 36.1898, lng: 5.4108 },
-  'Saïda': { lat: 34.8414, lng: 0.1515 },
-  'Skikda': { lat: 36.8715, lng: 6.9075 },
-  'Sidi Bel Abbès': { lat: 35.1891, lng: -0.6331 },
   'Annaba': { lat: 36.9142, lng: 7.7427 },
-  'Guelma': { lat: 36.4627, lng: 7.4306 },
-  'Constantine': { lat: 36.3650, lng: 6.6147 },
-  'Médéa': { lat: 36.2675, lng: 2.7634 },
-  'Mostaganem': { lat: 35.9312, lng: 0.0892 },
-  'M\'Sila': { lat: 35.7058, lng: 4.5419 },
-  'Mascara': { lat: 35.3979, lng: 0.1400 },
-  'Ouargla': { lat: 31.9527, lng: 5.3335 },
+  'Alger': { lat: 36.7538, lng: 3.0588 },
   'Oran': { lat: 35.6969, lng: -0.6331 },
-  'El Bayadh': { lat: 33.6868, lng: 1.0169 },
-  'Illizi': { lat: 26.5088, lng: 8.4698 },
-  'Bordj Bou Arréridj': { lat: 36.0730, lng: 4.7635 },
-  'Boumerdès': { lat: 36.7663, lng: 3.4783 },
-  'El Tarf': { lat: 36.7669, lng: 8.3136 },
-  'Tindouf': { lat: 27.6711, lng: -8.1289 },
-  'Tissemsilt': { lat: 35.6072, lng: 1.8106 },
-  'El Oued': { lat: 33.3683, lng: 6.8517 },
-  'Khenchela': { lat: 35.4359, lng: 7.1457 },
-  'Souk Ahras': { lat: 36.2863, lng: 7.9511 },
-  'Tipaza': { lat: 36.5892, lng: 2.4130 },
-  'Mila': { lat: 36.4503, lng: 6.2648 },
-  'Aïn Defla': { lat: 36.2641, lng: 1.9685 },
-  'Naâma': { lat: 33.2669, lng: -0.3115 },
-  'Aïn Témouchent': { lat: 35.2997, lng: -1.1400 },
-  'Ghardaïa': { lat: 32.4902, lng: 3.6738 },
-  'Relizane': { lat: 35.7378, lng: 0.5556 },
-  'Timimoun': { lat: 29.2639, lng: 0.2306 },
-  'Bordj Badji Mokhtar': { lat: 21.3283, lng: 0.9545 },
-  'Ouled Djellal': { lat: 34.4204, lng: 5.0658 },
-  'Béni Abbès': { lat: 30.1329, lng: -2.1675 },
-  'In Salah': { lat: 27.1974, lng: 2.4903 },
-  'In Guezzam': { lat: 19.5719, lng: 5.7704 },
-  'Touggourt': { lat: 33.1058, lng: 6.0566 },
-  'Djanet': { lat: 24.5521, lng: 9.4820 },
-  'El M\'Ghair': { lat: 33.9553, lng: 5.9226 },
-  'El Meniaa': { lat: 30.5789, lng: 2.8793 }
+  'Setif': { lat: 36.1898, lng: 5.4108 },
+  'Constantine': { lat: 36.3650, lng: 6.6147 },
+  'Bejaia': { lat: 36.7515, lng: 5.0557 }
 };
 
 // Popular locations within wilayas
@@ -136,6 +84,20 @@ const popularLocations = {
     { name: 'El Hadjar', address: 'El Hadjar, Annaba', lat: 36.8000, lng: 7.7333 },
     { name: 'Berrahal', address: 'Berrahal, Annaba', lat: 36.8333, lng: 7.4500 },
     { name: 'Seraïdi', address: 'Seraïdi, Annaba', lat: 36.9167, lng: 7.6667 }
+  ],
+  'Setif': [
+    { name: 'Ain El Kebira', address: 'Ain El Kebira, Setif', lat: 36.3689, lng: 5.5042 },
+    { name: 'El Eulma', address: 'El Eulma, Setif', lat: 36.1528, lng: 5.6911 },
+    { name: 'Ain Arnat', address: 'Ain Arnat, Setif', lat: 36.1917, lng: 5.3083 },
+    { name: 'Ain Oulmene', address: 'Ain Oulmene, Setif', lat: 35.9214, lng: 5.2939 },
+    { name: 'Bougaa', address: 'Bougaa, Setif', lat: 36.3328, lng: 5.0886 }
+  ],
+  'Bejaia': [
+    { name: 'Akbou', address: 'Akbou, Bejaia', lat: 36.4575, lng: 4.5403 },
+    { name: 'Souk El Tenine', address: 'Souk El Tenine, Bejaia', lat: 36.6167, lng: 5.3500 },
+    { name: 'Tazmalt', address: 'Tazmalt, Bejaia', lat: 36.3833, lng: 4.4000 },
+    { name: 'Amizour', address: 'Amizour, Bejaia', lat: 36.6400, lng: 4.9000 },
+    { name: 'Sidi Aich', address: 'Sidi Aich, Bejaia', lat: 36.6131, lng: 4.6925 }
   ]
 };
 
@@ -1358,25 +1320,44 @@ export default function AllOffersPage() {
                               <Box 
                                 component="button"
                                 onClick={() => {
-                                  // Open Google Maps with the car's location
+                                  // Navigate to internal MapPage with the car's location
                                   const wilaya = offer.wilaya || 'Alger';
                                   let lat, lng;
                                   
-                                  // Get coordinates from the car's location or from the wilaya coordinates
-                                  if (offer.location && offer.location.coordinates) {
+                                  // Get coordinates from the car's location data structure
+                                  // Check all possible location data structures
+                                  if (offer.location && offer.location.lat && offer.location.lng) {
+                                    // Direct lat/lng properties
+                                    lat = offer.location.lat;
+                                    lng = offer.location.lng;
+                                    console.log('Using direct location properties:', lat, lng);
+                                  } else if (offer.location && offer.location.coordinates && offer.location.coordinates.lat && offer.location.coordinates.lng) {
+                                    // Nested coordinates object
                                     lat = offer.location.coordinates.lat;
                                     lng = offer.location.coordinates.lng;
+                                    console.log('Using nested coordinates:', lat, lng);
+                                  } else if (offer.location && Array.isArray(offer.location.coordinates) && offer.location.coordinates.length >= 2) {
+                                    // GeoJSON format [lng, lat]
+                                    lng = offer.location.coordinates[0];
+                                    lat = offer.location.coordinates[1];
+                                    console.log('Using GeoJSON coordinates:', lat, lng);
                                   } else if (algeriaWilayaCoordinates[wilaya]) {
+                                    // Fallback to wilaya coordinates
                                     lat = algeriaWilayaCoordinates[wilaya].lat;
                                     lng = algeriaWilayaCoordinates[wilaya].lng;
+                                    console.log('Using wilaya coordinates:', wilaya, lat, lng);
                                   } else {
                                     // Default to Algeria center if no coordinates are found
                                     lat = 36.7372;
                                     lng = 3.0865;
+                                    console.log('Using default Algeria coordinates');
                                   }
                                   
-                                  // Open Google Maps in a new tab
-                                  window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+                                  // Log the offer object to debug location data
+                                  console.log('Car offer data:', offer);
+                                  
+                                  // Navigate to internal MapPage with URL parameters
+                                  window.location.href = `/map?carId=${offer._id}&lat=${lat}&lng=${lng}&wilaya=${encodeURIComponent(wilaya)}`;
                                 }}
                                 sx={{ 
                                   display: 'flex', 

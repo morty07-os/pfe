@@ -37,24 +37,16 @@ const MapSection = () => {
   const [selectedCity, setSelectedCity] = useState('');
   const [activeStep, setActiveStep] = useState(0);
   
-  // All 58 wilayas of Algeria
+  // Limited list of available wilayas
   const wilayas = [
-    'Adrar', 'Chlef', 'Laghouat', 'Oum El Bouaghi', 'Batna', 'Béjaïa', 'Biskra',
-    'Béchar', 'Blida', 'Bouira', 'Tamanrasset', 'Tébessa', 'Tlemcen', 'Tiaret',
-    'Tizi Ouzou', 'Algiers', 'Djelfa', 'Jijel', 'Sétif', 'Saïda', 'Skikda',
-    'Sidi Bel Abbès', 'Annaba', 'Guelma', 'Constantine', 'Médéa', 'Mostaganem',
-    'M\'Sila', 'Mascara', 'Ouargla', 'Oran', 'El Bayadh', 'Illizi', 'Bordj Bou Arréridj',
-    'Boumerdès', 'El Tarf', 'Tindouf', 'Tissemsilt', 'El Oued', 'Khenchela',
-    'Souk Ahras', 'Tipaza', 'Mila', 'Aïn Defla', 'Naâma', 'Aïn Témouchent',
-    'Ghardaïa', 'Relizane', 'El M\'Ghair', 'El Meniaa', 'Ouled Djellal', 'Bordj Badji Mokhtar',
-    'Béni Abbès', 'Timimoun', 'Touggourt', 'Djanet', 'In Salah', 'In Guezzam'
+    'Annaba', 'Alger', 'Oran', 'Setif', 'Constantine', 'Bejaia'
   ].sort();
   
   // Steps for the stepper
   const steps = [
     {
       label: 'Select Your City',
-      description: 'Choose from any of Algeria\'s 58 wilayas to find available rental locations.',
+      description: 'Choose from our available cities: Annaba, Alger, Oran, Setif, Constantine, and Bejaia.',
       icon: <LooksOneIcon sx={{ fontSize: 40, color: '#475569' }} />
     },
     {
@@ -186,19 +178,19 @@ const MapSection = () => {
               }}>
                 <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <LocationOnIcon /> 
-                  {selectedCity ? `${selectedCity}, Algeria` : 'Select a City'}
+                  {selectedCity ? `${selectedCity}` : 'Select a City'}
                 </Typography>
               </Box>
               
               {/* City Selection */}
               <Box sx={{ position: 'relative', flexGrow: 1 }}>
                 
-                <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Box sx={{ p: 3, pl: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Select a Wilaya
                   </Typography>
                     
-                    <FormControl fullWidth sx={{ mb: 4 }}>
+                    <FormControl fullWidth sx={{ mb: 4, maxWidth: '150px' }}>
                       <InputLabel id="city-select-label">Wilaya</InputLabel>
                       <Select
                         labelId="city-select-label"
@@ -206,6 +198,12 @@ const MapSection = () => {
                         value={selectedCity}
                         label="Wilaya"
                         onChange={(e) => setSelectedCity(e.target.value)}
+                        renderValue={(selected) => (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, maxWidth: '110px', overflow: 'hidden' }}>
+                            <LocationOnIcon sx={{ color: '#475569', fontSize: 20, flexShrink: 0 }} />
+                            <Typography noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{selected}</Typography>
+                          </Box>
+                        )}
                         MenuProps={{
                           PaperProps: {
                             sx: {
@@ -232,14 +230,27 @@ const MapSection = () => {
                           },
                           '& .MuiSvgIcon-root': {
                             color: '#475569',
+                          },
+                          width: '150px !important',
+                          minWidth: '150px !important',
+                          maxWidth: '150px !important',
+                          '& .MuiSelect-select': {
+                            width: '100%',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          },
+                          '& .MuiSelect-root': {
+                            width: '150px !important',
+                            maxWidth: '150px !important'
                           }
                         }}
                       >
                         {wilayas.map((city) => (
                           <MenuItem key={city} value={city}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <LocationOnIcon sx={{ color: '#475569', fontSize: 20 }} />
-                              <Typography>{city}</Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, maxWidth: '110px', overflow: 'hidden' }}>
+                              <LocationOnIcon sx={{ color: '#475569', fontSize: 20, flexShrink: 0 }} />
+                              <Typography noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{city}</Typography>
                             </Box>
                           </MenuItem>
                         ))}
@@ -440,7 +451,7 @@ const MapSection = () => {
                   
                   <Grid container spacing={2}>
                     {[
-                      { title: 'Nationwide Coverage', desc: 'Locations in all 58 wilayas' },
+                      { title: 'Select Cities Coverage', desc: 'Service in 6 major cities' },
                       { title: 'Flexible Pickup', desc: 'Multiple locations in each city' },
                       { title: '24/7 Availability', desc: 'Book anytime, anywhere' },
                       { title: 'Secure Parking', desc: 'All locations monitored' }

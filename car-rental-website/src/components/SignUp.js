@@ -113,8 +113,8 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-    if (age < 18) {
-      setMessage("You must be at least 18 years old to register.");
+    if (age < 21) {
+      setMessage("You must be at least 21 years old to register.");
       return;
     }
 
@@ -167,7 +167,24 @@ const SignUp = ({ open, onClose, onSwitchToSignIn, onSuccess }) => {
               <TextField required fullWidth label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} variant="outlined" onFocus={() => setFocused('lastName')} onBlur={() => setFocused('')} InputProps={{ startAdornment: <InputAdornment position="start"><PersonIcon sx={{ color: focused === 'lastName' ? '#475569' : '#94a3b8', transition: 'color 0.3s ease' }} /></InputAdornment> }} sx={{ '& .MuiOutlinedInput-root': { '&:hover fieldset': { borderColor: '#94a3b8' }, '&.Mui-focused fieldset': { borderColor: '#475569' } } }} />
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField required fullWidth label="Birth Date" name="birthDate" type="date" value={formData.birthDate} onChange={handleChange} InputLabelProps={{ shrink: true }} variant="outlined" />
+              <TextField 
+                required 
+                fullWidth 
+                label="Birth Date" 
+                name="birthDate" 
+                type="date" 
+                value={formData.birthDate} 
+                onChange={handleChange} 
+                InputLabelProps={{ shrink: true }} 
+                variant="outlined" 
+                inputProps={{ 
+                  max: new Date(new Date().setFullYear(new Date().getFullYear() - 21)).toISOString().split('T')[0] 
+                }}
+                helperText="You must be at least 21 years old"
+                onFocus={() => setFocused('birthDate')} 
+                onBlur={() => setFocused('')}
+                sx={{ '& .MuiOutlinedInput-root': { '&:hover fieldset': { borderColor: '#94a3b8' }, '&.Mui-focused fieldset': { borderColor: '#475569' } } }}
+              />
               <TextField required fullWidth label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleChange} variant="outlined" placeholder="05XXXXXXXX" error={!!phoneError} helperText={phoneError || "Enter Algerian mobile number (05, 06, or 07)"} onFocus={() => setFocused('phone')} onBlur={() => setFocused('')} InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon sx={{ color: focused === 'phone' ? '#475569' : '#94a3b8', transition: 'color 0.3s ease' }} /></InputAdornment> }} sx={{ '& .MuiOutlinedInput-root': { '&:hover fieldset': { borderColor: '#94a3b8' }, '&.Mui-focused fieldset': { borderColor: '#475569' } } }} />
             </Box>
             <WilayaDropdown value={formData.residence} onChange={(value) => setFormData((prev) => ({ ...prev, residence: value }))} sx={{ mb: 0 }} />

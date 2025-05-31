@@ -22,6 +22,7 @@ import ContactPage from './pages/ContactPage';
 import ReviewsPage from './pages/ReviewsPage';
 import AddCarPage from './pages/AddCarPage';
 import VerificationPage from './pages/VerificationPage';
+import MapPage from './pages/MapPage';
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/add-car" element={<AddCarPage />} />
             <Route path="/verify-email" element={<VerificationPage />} />
+            <Route path="/map" element={<MapPage />} />
           </Routes>
         </div>
       </BrowserRouter>
