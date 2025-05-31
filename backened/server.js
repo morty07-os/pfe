@@ -19,6 +19,7 @@ import bookingRoutes from "./routes/booking.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import ratingRoutes from "./routes/rating.routes.js"; // Import rating routes
 import feedbackRoutes from "./routes/feedback.routes.js"; // Import feedback routes
+import adminRoutes from "./routes/admin.routes.js"; // Import admin routes
 
 
 // Load environment variables
@@ -152,8 +153,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/cars", carRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/messages", messageRoutes);
-app.use("/api/ratings", ratingRoutes);
-app.use("/api/feedbacks", feedbackRoutes);
+app.use("/api/ratings", ratingRoutes); // Mount rating routes
+app.use("/api/feedbacks", feedbackRoutes); // Mount feedback routes
+app.use("/api/admin", adminRoutes); // Mount admin routes
 
 // Add a simple root route for health check
 app.get('/', (req, res) => {
@@ -169,4 +171,3 @@ httpServer.listen(PORT, async () => {
     await connectMongoDB();
     await removeUsernameIndex(); // Ensure the username index is removed
 });
- 
