@@ -86,6 +86,17 @@ const carSchema = new mongoose.Schema(
           'You must upload between 1 and 5 images, and all image URLs must be from Cloudinary (starting with "https://res.cloudinary.com").',
       },
     },
+    documentation: {
+      type: String, // Store Cloudinary URL for documentation
+      required: false, // Make documentation optional for now
+      validate: {
+        validator: function (doc) {
+          if (!doc) return true; // Allow null or empty string if not required
+          return doc.startsWith("https://res.cloudinary.com");
+        },
+        message: 'Documentation URL must be from Cloudinary (starting with "https://res.cloudinary.com").',
+      },
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
