@@ -84,7 +84,8 @@ const MapSection = () => {
 
   return (
     <Box sx={{ 
-      py: 10, 
+      pt: 0,
+      pb: 6, 
       background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
       position: 'relative',
       overflow: 'hidden'
@@ -111,14 +112,14 @@ const MapSection = () => {
         zIndex: 0
       }} />
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 8, position: 'relative', zIndex: 1 }}>
+        <Box sx={{ textAlign: 'center', mb: 2, position: 'relative', zIndex: 1 }}>
           <Typography 
             variant="h3" 
             component="h2" 
             sx={{ 
               fontWeight: 800, 
               color: '#1e293b',
-              mb: 3,
+              mb: 1.5,
               position: 'relative',
               display: 'inline-block',
               '&::after': {
@@ -150,9 +151,9 @@ const MapSection = () => {
           </Typography>
         </Box>
 
-        <Grid container spacing={4} sx={{ position: 'relative', zIndex: 1 }}>
-          {/* Left side - Map and City Selection */}
-          <Grid item xs={12} md={6}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, position: 'relative', zIndex: 1, mt: -1 }}>
+          {/* Left side - Map */}
+          <Box sx={{ flex: '0 0 20%', minWidth: 0 }}>
             <Paper 
               elevation={4} 
               sx={{ 
@@ -172,122 +173,158 @@ const MapSection = () => {
               <Box sx={{ 
                 background: 'linear-gradient(90deg, #475569 0%, #334155 100%)', 
                 color: 'white',
-                p: 3,
+                p: 2,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'
               }}>
-                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <LocationOnIcon /> 
-                  {selectedCity ? `${selectedCity}` : 'Select a City'}
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 700, letterSpacing: '0.5px', fontSize: '0.95rem', py: 0.5 }}>
+                  <LocationOnIcon sx={{ fontSize: '1rem' }} /> 
+                  {selectedCity ? `${selectedCity}` : 'Map'}
                 </Typography>
               </Box>
               
               {/* City Selection */}
               <Box sx={{ position: 'relative', flexGrow: 1 }}>
-                
-                <Box sx={{ p: 3, pl: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                <Box sx={{ 
+                  px: { xs: 1, sm: 1.5 },
+                  pb: { xs: 1, sm: 1.5 },
+                  pt: 10,
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  height: '100%', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'center', 
+                  backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(203, 213, 225, 0.15) 0%, transparent 70%)',
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '4px',
+                    background: 'linear-gradient(90deg, transparent, rgba(71, 85, 105, 0.1), transparent)'
+                  }
+                }}>
+                  <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 700, fontSize: '0.9rem', color: '#334155', textAlign: 'center', letterSpacing: '0.5px', mt: 0, position: 'relative', display: 'inline-block',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      width: '25px',
+                      height: '2px',
+                      backgroundColor: '#475569',
+                      bottom: '-3px',
+                      left: 'calc(50% - 12.5px)'
+                    } }}>
                     Select a Wilaya
                   </Typography>
                     
-                    <FormControl fullWidth sx={{ mb: 4, maxWidth: '150px' }}>
-                      <InputLabel id="city-select-label">Wilaya</InputLabel>
-                      <Select
-                        labelId="city-select-label"
-                        id="city-select"
-                        value={selectedCity}
-                        label="Wilaya"
-                        onChange={(e) => setSelectedCity(e.target.value)}
-                        renderValue={(selected) => (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, maxWidth: '110px', overflow: 'hidden' }}>
-                            <LocationOnIcon sx={{ color: '#475569', fontSize: 20, flexShrink: 0 }} />
-                            <Typography noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{selected}</Typography>
-                          </Box>
-                        )}
-                        MenuProps={{
-                          PaperProps: {
-                            sx: {
-                              maxHeight: 300,
-                              '&::-webkit-scrollbar': {
-                                width: '8px'
-                              },
-                              '&::-webkit-scrollbar-thumb': {
-                                backgroundColor: '#cbd5e1',
-                                borderRadius: '4px'
-                              }
+                  <FormControl fullWidth sx={{ mb: 1, mt: 0, maxWidth: '150px' }}>
+                    <InputLabel id="city-select-label">Wilaya</InputLabel>
+                    <Select
+                      labelId="city-select-label"
+                      id="city-select"
+                      value={selectedCity}
+                      label="Wilaya"
+                      onChange={(e) => setSelectedCity(e.target.value)}
+                      renderValue={(selected) => (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, maxWidth: '110px', overflow: 'hidden' }}>
+                          <LocationOnIcon sx={{ color: '#475569', fontSize: 20, flexShrink: 0 }} />
+                          <Typography noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{selected}</Typography>
+                        </Box>
+                      )}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            maxHeight: 300,
+                            '&::-webkit-scrollbar': {
+                              width: '8px'
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                              backgroundColor: '#cbd5e1',
+                              borderRadius: '4px'
                             }
                           }
-                        }}
-                        sx={{
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#cbd5e1',
-                          },
-                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#475569',
-                          },
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#94a3b8',
-                          },
-                          '& .MuiSvgIcon-root': {
-                            color: '#475569',
-                          },
+                        }
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#cbd5e1',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#475569',
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#94a3b8',
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: '#475569',
+                        },
+                        width: '150px !important',
+                        minWidth: '150px !important',
+                        maxWidth: '150px !important',
+                        '& .MuiSelect-select': {
+                          width: '100%',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        },
+                        '& .MuiSelect-root': {
                           width: '150px !important',
-                          minWidth: '150px !important',
-                          maxWidth: '150px !important',
-                          '& .MuiSelect-select': {
-                            width: '100%',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          },
-                          '& .MuiSelect-root': {
-                            width: '150px !important',
-                            maxWidth: '150px !important'
-                          }
-                        }}
-                      >
-                        {wilayas.map((city) => (
-                          <MenuItem key={city} value={city}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, maxWidth: '110px', overflow: 'hidden' }}>
-                              <LocationOnIcon sx={{ color: '#475569', fontSize: 20, flexShrink: 0 }} />
-                              <Typography noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{city}</Typography>
-                            </Box>
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                    
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                      <Button
-                        variant="contained"
-                        disabled={!selectedCity}
-                        onClick={handleShowMap}
-                        size="large"
-                        startIcon={<SearchIcon />}
-                        sx={{
-                          bgcolor: '#475569',
-                          '&:hover': {
-                            bgcolor: '#334155'
-                          },
-                          '&.Mui-disabled': {
-                            bgcolor: '#94a3b8',
-                            color: 'white'
-                          },
-                          position: 'relative'
-                        }}
-                      >
-                        Go to Map
-                      </Button>
-                    </Box>
-
+                          maxWidth: '150px !important'
+                        }
+                      }}
+                    >
+                      {wilayas.map((city) => (
+                        <MenuItem key={city} value={city}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, maxWidth: '110px', overflow: 'hidden' }}>
+                            <LocationOnIcon sx={{ color: '#475569', fontSize: 20, flexShrink: 0 }} />
+                            <Typography noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{city}</Typography>
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5, width: '100%', position: 'relative' }}>
+                    <Button
+                      variant="contained"
+                      disabled={!selectedCity}
+                      onClick={handleShowMap}
+                      size="small"
+                      startIcon={<SearchIcon />}
+                      sx={{
+                        bgcolor: '#475569',
+                        '&:hover': {
+                          bgcolor: '#334155',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                          transform: 'translateY(-2px)'
+                        },
+                        '&.Mui-disabled': {
+                          bgcolor: '#94a3b8',
+                          color: 'white'
+                        },
+                        position: 'relative',
+                        borderRadius: '8px',
+                        px: 3,
+                        py: 1,
+                        fontWeight: 600,
+                        letterSpacing: '0.5px',
+                        boxShadow: '0 3px 6px rgba(0, 0, 0, 0.08)',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      View Map
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
             </Paper>
-          </Grid>
-          
-          {/* Right side - Steps Slideshow */}
-          <Grid item xs={12} md={6}>
+          </Box>
+
+          {/* Right side - How It Works */}
+          <Box sx={{ flex: '0 0 80%', minWidth: 0, pr: { md: 4 } }}>
             <Paper 
               elevation={4} 
               sx={{ 
@@ -306,7 +343,10 @@ const MapSection = () => {
               <Box sx={{ 
                 background: 'linear-gradient(90deg, #475569 0%, #334155 100%)', 
                 color: 'white',
-                p: 3
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
               }}>
                 <Typography variant="h6">
                   How It Works
@@ -318,17 +358,17 @@ const MapSection = () => {
                 flexDirection: 'column', 
                 alignItems: 'center',
                 justifyContent: 'center',
-                p: 4,
+                p: { xs: 2, sm: 3 },
                 flexGrow: 1
               }}>
-                <Box sx={{ maxWidth: 400, width: '100%', mb: 4 }}>
+                <Box sx={{ maxWidth: 400, width: '100%', mb: { xs: 2, sm: 4 } }}>
                   <Card 
                     elevation={0} 
                     sx={{ 
                       display: 'flex', 
                       flexDirection: 'column', 
                       alignItems: 'center', 
-                      mb: 4,
+                      mb: { xs: 2, sm: 4 },
                       position: 'relative',
                       '&::before': {
                         content: '""',
@@ -357,19 +397,19 @@ const MapSection = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      width: 80,
-                      height: 80,
+                      width: { xs: 60, sm: 80 },
+                      height: { xs: 60, sm: 80 },
                       borderRadius: '50%',
                       backgroundColor: 'rgba(71, 85, 105, 0.1)',
-                      mb: 3
+                      mb: { xs: 1, sm: 2 }
                     }}>
                       {steps[activeStep].icon}
                     </Box>
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
+                    <CardContent sx={{ textAlign: 'center', p: { xs: 1, sm: 2 } }}>
+                      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, color: '#1e293b', fontSize: { xs: '1.1rem', sm: '1.3rem' } }}>
                         {steps[activeStep].label}
                       </Typography>
-                      <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                      <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                         {steps[activeStep].description}
                       </Typography>
                     </CardContent>
@@ -429,27 +469,27 @@ const MapSection = () => {
                   />
                 </Box>
                 
-                <Box sx={{ mt: 2, width: '100%' }}>
-                  <Divider sx={{ mb: 4, borderColor: 'rgba(203, 213, 225, 0.5)' }} />
+                <Box sx={{ mt: { xs: 1, sm: 2 }, width: '100%' }}>
+                  <Divider sx={{ mb: { xs: 2, sm: 4 }, borderColor: 'rgba(203, 213, 225, 0.5)' }} />
                   
-                  <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, textAlign: 'center', color: '#1e293b' }}>
+                  <Typography variant="h6" sx={{ mb: { xs: 2, sm: 3 }, fontWeight: 700, textAlign: 'center', color: '#1e293b', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                     Why Choose Our Service
                   </Typography>
                   
-                  <Grid container spacing={2}>
+                  <Grid container spacing={1} justifyContent="center">
                     {[
                       { title: 'Select Cities Coverage', desc: 'Service in 6 major cities' },
                       { title: 'Flexible Pickup', desc: 'Multiple locations in each city' },
                       { title: '24/7 Availability', desc: 'Book anytime, anywhere' },
                       { title: 'Secure Parking', desc: 'All locations monitored' }
                     ].map((item, index) => (
-                      <Grid item xs={6} key={index}>
+                      <Grid item xs={6} md={3} key={index}>
                         <Box sx={{ 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          alignItems: 'center', 
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
                           textAlign: 'center',
-                          p: 2,
+                          p: { xs: 0.5, sm: 1 },
                           borderRadius: 2,
                           transition: 'all 0.3s ease',
                           '&:hover': {
@@ -461,18 +501,18 @@ const MapSection = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            width: 40,
-                            height: 40,
+                            width: { xs: 24, sm: 32 },
+                            height: { xs: 24, sm: 32 },
                             borderRadius: '50%',
                             backgroundColor: 'rgba(71, 85, 105, 0.1)',
-                            mb: 2
+                            mb: { xs: 0.5, sm: 1 }
                           }}>
-                            <CheckCircleOutlineIcon sx={{ fontSize: 20, color: '#475569' }} />
+                            <CheckCircleOutlineIcon sx={{ fontSize: { xs: 16, sm: 20 }, color: '#475569' }} />
                           </Box>
-                          <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          <Typography variant="body1" sx={{ mb: 2, color: '#64748b', fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
                             {item.title}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                             {item.desc}
                           </Typography>
                         </Box>
@@ -482,8 +522,8 @@ const MapSection = () => {
                 </Box>
               </Box>
             </Paper>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
         
 
       </Container>

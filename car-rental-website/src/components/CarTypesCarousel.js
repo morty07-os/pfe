@@ -280,15 +280,15 @@ function CarTypesCarousel() {
       }}
     >
       <Box sx={{ maxWidth: '1200px', mx: 'auto', position: 'relative' }}>
+        <Box sx={{ '.slick-track': { display: 'flex', '& .slick-slide': { height: 'auto', '& > div': { height: '100%' } } } }}>
         <Slider {...settings}>
           {carTypes.map((car, index) => (
-            <Box key={car.type} sx={{ p: 2 }}>
+            <Box key={car.type} sx={{ p: 2, height: '100%' }}>
               <Card
                 elevation={2}
                 onClick={() => navigate(`/offers?category=${car.type}`)}
                 sx={{
                   height: '100%',
-                  minHeight: '400px',
                   display: 'flex',
                   flexDirection: 'column',
                   position: 'relative',
@@ -309,9 +309,13 @@ function CarTypesCarousel() {
                 <Box
                   sx={{
                     bgcolor: '#f8fafc',
-                    pt: 4,
+                    pt: 3,
                     pb: 2,
                     px: 3,
+                    height: '180px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     borderBottom: '1px solid #e2e8f0'
                   }}
                 >
@@ -322,8 +326,8 @@ function CarTypesCarousel() {
                       transform: 'scale(1)',
                       '& svg': {
                         width: '100%',
-                        height: 'auto',
-                        maxHeight: '140px'
+                        height: '120px',
+                        maxWidth: '220px'
                       }
                     }}
                   >
@@ -336,8 +340,9 @@ function CarTypesCarousel() {
                     flexGrow: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    p: 3,
-                    gap: 2
+                    p: 2.5,
+                    height: '220px',
+                    gap: 1.5
                   }}
                 >
                   <Box>
@@ -346,7 +351,11 @@ function CarTypesCarousel() {
                       sx={{
                         fontWeight: 600,
                         color: '#1a202c',
-                        mb: 1
+                        mb: 0.75,
+                        fontSize: '1.25rem',
+                        height: '30px',
+                        display: 'flex',
+                        alignItems: 'center'
                       }}
                     >
                       {car.type}
@@ -355,8 +364,11 @@ function CarTypesCarousel() {
                       variant="body1"
                       sx={{
                         color: '#4a5568',
-                        mb: 2,
-                        fontStyle: 'italic'
+                        mb: 1.5,
+                        fontStyle: 'italic',
+                        height: '48px',
+                        lineHeight: 1.5,
+                        fontSize: '0.95rem'
                       }}
                     >
                       {car.advantage}
@@ -410,6 +422,7 @@ function CarTypesCarousel() {
             </Box>
           ))}
         </Slider>
+        </Box>
       </Box>
     </Box>
   );
