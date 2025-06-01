@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Slider from 'react-slick';
-import { Box, Card, CardContent, Typography, useTheme, useMediaQuery, IconButton } from '@mui/material';
+import { Box, Card, CardContent, Typography, useTheme, useMediaQuery, IconButton, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
@@ -243,6 +243,15 @@ function CarTypesCarousel() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+  const [selectedCarType, setSelectedCarType] = useState('');
+
+  const handleFilterChange = (event) => {
+    setSelectedCarType(event.target.value);
+  };
+
+  const filteredCarTypes = selectedCarType
+    ? carTypes.filter(car => car.type === selectedCarType)
+    : carTypes;
 
   const settings = {
     dots: true,
@@ -280,9 +289,26 @@ function CarTypesCarousel() {
       }}
     >
       <Box sx={{ maxWidth: '1200px', mx: 'auto', position: 'relative' }}>
+        <FormControl sx={{ minWidth: 120, mb: 4 }}>
+          <InputLabel id="car-type-filter-label">Filter by Car Type</InputLabel>
+          <Select
+            labelId="car-type-filter-label"
+            id="car-type-filter"
+            value={selectedCarType}
+            label="Filter by Car Type"
+            onChange={handleFilterChange}
+          >
+            <MenuItem value="">
+              <em>All</em>
+            </MenuItem>
+            {carTypes.map((car) => (
+              <MenuItem key={car.type} value={car.type}>{car.type}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <Box sx={{ '.slick-track': { display: 'flex', '& .slick-slide': { height: 'auto', '& > div': { height: '100%' } } } }}>
         <Slider {...settings}>
-          {carTypes.map((car, index) => (
+          {filteredCarTypes.map((car, index) => (
             <Box key={car.type} sx={{ p: 2, height: '100%' }}>
               <Card
                 elevation={2}
