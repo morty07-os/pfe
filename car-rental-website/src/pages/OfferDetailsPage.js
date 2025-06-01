@@ -12,6 +12,11 @@ export default function OfferDetailsPage() {
   const [offer, setOffer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
   // Fetch offer data from API
   useEffect(() => {
@@ -100,12 +105,6 @@ export default function OfferDetailsPage() {
     ['Location', posterLocation],
     ['Phone', posterPhone],
   ];
-
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'info'
-  });
 
   const isAuthenticated = () => {
     try {
