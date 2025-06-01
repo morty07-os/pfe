@@ -1413,7 +1413,7 @@ export default function AllOffersPage() {
                                     // Nested coordinates object
                                     lat = offer.location.coordinates.lat;
                                     lng = offer.location.coordinates.lng;
-                                    console.log('Using nested coordinates:', lat, lng);
+                                    console.log('Using nested coordinatess:', lat, lng);
                                   } else if (offer.location && Array.isArray(offer.location.coordinates) && offer.location.coordinates.length >= 2) {
                                     // GeoJSON format [lng, lat]
                                     lng = offer.location.coordinates[0];
