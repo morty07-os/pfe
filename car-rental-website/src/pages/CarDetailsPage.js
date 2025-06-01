@@ -104,24 +104,22 @@ export default function CarDetailsPage() {
   // Handle Book Now button click
   const handleBookNow = () => {
     if (isOwnCar) return; // Don't do anything if it's the user's own car
-    
+
     if (!isAuthenticated()) {
-      // Show snackbar message if user is not authenticated
-      setSnackbar({
+      const snackbarState = {
         open: true,
         message: 'Please sign in to continue booking',
         severity: 'info'
-      });
-      
-      // Keep user on the same page
+      };
+      setSnackbar(snackbarState);
       return;
     }
-    
+
     // If authenticated, navigate to chat with car owner
-    const ownerName = typeof car.owner === 'string' ? 
-      (car.ownerName || 'Owner') : 
+    const ownerName = typeof car.owner === 'string' ?
+      (car.ownerName || 'Owner') :
       (car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : 'Owner');
-    
+
     navigate(`/chat/${ownerName}`, {
       state: {
         autoMessage: `I'm interested in renting your ${car.brand} ${car.model}`,

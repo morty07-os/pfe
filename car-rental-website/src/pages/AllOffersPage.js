@@ -314,12 +314,9 @@ export default function AllOffersPage() {
 
     // Apply category filter from URL query param first
     if (categoryFilter) {
-      tempOffers = tempOffers.filter(offer => {
-        // Check both category and carType properties with case-insensitive matching
-        const categoryMatch = offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase();
-        const carTypeMatch = offer.carType && offer.carType.toLowerCase() === categoryFilter.toLowerCase();
-        return categoryMatch || carTypeMatch;
-      });
+      tempOffers = tempOffers.filter(offer =>
+        offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase()
+      );
     }
 
     // Apply search term filter (now handled by backend, but keep as fallback)
@@ -1211,55 +1208,16 @@ export default function AllOffersPage() {
                             />
                           </Box>
                           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                            {offer.documentationImages && offer.documentationImages.length > 0 && (
-                              <Box sx={{ mt: 1.5 }}>
-                                <Typography variant="subtitle2" sx={{
-                                  mb: 1, color: '#334155', fontWeight: 600,
-                                  display: 'flex', alignItems: 'center'
-                                }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: 4 }}>
-                                    <path d="M13 2H6C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V9L13 2Z" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M13 2V9H19" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                  Documentation Images
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 1 }}>
-                                  {offer.documentationImages.map((docImage, docIdx) => (
-                                    <Box
-                                      key={docIdx}
-                                      sx={{
-                                        width: 60,
-                                        height: 60,
-                                        borderRadius: 1,
-                                        overflow: 'hidden',
-                                        border: '1px solid #cbd5e1',
-                                        flexShrink: 0,
-                                      }}
-                                    >
-                                      <img
-                                        src={docImage}
-                                        alt={`Documentation ${docIdx + 1}`}
-                                        style={{
-                                          width: '100%',
-                                          height: '100%',
-                                          objectFit: 'cover',
-                                        }}
-                                      />
-                                    </Box>
-                                  ))}
-                                </Box>
-                              </Box>
-                            )}
-                            <Box sx={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
+                            <Box sx={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
                               mb: 1.5,
                               flexWrap: { xs: 'wrap', sm: 'nowrap' },
                               gap: 0.75
                             }}>
-                              <Box sx={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'flex-start', 
                                 gap: 0.75,
                                 flexDirection: 'column'
                               }}>
@@ -1279,8 +1237,8 @@ export default function AllOffersPage() {
                                     }}
                                   />
                                 )}
-                                <Typography
-                                  variant="subtitle1"
+                                <Typography 
+                                  variant="subtitle1" 
                                   sx={{
                                     fontWeight: 700,
                                     color: '#1e293b',
@@ -1344,10 +1302,10 @@ export default function AllOffersPage() {
                               }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 2 }}>
                                   <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-                                    <Typography
-                                      component="span"
-                                      sx={{
-                                        fontWeight: 700,
+                                    <Typography 
+                                      component="span" 
+                                      sx={{ 
+                                        fontWeight: 700, 
                                         fontSize: '0.7rem',
                                         color: '#475569',
                                         letterSpacing: '0.02em',
@@ -1356,10 +1314,10 @@ export default function AllOffersPage() {
                                     >
                                       DZD
                                     </Typography>
-                                    <Typography
-                                      component="span"
-                                      sx={{
-                                        fontWeight: 700,
+                                    <Typography 
+                                      component="span" 
+                                      sx={{ 
+                                        fontWeight: 700, 
                                         fontSize: '1.1rem',
                                         color: '#334155',
                                         letterSpacing: '-0.01em'
@@ -1368,10 +1326,10 @@ export default function AllOffersPage() {
                                       {offer.price.toLocaleString()}
                                     </Typography>
                                   </Box>
-                                  <Typography
-                                    component="span"
-                                    sx={{
-                                      fontSize: '0.65rem',
+                                  <Typography 
+                                    component="span" 
+                                    sx={{ 
+                                      fontSize: '0.65rem', 
                                       color: '#64748b',
                                       fontWeight: 600,
                                       letterSpacing: '0.02em',
@@ -1384,8 +1342,8 @@ export default function AllOffersPage() {
                                 </Box>
                               </Box>
                             </Box>
-                            <Typography variant="subtitle2" sx={{
-                              color: '#475569',
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#475569', 
                               fontWeight: 700,
                               fontSize: '0.7rem',
                               display: 'flex',
@@ -1400,11 +1358,11 @@ export default function AllOffersPage() {
                               <LocationOnIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} />
                               Location
                             </Typography>
-
-                            <Box sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              mb: 1.5,
+                            
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              mb: 1.5, 
                               flexWrap: 'wrap',
                               gap: 1,
                               bgcolor: 'rgba(241, 245, 249, 0.5)',
@@ -1413,9 +1371,9 @@ export default function AllOffersPage() {
                               border: '1px solid rgba(226, 232, 240, 0.4)',
                               boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)'
                             }}>
-                              <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
                                 gap: 0.75,
                                 bgcolor: 'white',
                                 borderRadius: 1.5,
@@ -1424,9 +1382,9 @@ export default function AllOffersPage() {
                                 boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
                                 border: '1px solid rgba(226, 232, 240, 0.8)'
                               }}>
-                                <LocationOnIcon sx={{
-                                  color: '#475569',
-                                  fontSize: '1.1rem'
+                                <LocationOnIcon sx={{ 
+                                  color: '#475569', 
+                                  fontSize: '1.1rem' 
                                 }} />
                                 <Typography variant="body2" sx={{
                                   color: '#334155',
@@ -1437,13 +1395,13 @@ export default function AllOffersPage() {
                                 </Typography>
                               </Box>
 
-                              <Box
+                              <Box 
                                 component="button"
                                 onClick={() => {
                                   // Navigate to internal MapPage with the car's location
                                   const wilaya = offer.wilaya || 'Alger';
                                   let lat, lng;
-
+                                  
                                   // Get coordinates from the car's location data structure
                                   // Check all possible location data structures
                                   if (offer.location && offer.location.lat && offer.location.lng) {
@@ -1471,19 +1429,19 @@ export default function AllOffersPage() {
                                     lng = 3.0865;
                                     console.log('Using default Algeria coordinates');
                                   }
-
+                                  
                                   // Log the offer object to debug location data
                                   console.log('Car offer data:', offer);
-
+                                  
                                   // Navigate to internal MapPage with URL parameters
                                   window.location.href = `/map?carId=${offer._id}&lat=${lat}&lng=${lng}&wilaya=${encodeURIComponent(wilaya)}`;
-
+                                  
                                   // Alternative: Open in Google Maps (uncomment to use)
                                   // window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
-
+                                
                                 }}
-                                sx={{
-                                  display: 'flex',
+                                sx={{ 
+                                  display: 'flex', 
                                   alignItems: 'center',
                                   background: 'white',
                                   border: '1px solid rgba(226, 232, 240, 0.8)',
@@ -1513,8 +1471,8 @@ export default function AllOffersPage() {
                                 </Typography>
                               </Box>
                             </Box>
-                            <Typography variant="subtitle2" sx={{
-                              color: '#475569',
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#475569', 
                               fontWeight: 700,
                               fontSize: '0.7rem',
                               display: 'flex',
@@ -1529,16 +1487,16 @@ export default function AllOffersPage() {
                               <DirectionsCarIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} />
                               Specifications
                             </Typography>
-
-                            <Box sx={{
+                            
+                            <Box sx={{ 
                               mb: 1.5,
                               display: 'flex',
                               flexDirection: 'column',
                               gap: 0.75
                             }}>
-                              <Box sx={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
+                              <Box sx={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
                                 gap: 0.75,
                                 bgcolor: 'rgba(241, 245, 249, 0.5)',
                                 borderRadius: 1.5,
@@ -1603,7 +1561,7 @@ export default function AllOffersPage() {
                                       boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
                                       height: 24,
                                       maxWidth: 160,
-                                      '& .MuiChip-label': {
+                                      '& .MuiChip-label': { 
                                         px: 0.6,
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
@@ -1692,8 +1650,8 @@ export default function AllOffersPage() {
                               </Box>
                             </Box>
 
-                            <Typography variant="subtitle2" sx={{
-                              color: '#475569',
+                            <Typography variant="subtitle2" sx={{ 
+                              color: '#475569', 
                               fontWeight: 700,
                               fontSize: '0.7rem',
                               display: 'flex',
@@ -1708,8 +1666,8 @@ export default function AllOffersPage() {
                               <CalendarMonthIcon sx={{ fontSize: '0.8rem', color: '#64748b' }} />
                               Availability
                             </Typography>
-
-                            <Box sx={{
+                            
+                            <Box sx={{ 
                               display: 'flex',
                               flexDirection: { xs: 'column', sm: 'row' },
                               gap: 0.75,
@@ -1754,9 +1712,9 @@ export default function AllOffersPage() {
 
                             {offer.features && Object.keys(offer.features).length > 0 && (
                               <Box sx={{ mb: 2 }}>
-                                <Typography variant="body2" sx={{
-                                  color: '#475569',
-                                  fontWeight: 600,
+                                <Typography variant="body2" sx={{ 
+                                  color: '#475569', 
+                                  fontWeight: 600, 
                                   mb: 1,
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1770,7 +1728,8 @@ export default function AllOffersPage() {
                                 <Box sx={{
                                   display: 'flex',
                                   flexWrap: 'wrap',
-                                  gap: 0.75
+                                  gap: 0.75,
+                                  maxWidth: '100%'
                                 }}>
                                   {/* Feature chips would go here */}
                                 </Box>
@@ -1807,7 +1766,7 @@ export default function AllOffersPage() {
                                 mt: 0.5
                               }}
                             >
-                              <DirectionsCarIcon sx={{ mr: 0.4, fontSize: '0.8rem' }} />
+                              <DirectionsCarIcon sx={{ mr: 0.4, fontSize: '0.8rem' }} /> 
                               {isOwnOffer ? "Your Listing" : "View Details"}
                             </Button>
                           </Box>
