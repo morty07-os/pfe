@@ -30,6 +30,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import MarkerClusterGroup from 'react-leaflet-markercluster';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import Navbar from '../components/Navbar';
@@ -37,11 +38,11 @@ import QuickSearch from '../components/QuickSearch';
 
 // Mock data for wilayas and pickup locations
 const wilayasConfig = [
-  { code: 16, name: 'Algiers', lat: 36.7538, lng: 3.0588 },
-  { code: 31, name: 'Oran', lat: 35.6969, lng: -0.6331 },
-  { code: 19, name: 'Setif', lat: 36.1898, lng: 5.4108 },
-  { code: 9, name: 'Blida', lat: 36.4702, lng: 2.8299 },
-  { code: 15, name: 'Tizi Ouzou', lat: 36.7169, lng: 4.0476 }
+  { code: 16, name: 'Algiers', lat: 36.7538, lng: 3.0588, available: true },
+  { code: 31, name: 'Oran', lat: 35.6969, lng: -0.6331, available: true },
+  { code: 19, name: 'Setif', lat: 36.1898, lng: 5.4108, available: true },
+  { code: 9, name: 'Blida', lat: 36.4702, lng: 2.8299, available: true },
+  { code: 15, name: 'Tizi Ouzou', lat: 36.7169, lng: 4.0476, available: true }
 ];
 
 const pickupLocationsConfig = {
@@ -63,7 +64,7 @@ const pickupLocationsConfig = {
   15: [
     { id: 'tizi1', name: 'Tizi Ouzou Center', lat: 36.7169, lng: 4.0476 }
   ]
-];
+};
 
 // Helper function to find nearest wilaya to a location
 const findNearestWilaya = (location) => {
@@ -87,6 +88,168 @@ const findNearestWilaya = (location) => {
   return nearestWilaya;
 };
 
+// Component to update map view
+const ChangeMapView = ({ center, zoom }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+};
+
+// Map Controls Component
+const MapControls = ({ onZoomIn, onZoomOut, onMyLocation, locationStatus }) => (
+  <Box sx={{ 
+    position: 'absolute', 
+    top: 16, 
+    right: 16, 
+    zIndex: 1000,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 1
+  }}>
+    <Paper elevation={3} sx={{ 
+      borderRadius: 2, 
+      overflow: 'hidden',
+      backgroundColor: 'rgba(255, 255, 255, 0.9)'
+    }}>
+      <IconButton onClick={onZoomIn} sx={{ color: '#475569' }}>
+        <ZoomInIcon />
+      </IconButton>
+    </Paper>
+    
+    <Paper elevation={3} sx={{ 
+      borderRadius: 2, 
+      overflow: 'hidden',
+      backgroundColor: 'rgba(255, 255, 255, 0.9)'
+    }}>
+      <IconButton onClick={onZoomOut} sx={{ color: '#475569' }}>
+        <ZoomOutIcon />
+      </IconButton>
+    </Paper>
+    
+    <Paper elevation={3} sx={{ 
+      borderRadius: 2, 
+      overflow: 'hidden',
+      backgroundColor: 'rgba(255, 255, 255, 0.9)'
+    }}>
+      <IconButton 
+        onClick={onMyLocation}
+        sx={{ 
+          color: locationStatus === 'loading' ? '#94a3b8' : '#475569',
+          animation: locationStatus === 'loading' ? 'pulse 1.5s infinite' : 'none'
+        }}
+        disabled={locationStatus === 'loading'}
+      >
+        <MyLocationIcon />
+      </IconButton>
+    </Paper>
+  </Box>
+);
+
+// Map Content Renderer
+const MapComponentsRenderer = ({ 
+  userLocation, 
+  selectedWilaya, 
+  pickupLocations, 
+  carData, 
+  userLocationIcon,
+  pickupLocationIcon,
+  carIcon,
+  highlightedCarIcon
+}) => {
+  return (
+    <>
+      {/* User Location Marker */}
+      {userLocation && (
+        <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
+          <Popup>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Your Location</Typography>
+          </Popup>
+        </Marker>
+      )}
+
+      {/* Pickup Locations */}
+      {pickupLocations.map(location => (
+        <Marker 
+          key={location.id} 
+          position={[location.lat, location.lng]} 
+          icon={pickupLocationIcon}
+        >
+          <Popup>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{location.name}</Typography>
+          </Popup>
+        </Marker>
+      ))}
+
+      {/* Cars */}
+      {carData.length > 0 && (
+        <MarkerClusterGroup>
+          {carData.map(car => (
+            <Marker 
+              key={car._id} 
+              position={[car.location.lat, car.location.lng]} 
+              icon={car.isHighlighted ? highlightedCarIcon : carIcon}
+            >
+              <Popup>
+                <Box sx={{ minWidth: 250, p: 1.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                      {car.brand} {car.carName}
+                    </Typography>
+                    {car.isHighlighted && (
+                      <Chip label="Popular" size="small" sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 600 }} />
+                    )}
+                  </Box>
+                  <Typography variant="body2" sx={{ mb: 1.5, color: '#64748b' }}>
+                    {car.model} • Petrol • {car.seats || 5} seats
+                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <DirectionsCarIcon sx={{ fontSize: 16, color: '#64748b', mr: 0.5 }} />
+                      <Typography variant="body2" sx={{ color: '#64748b' }}>
+                        {car.transmission || 'Manual'}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>
+                      {car.price} DA/day
+                    </Typography>
+                  </Box>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    sx={{ 
+                      background: car.isHighlighted 
+                        ? 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)'
+                        : 'linear-gradient(135deg, #475569 0%, #334155 100%)',
+                      color: 'white',
+                      fontWeight: 600,
+                      borderRadius: '8px',
+                      border: 'none',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        background: car.isHighlighted
+                          ? 'linear-gradient(135deg, #1e3a8a 0%, #172554 100%)'
+                          : 'linear-gradient(135deg, #334155 0%, #1e293b 100%)',
+                        boxShadow: '0 4px 12px rgba(51, 65, 85, 0.25)',
+                        transform: 'translateY(-2px)'
+                      }
+                    }}
+                    onClick={() => window.location.href = `/offer/${car._id}`}
+                  >
+                    View Details
+                  </Button>
+                </Box>
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
+      )}
+    </>
+  );
+};
+
 // Main MapPage component
 const MapPage = () => {
   const navigate = useNavigate();
@@ -108,6 +271,7 @@ const MapPage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('info');
+  const [isLoadingCars, setIsLoadingCars] = useState(false);
   
   // Refs
   const mapRef = useRef(null);
@@ -214,21 +378,9 @@ const MapPage = () => {
     setSnackbarOpen(false);
   };
   
-  // Set up global variables for map components
-  useEffect(() => {
-    // Make these variables available to MapComponentsRenderer
-    window.userLocationForMap = userLocation;
-    window.selectedWilayaForMap = selectedWilaya;
-    window.pickupLocationsForMap = pickupLocations;
-    window.carDataForMap = carData;
-    window.mapCenterForMap = mapCenter;
-    window.mapZoomForMap = mapZoom;
-    window.userLocationIconForMap = userLocationIcon;
-    window.pickupLocationIconForMap = pickupLocationIcon;
-    window.carIconForMap = carIcon;
-    window.highlightedCarIconForMap = highlightedCarIcon;
-  }, [userLocation, selectedWilaya, pickupLocations, carData, mapCenter, mapZoom, 
-      userLocationIcon, pickupLocationIcon, carIcon, highlightedCarIcon]);
+  // Handle zoom controls
+  const handleZoomIn = () => setMapZoom(prev => Math.min(prev + 1, 18));
+  const handleZoomOut = () => setMapZoom(prev => Math.max(prev - 1, 6));
   
   // Load initial data
   useEffect(() => {
@@ -247,7 +399,7 @@ const MapPage = () => {
       }
     }
     
-    // Load mock car data (in a real app, this would come from an API)
+    // Load mock car data
     const mockCarData = [
       {
         _id: 'car1',
@@ -256,7 +408,9 @@ const MapPage = () => {
         model: '2020',
         price: 5000,
         location: { lat: 36.7538, lng: 3.0588, name: 'Algiers Center' },
-        isHighlighted: false
+        isHighlighted: false,
+        seats: 5,
+        transmission: 'Automatic'
       },
       {
         _id: 'car2',
@@ -265,7 +419,9 @@ const MapPage = () => {
         model: '2021',
         price: 6000,
         location: { lat: 36.7658, lng: 3.0478, name: 'Bab Ezzouar' },
-        isHighlighted: true
+        isHighlighted: true,
+        seats: 5,
+        transmission: 'Manual'
       },
       {
         _id: 'car3',
@@ -274,7 +430,9 @@ const MapPage = () => {
         model: '2019',
         price: 5500,
         location: { lat: 36.7438, lng: 3.0688, name: 'Hussein Dey' },
-        isHighlighted: false
+        isHighlighted: false,
+        seats: 7,
+        transmission: 'Automatic'
       }
     ];
     setCarData(mockCarData);
@@ -290,69 +448,36 @@ const MapPage = () => {
           zoom={mapZoom}
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
+          whenCreated={mapInstance => { mapRef.current = mapInstance }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          {/* Render all Leaflet components safely inside MapContainer */}
-          <MapComponentsRenderer />
+          {/* Render all Leaflet components */}
+          <MapComponentsRenderer 
+            userLocation={userLocation}
+            selectedWilaya={selectedWilaya}
+            pickupLocations={pickupLocations}
+            carData={carData}
+            userLocationIcon={userLocationIcon}
+            pickupLocationIcon={pickupLocationIcon}
+            carIcon={carIcon}
+            highlightedCarIcon={highlightedCarIcon}
+          />
+          
+          {/* Update map view when center changes */}
+          <ChangeMapView center={mapCenter} zoom={mapZoom} />
         </MapContainer>
         
         {/* Map Controls */}
-        <Box sx={{ 
-          position: 'absolute', 
-          top: 16, 
-          right: 16, 
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1
-        }}>
-          <Paper elevation={3} sx={{ 
-            borderRadius: 2, 
-            overflow: 'hidden',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)'
-          }}>
-            <IconButton 
-              onClick={() => setMapZoom(prev => prev + 1)}
-              sx={{ color: '#475569' }}
-            >
-              <ZoomInIcon />
-            </IconButton>
-          </Paper>
-          
-          <Paper elevation={3} sx={{ 
-            borderRadius: 2, 
-            overflow: 'hidden',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)'
-          }}>
-            <IconButton 
-              onClick={() => setMapZoom(prev => prev - 1)}
-              sx={{ color: '#475569' }}
-            >
-              <ZoomOutIcon />
-            </IconButton>
-          </Paper>
-          
-          <Paper elevation={3} sx={{ 
-            borderRadius: 2, 
-            overflow: 'hidden',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)'
-          }}>
-            <IconButton 
-              onClick={getUserLocation}
-              sx={{ 
-                color: locationStatus === 'loading' ? '#94a3b8' : '#475569',
-                animation: locationStatus === 'loading' ? 'pulse 1.5s infinite' : 'none'
-              }}
-              disabled={locationStatus === 'loading'}
-            >
-              <MyLocationIcon />
-            </IconButton>
-          </Paper>
-        </Box>
+        <MapControls 
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onMyLocation={getUserLocation}
+          locationStatus={locationStatus}
+        />
         
         {/* Wilaya Selector */}
         <Box sx={{ 
@@ -421,356 +546,76 @@ const MapPage = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-    </>
-  );
-};
-
-export default MapPage;
-              filter: drop-shadow(0 3px 5px rgba(30, 64, 175, 0.5));
-              transform: scale(1.1);
-            }
-          `}</style>
-          
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <DirectionsCarIcon sx={{ fontSize: 16, color: '#64748b', mr: 0.5 }} />
-                                  <Typography variant="body2" sx={{ color: '#64748b' }}>
-                                    {car.transmission || 'Manual'}
-                                  </Typography>
-                                </Box>
-                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>
-                                  {car.price} DA/day
-                                </Typography>
-                              </Box>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                fullWidth
-                                sx={{ 
-                                  background: car.isHighlighted 
-                                    ? 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)'
-                                    : 'linear-gradient(135deg, #475569 0%, #334155 100%)',
-                                  color: 'white',
-                                  fontWeight: 600,
-                                  borderRadius: '8px',
-                                  border: 'none',
-                                  transition: 'all 0.2s ease',
-                                  '&:hover': {
-                                    background: car.isHighlighted
-                                      ? 'linear-gradient(135deg, #1e3a8a 0%, #172554 100%)'
-                                      : 'linear-gradient(135deg, #334155 0%, #1e293b 100%)',
-                                    boxShadow: '0 4px 12px rgba(51, 65, 85, 0.25)',
-                                    transform: 'translateY(-2px)'
-                                  }
-                                }}
-                                onClick={() => window.location.href = `/offer/${car._id}`}
-                              >
-                                View Details
-                              </Button>
-                            </Box>
-                          </Popup>
-                        </Marker>
-                      ))}
-                    </MarkerClusterGroup>
-                  )}
-
-                  {/* Display city center marker for non-available wilayas */}
-                  {selectedWilaya && !selectedWilaya.available && cityCentersConfig[selectedWilaya.name] && 
-                    cityCentersConfig[selectedWilaya.name].map((location) => (
-                      <Marker 
-                        key={location.id} 
-                        position={location.position}
-                        icon={carRentalIcon}
-                      >
-                        <Popup>
-                          <Box sx={{ p: 1.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#334155' }}>
-                              {location.name}
-                            </Typography>
-                            <Typography variant="body2" sx={{ mb: 2, color: '#64748b' }}>
-                              {location.address}
-                            </Typography>
-                            <Box sx={{ bgcolor: '#f1f5f9', p: 1.5, borderRadius: 2, border: '1px solid #e2e8f0' }}>
-                              <Typography variant="body2" sx={{ color: '#64748b', fontStyle: 'italic', textAlign: 'center' }}>
-                                Car rental service coming soon to this location
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Popup>
-                      </Marker>
-                    ))
-                  }
-                  
-                  {/* Update map view when center changes */}
-                  <ChangeMapView center={mapCenter} zoom={mapZoom} />
-                </MapContainer>
-                
-                {/* Custom map controls */}
-                <MapControls 
-                  onZoomIn={handleZoomIn}
-                  onZoomOut={handleZoomOut}
-                  onMyLocation={handleMyLocation}
-                />
-                
-                {/* Overlay for when no wilaya is selected */}
-                {!selectedWilaya && (
-                  <Box 
-                    sx={{ 
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'linear-gradient(135deg, rgba(241, 245, 249, 0.9) 0%, rgba(226, 232, 240, 0.9) 100%)',
-                      backdropFilter: 'blur(8px)',
-                      zIndex: 1000
-                    }}
-                  >
-                    <Box 
-                      sx={{ 
-                        p: 4, 
-                        bgcolor: 'white', 
-                        borderRadius: 4,
-                        maxWidth: 400,
-                        textAlign: 'center',
-                        boxShadow: '0 15px 35px rgba(71, 85, 105, 0.15)',
-                        border: '1px solid #e2e8f0',
-                        backdropFilter: 'blur(10px)'
-                      }}
-                    >
-                      <Box 
-                        sx={{ 
-                          width: 80, 
-                          height: 80, 
-                          borderRadius: '50%', 
-                          bgcolor: '#f1f5f9', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          mx: 'auto',
-                          mb: 3,
-                          border: '4px solid #e2e8f0'
-                        }}
-                      >
-                        <LocationOnIcon sx={{ fontSize: 40, color: '#475569' }} />
-                      </Box>
-                      <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#334155' }}>
-                        Explore Available Locations
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 3, color: '#64748b' }}>
-                        Select a wilaya from the dropdown below to view available car rental pickup points on the map
-                      </Typography>
-                      <FormControl fullWidth>
-                        <InputLabel id="city-select-overlay-label">Wilaya</InputLabel>
-                        <Select
-                          labelId="city-select-overlay-label"
-                          id="city-select-overlay"
-                          value={selectedWilaya ? selectedWilaya.id : ''}
-                          label="Wilaya"
-                          onChange={(e) => {
-                            const selected = wilayasConfig.find(w => w.id === e.target.value);
-                            if (selected && selected.available) {
-                              setSelectedWilaya(selected);
-                            }
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#cbd5e1',
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#475569',
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#94a3b8',
-                            },
-                            '& .MuiSvgIcon-root': {
-                              color: '#475569',
-                            }
-                          }}
-                        >
-                          {wilayasConfig.filter(wilaya => wilaya.available).map((wilaya) => (
-                            <MenuItem key={wilaya.id} value={wilaya.id}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <LocationOnIcon sx={{ color: '#475569', fontSize: 20 }} />
-                                <Typography>{wilaya.name}</Typography>
-                              </Box>
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </Box>
-        </Container>
-      </Box>
       
-
-      
-      {/* Car loading snackbar */}
-      <Snackbar 
-        open={isLoadingCars} 
-        autoHideDuration={null} 
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert 
-          severity="info"
-          variant="filled"
-          sx={{ 
-            width: '100%', 
-            bgcolor: '#64748b',
-            color: 'white',
-            '& .MuiAlert-icon': {
-              color: 'white'
-            },
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-          }}
-        >
-          <Typography variant="body2">
-            Loading available cars...
-          </Typography>
-        </Alert>
-      </Snackbar>
-      
-      {/* Location status snackbars */}
-      <Snackbar 
-        open={locationStatus === 'loading'} 
-        autoHideDuration={null} 
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          severity="info"
-          variant="filled"
-          sx={{ 
-            width: '100%', 
-            bgcolor: '#64748b',
-            color: 'white',
-            '& .MuiAlert-icon': {
-              color: 'white'
-            },
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-          }}
-        >
-          <Typography variant="body2">
-            Getting your location...
-          </Typography>
-        </Alert>
-      </Snackbar>
-      
-      <Snackbar 
-        open={locationStatus === 'success'} 
-        autoHideDuration={6000} 
-        onClose={() => setLocationStatus(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={() => setLocationStatus(null)} 
-          severity="success"
-          variant="filled"
-          sx={{ 
-            width: '100%', 
-            bgcolor: '#475569',
-            color: 'white',
-            '& .MuiAlert-icon': {
-              color: 'white'
-            },
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-          }}
-        >
-          <Typography variant="body2">
-            {selectedWilaya ? `Location found: ${selectedWilaya.name}` : 'Location found!'}
-          </Typography>
-        </Alert>
-      </Snackbar>
-      
-      <Snackbar 
-        open={locationStatus === 'not-found'} 
-        autoHideDuration={6000} 
-        onClose={() => setLocationStatus(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={() => setLocationStatus(null)} 
-          severity="warning"
-          variant="filled"
-          sx={{ 
-            width: '100%', 
-            bgcolor: '#475569',
-            color: 'white',
-            '& .MuiAlert-icon': {
-              color: 'white'
-            },
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-          }}
-        >
-          <Typography variant="body2">
-            No service areas found near your location.
-          </Typography>
-        </Alert>
-      </Snackbar>
-      
-      <Snackbar 
-        open={locationStatus === 'not-available'} 
-        autoHideDuration={6000} 
-        onClose={() => setLocationStatus(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={() => setLocationStatus(null)} 
-          severity="info"
-          variant="filled"
-          sx={{ 
-            width: '100%', 
-            bgcolor: '#64748b',
-            color: 'white',
-            '& .MuiAlert-icon': {
-              color: 'white'
-            },
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-          }}
-        >
-          <Typography variant="body2">
-            {selectedWilaya ? `${selectedWilaya.name} found, but car rental service is not yet available in this area.` : 'Location found, but service is not available in this area.'}
-          </Typography>
-        </Alert>
-      </Snackbar>
-      
-      <Snackbar 
-        open={locationStatus === 'error'} 
-        autoHideDuration={6000} 
-        onClose={() => setLocationStatus(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={() => setLocationStatus(null)} 
-          severity="error"
-          variant="filled"
-          sx={{ 
-            width: '100%', 
-            bgcolor: '#475569',
-            color: 'white',
-            '& .MuiAlert-icon': {
-              color: 'white'
-            },
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-          }}
-        >
-          <Typography variant="body2">
-            {locationError || 'Error accessing your location. Please try again.'}
-          </Typography>
-        </Alert>
-      </Snackbar>
+      <style jsx global>{`
+        .user-location-marker {
+          position: relative;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background-color: #3b82f6;
+          border: 2px solid white;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        
+        .user-location-marker:after {
+          content: "";
+          position: absolute;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: white;
+        }
+        
+        .pickup-location-marker {
+          position: relative;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background-color: #10b981;
+          border: 2px solid white;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: white;
+          font-size: 16px;
+        }
+        
+        .car-marker {
+          position: relative;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background-color: #ef4444;
+          border: 2px solid white;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: white;
+          font-size: 16px;
+          transition: all 0.3s ease;
+        }
+        
+        .car-marker.highlighted {
+          background-color: #f59e0b;
+          width: 38px;
+          height: 38px;
+          font-size: 18px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+          z-index: 1000;
+        }
+        
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
     </>
   );
 };
