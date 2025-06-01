@@ -32,7 +32,7 @@ const wilayasConfig = [
   },
   {
     id: 6,
-    name: 'Bejaia',
+    name: 'Béjaïa',
     coordinates: [36.7512, 5.0557],
     available: true
   },
@@ -110,7 +110,7 @@ const wilayasConfig = [
   },
   {
     id: 19,
-    name: 'Setif',
+    name: 'Sétif',
     coordinates: [36.19, 5.4108],
     available: true
   },
@@ -297,7 +297,7 @@ const cityCentersConfig = {
   'Laghouat': [{ id: 'center-3', name: 'Laghouat City Center', address: 'Centre-ville, Laghouat', position: [33.8, 2.8858] }],
   'Oum El Bouaghi': [{ id: 'center-4', name: 'Oum El Bouaghi City Center', address: 'Centre-ville, Oum El Bouaghi', position: [35.8789, 7.1148] }],
   'Batna': [{ id: 'center-5', name: 'Batna City Center', address: 'Centre-ville, Batna', position: [35.5552, 6.1742] }],
-  'Bejaia': [{ id: 'center-6', name: 'Bejaia City Center', address: 'Centre-ville, Bejaia', position: [36.7512, 5.0557] }],
+  'Béjaïa': [{ id: 'center-6', name: 'Béjaïa City Center', address: 'Centre-ville, Béjaïa', position: [36.7512, 5.0557] }],
   'Biskra': [{ id: 'center-7', name: 'Biskra City Center', address: 'Centre-ville, Biskra', position: [34.8516, 5.7282] }],
   'Bechar': [{ id: 'center-8', name: 'Bechar City Center', address: 'Centre-ville, Bechar', position: [31.6182, -2.2186] }],
   'Blida': [{ id: 'center-9', name: 'Blida City Center', address: 'Centre-ville, Blida', position: [36.4722, 2.8333] }],
@@ -310,7 +310,7 @@ const cityCentersConfig = {
   'Alger': [{ id: 'center-16', name: 'Algiers City Center', address: 'Centre-ville, Alger', position: [36.7538, 3.0588] }],
   'Djelfa': [{ id: 'center-17', name: 'Djelfa City Center', address: 'Centre-ville, Djelfa', position: [34.6703, 3.2503] }],
   'Jijel': [{ id: 'center-18', name: 'Jijel City Center', address: 'Centre-ville, Jijel', position: [36.8, 5.7667] }],
-  'Setif': [{ id: 'center-19', name: 'Setif City Center', address: 'Centre-ville, Setif', position: [36.19, 5.4108] }],
+  'Sétif': [{ id: 'center-19', name: 'Sétif City Center', address: 'Centre-ville, Sétif', position: [36.19, 5.4108] }],
   'Saida': [{ id: 'center-20', name: 'Saida City Center', address: 'Centre-ville, Saida', position: [34.8303, 0.1507] }],
   'Skikda': [{ id: 'center-21', name: 'Skikda City Center', address: 'Centre-ville, Skikda', position: [36.8667, 6.9] }],
   'Sidi Bel Abbes': [{ id: 'center-22', name: 'Sidi Bel Abbes City Center', address: 'Centre-ville, Sidi Bel Abbes', position: [35.1892, -0.6307] }],
@@ -358,17 +358,17 @@ const pickupLocationsConfig = {
     { id: 7, name: 'Oran Airport', address: 'Ahmed Ben Bella Airport, Oran', position: [35.623, -0.621] },
     { id: 8, name: 'Oran City Center', address: 'Place du 1er Novembre, Oran', position: [35.697, -0.641] }
   ],
-  'Setif': [
-    { id: 9, name: 'Setif City Center', address: 'Centre-ville, Setif', position: [36.190, 5.414] },
-    { id: 14, name: 'Park Mall Setif', address: 'Park Mall, El Hidhab, Setif', position: [36.1833, 5.4099] }
+  'Sétif': [
+    { id: 9, name: 'Sétif City Center', address: 'Centre-ville, Sétif', position: [36.190, 5.414] },
+    { id: 14, name: 'Park Mall Sétif', address: 'Park Mall, El Hidhab, Sétif', position: [36.1833, 5.4099] }
   ],
   'Constantine': [
     { id: 10, name: 'Constantine Airport', address: 'Mohamed Boudiaf Airport, Constantine', position: [36.276, 6.620] },
     { id: 11, name: 'Constantine City', address: 'Centre-ville, Constantine', position: [36.365, 6.614] }
   ],
-  'Bejaia': [
-    { id: 12, name: 'Bejaia Airport', address: 'Soummam Airport, Bejaia', position: [36.712, 5.069] },
-    { id: 13, name: 'Bejaia Port', address: 'Port de Béjaïa, Bejaia', position: [36.751, 5.084] }
+  'Béjaïa': [
+    { id: 12, name: 'Béjaïa Airport', address: 'Soummam Airport, Béjaïa', position: [36.712, 5.069] },
+    { id: 13, name: 'Béjaïa Port', address: 'Port de Béjaïa, Béjaïa', position: [36.751, 5.084] }
   ]
 };
 

@@ -75,7 +75,7 @@ const energies = ['Essence', 'Diesel', 'Hybrid', 'Electric'];
 const transmissions = ['Manual', 'Automatic'];
 const carTypes = ['SUV', 'VAN', 'STATIONWAGON', 'CITADINE', 'SEDAN']; // Added carTypes
 const wilayas = [
-  "Annaba", "Alger", "Oran", "Setif", "Constantine", "Bejaia"
+  "Annaba", "Alger", "Oran", "Sétif", "Constantine", "Béjaïa"
 ];
 
 // Collapsible section component
@@ -647,9 +647,9 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               gap: 1
             }}>
               <ToggleButton
-                value="Gasoline"
-                selected={pendingFilters.energy === 'Gasoline'}
-                onChange={() => handleChange({ target: { name: 'energy', value: 'Gasoline' } })}
+                value="Essence"
+                selected={pendingFilters.energy === 'Essence'}
+                onChange={() => handleChange({ target: { name: 'energy', value: 'Essence' } })}
                 sx={{
                   borderRadius: 2,
                   textTransform: 'none',
@@ -682,7 +682,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <LocalGasStationIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
-                  Gasoline
+                  Essence
                 </Box>
               </ToggleButton>
 

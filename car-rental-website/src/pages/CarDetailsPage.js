@@ -32,6 +32,7 @@ import DoorFrontIcon from '@mui/icons-material/DoorFront';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import ElectricCarIcon from '@mui/icons-material/ElectricCar';
 import SettingsIcon from '@mui/icons-material/Settings';
+import TuneIcon from '@mui/icons-material/Tune';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
@@ -39,6 +40,7 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import PersonIcon from '@mui/icons-material/Person';
 import SpeedIcon from '@mui/icons-material/Speed';
 import AcUnitIcon from '@mui/icons-material/AcUnit';
+import PhoneIcon from '@mui/icons-material/Phone';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -144,7 +146,7 @@ export default function CarDetailsPage() {
     } else if (type.includes('diesel')) {
       return <LocalGasStationIcon sx={{ color: '#6366f1' }} />;
     } else {
-      return <LocalGasStationIcon sx={{ color: '#f59e0b' }} />;
+      return <LocalGasStationIcon sx={{ color: '#475569' }} />;
     }
   };
   
@@ -472,8 +474,7 @@ export default function CarDetailsPage() {
             Back to results
           </Button>
           
-          <Fade in={true} timeout={500}>
-            <Paper
+          <Paper
               elevation={2}
               sx={{
                 borderRadius: 3,
@@ -549,7 +550,13 @@ export default function CarDetailsPage() {
                   )}
                   {car.transmission && (
                     <Chip 
-                      icon={<SettingsIcon sx={{ color: 'white !important', fontSize: '0.85rem' }} />}
+                      icon={
+                        car.transmission.toLowerCase() === 'manual' ? (
+                          <TuneIcon sx={{ color: 'white !important', fontSize: '0.85rem', transform: 'rotate(90deg)' }} />
+                        ) : (
+                          <SettingsIcon sx={{ color: 'white !important', fontSize: '0.85rem' }} />
+                        )
+                      }
                       label={car.transmission} 
                       size="small" 
                       sx={{ 
@@ -854,7 +861,7 @@ export default function CarDetailsPage() {
                                 {getFuelIcon(car.energy)}
                                 <Box>
                                   <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
-                                    {car.energy || 'Gasoline'}
+                                    {car.energy || 'Essence'}
                                   </Typography>
                                   <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
                                     Fuel type
@@ -1020,11 +1027,19 @@ export default function CarDetailsPage() {
                               <Avatar
                                 src={typeof car.owner === 'string' || !car.owner ? null : car.owner.avatar}
                                 sx={{
-                                  width: 40,
-                                  height: 40,
-                                  bgcolor: 'primary.main',
-                                  color: 'primary.contrastText',
-                                  fontSize: '1rem'
+                                  width: 45,
+                                  height: 45,
+                                  bgcolor: '#475569',
+                                  color: 'white',
+                                  fontSize: '1.1rem',
+                                  fontWeight: 600,
+                                  border: '2px solid rgba(255, 255, 255, 0.8)',
+                                  boxShadow: '0 2px 8px rgba(71, 85, 105, 0.2)',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    boxShadow: '0 4px 12px rgba(71, 85, 105, 0.3)'
+                                  }
                                 }}
                               >
                                 {typeof car.owner === 'string' ? car.ownerName?.[0] : 
@@ -1042,6 +1057,36 @@ export default function CarDetailsPage() {
                                  (car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : car.ownerName || 'Unknown Owner')}
                               </Typography>
                             </Box>
+                            
+                            {/* Owner Phone Number */}
+                            <Paper 
+                              elevation={0}
+                              sx={{ 
+                                display: 'flex',
+                                alignItems: 'center',
+                                mt: 2,
+                                ml: 0.5,
+                                py: 1,
+                                px: 1.5,
+                                borderRadius: 2,
+                                backgroundColor: 'rgba(241, 245, 249, 0.7)',
+                                border: '1px solid #e2e8f0',
+                                transition: 'all 0.2s ease',
+                                width: 'fit-content',
+                                '&:hover': {
+                                  boxShadow: '0 4px 12px rgba(71, 85, 105, 0.08)',
+                                  borderColor: '#cbd5e1',
+                                  backgroundColor: 'rgba(241, 245, 249, 0.9)',
+                                }
+                              }}
+                            >
+                              <PhoneIcon sx={{ color: '#475569', fontSize: '1.1rem', mr: 1 }} />
+                              <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
+                                {typeof car.owner === 'string' ? 'Contact via chat' : 
+                                 (car.owner && car.owner.phone ? car.owner.phone : 'Not provided')}
+                              </Typography>
+                            </Paper>
+                            
                             {ownerRatingsLoading ? (
                                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                                     <Skeleton variant="text" width={100} height={20} />
@@ -1207,7 +1252,6 @@ export default function CarDetailsPage() {
                 {/* Removed 'About This Vehicle' section */}
               </Box>
             </Paper>
-          </Fade>
         </Container>
       </Box>
       

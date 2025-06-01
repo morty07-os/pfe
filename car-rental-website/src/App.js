@@ -1,7 +1,7 @@
 import './App.css';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import QuickSearch from './components/QuickSearch';
 import CarTypesCarousel from './components/CarTypesCarousel';
@@ -26,12 +26,12 @@ import MapPage from './pages/MapPage';
 import EditProfilePage from './pages/EditProfilePage';
 import AdminWelcomePage from './pages/AdminWelcomePage'; // Import AdminWelcomePage
 
-function App() {
+// Routes component to handle navigation
+const AppRoutes = () => {
+  const location = useLocation();
+  
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <BrowserRouter>
-        <div className="App">
-          <Routes>
+      <Routes location={location}>
             <Route path="/" element={
               <>
                 <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
@@ -59,7 +59,16 @@ function App() {
             <Route path="/verify-email" element={<VerificationPage />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/admin" element={<AdminWelcomePage />} /> {/* Add Admin route */}
-          </Routes>
+      </Routes>
+  );
+};
+
+function App() {
+  return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <BrowserRouter>
+        <div className="App">
+          <AppRoutes />
         </div>
       </BrowserRouter>
     </LocalizationProvider>

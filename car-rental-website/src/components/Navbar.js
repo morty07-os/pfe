@@ -45,8 +45,7 @@ const buttonStyles = (iconColor) => ({
   '&:hover': {
     color: '#3498db',
     cursor: 'pointer',
-  },
-  transition: 'color 0.3s ease',
+  }
 });
 
 const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
@@ -301,7 +300,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: '#000', zIndex: 1200, ...sx }}>
+      <AppBar position="fixed" sx={{ backgroundColor: '#000', zIndex: 9999, ...sx }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <IconButton
             size="large"

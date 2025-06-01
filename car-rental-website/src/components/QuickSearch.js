@@ -19,7 +19,7 @@ import { useLocation } from 'react-router-dom';
 
 // Limited list of Algerian wilayas
 const wilayas = [
-  "Annaba", "Alger", "Oran", "Setif", "Constantine", "Bejaia"
+  "Annaba", "Alger", "Oran", "Sétif", "Constantine", "Béjaïa"
 ];
 
 const QuickSearch = ({ noBackground = false, isLoggedIn, onFilterChange }) => {

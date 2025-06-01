@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { 
   Box, 
   Container, 
@@ -56,85 +57,95 @@ import '../styles/MapStyles.css';
 // Create a custom MarkerClusterGroup component
 const MarkerClusterGroup = ({ children, ...props }) => {
   const map = useMap();
-  const markerClusterGroupRef = useRef(null);
+  const clusterGroupRef = useRef(null);
+  const markersRef = useRef([]);
   
+  // Initialize cluster group on mount
   useEffect(() => {
-    if (!map) return;
+    console.log('Initializing MarkerClusterGroup');
+    if (!clusterGroupRef.current) {
+      clusterGroupRef.current = L.markerClusterGroup(props);
+      map.addLayer(clusterGroupRef.current);
+      console.log('MarkerClusterGroup added to map');
+    }
     
-    // Custom icon creation function for clusters with blue-grey theme
-    const createClusterCustomIcon = function(cluster) {
-      const count = cluster.getChildCount();
-      let size = 'small';
-      let iconSize = 40;
-      
-      if (count > 50) {
-        size = 'large';
-        iconSize = 60;
-      } else if (count > 20) {
-        size = 'medium';
-        iconSize = 50;
+    return () => {
+      console.log('Cleaning up MarkerClusterGroup');
+      if (clusterGroupRef.current) {
+        map.removeLayer(clusterGroupRef.current);
+        clusterGroupRef.current = null;
       }
-      
-      return L.divIcon({
-        html: `<div><span>${count}</span></div>`,
-        className: `marker-cluster marker-cluster-${size}`,
-        iconSize: L.point(iconSize, iconSize)
-      });
     };
+  }, [map]);
+  
+  // Update markers when children change
+  useEffect(() => {
+    if (!clusterGroupRef.current) {
+      console.error('Cluster group ref is null, cannot update markers');
+      return;
+    }
     
-    // Create a new marker cluster group
-    markerClusterGroupRef.current = L.markerClusterGroup({
-      chunkedLoading: props.chunkedLoading || true,
-      spiderfyOnMaxZoom: props.spiderfyOnMaxZoom || true,
-      showCoverageOnHover: props.showCoverageOnHover || false,
-      maxClusterRadius: props.maxClusterRadius || 60,
-      disableClusteringAtZoom: props.disableClusteringAtZoom || 16,
-      animate: props.animate || true,
-      iconCreateFunction: props.iconCreateFunction || createClusterCustomIcon
+    const childCount = React.Children.count(children);
+    console.log('Updating markers in cluster group, children count:', childCount);
+    
+    // Clear previous markers
+    if (markersRef.current.length > 0) {
+      console.log('Clearing previous markers:', markersRef.current.length);
+      markersRef.current.forEach(marker => {
+        if (marker && clusterGroupRef.current) {
+          clusterGroupRef.current.removeLayer(marker);
+        }
+      });
+      markersRef.current = [];
+    }
+    
+    // Add new markers
+    const markers = [];
+    React.Children.forEach(children, (child, index) => {
+      if (!child) return;
+      
+      const { position, icon, zIndexOffset } = child.props;
+      console.log(`Creating marker ${index} at position:`, position);
+      
+      try {
+        const marker = L.marker(position, { icon, zIndexOffset });
+        
+        // Handle popup content if present
+        const popupContent = child.props.children;
+        if (popupContent) {
+          const container = document.createElement('div');
+          const root = createRoot(container);
+          root.render(popupContent);
+          marker.bindPopup(container);
+        }
+        
+        markers.push(marker);
+        clusterGroupRef.current.addLayer(marker);
+        console.log(`Added marker ${index} to cluster group`);
+      } catch (error) {
+        console.error(`Error creating marker ${index}:`, error);
+      }
     });
     
-    // Add the marker cluster group to the map
-    map.addLayer(markerClusterGroupRef.current);
+    markersRef.current = markers;
+    console.log('Added new markers to cluster:', markers.length);
     
-    // Clean up on unmount
-    return () => {
-      if (map && markerClusterGroupRef.current) {
-        map.removeLayer(markerClusterGroupRef.current);
-      }
-    };
-  }, [map, props]);
-  
-  // Add markers to the cluster group when children change
-  useEffect(() => {
-    if (!markerClusterGroupRef.current) return;
-    
-    // Clear existing markers
-    markerClusterGroupRef.current.clearLayers();
-    
-    // Get all marker elements from children
-    const markers = React.Children.map(children, (child) => {
-      if (!child) return null;
-      
-      // Create a marker with the properties from the Marker component
-      const marker = L.marker(child.props.position, {
-        icon: child.props.icon
-      });
-      
-      // Add popup if it exists
-      if (child.props.children) {
-        const popupContent = document.createElement('div');
-        ReactDOM.render(child.props.children, popupContent);
-        marker.bindPopup(popupContent);
-      }
-      
-      return marker;
-    }).filter(Boolean);
-    
-    // Add markers to the cluster group
-    if (markers && markers.length > 0) {
-      markerClusterGroupRef.current.addLayers(markers);
+    // Force cluster update
+    if (clusterGroupRef.current) {
+      clusterGroupRef.current.refreshClusters();
+      console.log('Refreshed clusters');
+    } else {
+      console.warn('No markers to add to cluster group');
     }
-  }, [children]);
+    
+    // Force map update
+    setTimeout(() => {
+      if (map) {
+        console.log('Forcing map update after adding markers');
+        map.invalidateSize();
+      }
+    }, 100);
+  }, [children, map]); // Depend on both children and map
   
   return null;
 };
@@ -265,6 +276,11 @@ const MapPage = () => {
   const [carData, setCarData] = useState([]);
   const [isLoadingCars, setIsLoadingCars] = useState(false);
   const [highlightedCar, setHighlightedCar] = useState(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
   
   // Get available wilayas from config
   const availableWilayas = wilayasConfig.filter(wilaya => wilaya.available);
@@ -352,6 +368,127 @@ const MapPage = () => {
     }
   }, [selectedWilaya, location.search]);
   
+  // Function to get the map instance from the ref
+  const getMap = () => {
+    return mapRef.current ? mapRef.current : null;
+  };
+  
+  // Function to get user's current location
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      setSnackbar({
+        open: true,
+        message: 'Getting your location...',
+        severity: 'info'
+      });
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const userCoords = [latitude, longitude];
+          
+          console.log('User location obtained:', userCoords);
+          setUserLocation(userCoords);
+          setMapCenter(userCoords);
+          setMapZoom(15);
+          
+          // Find nearest wilaya to user location
+          const nearestWilaya = findNearestWilaya(userCoords, wilayasConfig);
+          if (nearestWilaya && nearestWilaya.name !== selectedWilaya?.name) {
+            console.log('Setting nearest wilaya:', nearestWilaya.name);
+            setSelectedWilaya(nearestWilaya);
+          }
+          
+          setSnackbar({
+            open: true,
+            message: 'Location found!',
+            severity: 'success'
+          });
+        },
+        (error) => {
+          console.error('Error getting user location:', error);
+          let errorMessage = 'Unable to get your location';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location permission denied. Please enable location services.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information is unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out.';
+              break;
+            case error.UNKNOWN_ERROR:
+              errorMessage = 'An unknown error occurred while getting your location.';
+              break;
+          }
+          
+          setSnackbar({
+            open: true,
+            message: errorMessage,
+            severity: 'error'
+          });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      setSnackbar({
+        open: true,
+        message: 'Geolocation is not supported by your browser',
+        severity: 'error'
+      });
+    }
+  };
+  
+  // Initialize map when component mounts or when mapCenter or mapZoom changes
+  useEffect(() => {
+    const map = getMap();
+    if (map && mapCenter) {
+      console.log('Updating map view to:', mapCenter, 'with zoom:', mapZoom);
+      
+      // Use flyTo for smooth animation when changing map center
+      map.flyTo(mapCenter, mapZoom, {
+        animate: true,
+        duration: 1.5 // seconds
+      });
+      
+      // Force a re-render of markers if they're not showing up
+      setTimeout(() => {
+        const currentMap = getMap();
+        if (currentMap) {
+          console.log('Invalidating map size to force re-render');
+          currentMap.invalidateSize();
+        }
+      }, 500);
+      
+      // Additional timeout to ensure markers are rendered
+      setTimeout(() => {
+        console.log('Second map refresh to ensure markers are visible');
+        const currentMap = getMap();
+        if (currentMap) {
+          currentMap.invalidateSize();
+          // Force redraw of all layers
+          Object.values(currentMap._layers || {}).forEach(layer => {
+            if (layer && layer._icon) {
+              // Force redraw of marker icons
+              const icon = layer._icon;
+              const wasVisible = icon.style.display !== 'none';
+              icon.style.display = 'none';
+              // Trigger reflow
+              void icon.offsetHeight;
+              icon.style.display = wasVisible ? '' : 'none';
+            }
+          });
+        }
+      }, 1500);
+    }
+  }, [mapCenter, mapZoom]);
+  
   // Function to fetch car data for the selected wilaya
   const fetchCarData = async (wilayaName) => {
     setIsLoadingCars(true);
@@ -371,12 +508,44 @@ const MapPage = () => {
       }).toString();
       
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      console.log('Fetching cars from:', `${apiUrl}/api/cars/getcars?${queryParams}`);
+      
       const response = await fetch(`${apiUrl}/api/cars/getcars?${queryParams}`);
       
-      if (!response.ok) throw new Error('Failed to fetch car data');
+      if (!response.ok) {
+        console.error('Failed to fetch car data, status:', response.status);
+        throw new Error(`Failed to fetch car data: ${response.status}`);
+      }
       
       const data = await response.json();
-      console.log('Fetched car data:', data);
+      console.log('Fetched car data count:', data.length);
+      console.log('First car example:', data[0]);
+      
+      // Create some test car data with hardcoded locations for testing
+      const testCarData = data.slice(0, 5).map((car, index) => {
+        // Use the selected wilaya's coordinates with small offsets
+        const wilayaCoords = selectedWilaya ? selectedWilaya.coordinates : [28.0339, 1.6596];
+        return {
+          ...car,
+          location: {
+            name: `Test Location ${index + 1}`,
+            address: `${wilayaName}, Algeria`,
+            lat: wilayaCoords[0] + (index * 0.01),
+            lng: wilayaCoords[1] + (index * 0.01)
+          },
+          isHighlighted: car._id === highlightCarId
+        };
+      });
+      
+      console.log('Created test car data with hardcoded locations:', testCarData);
+      
+      // Use test car data for debugging
+      if (testCarData.length > 0) {
+        console.log('Using test car data for map display');
+        setCarData(testCarData);
+        setIsLoadingCars(false);
+        return;
+      }
       
       // Process car data to include location information
       const processedData = data.map(car => {
@@ -423,6 +592,36 @@ const MapPage = () => {
           }
         }
         
+        // Additional check for locationCoordinates property
+        if (!locationData && car.locationCoordinates) {
+          try {
+            // Try to parse locationCoordinates if it's a string
+            const coords = typeof car.locationCoordinates === 'string' 
+              ? JSON.parse(car.locationCoordinates) 
+              : car.locationCoordinates;
+              
+            if (coords.lat && coords.lng) {
+              locationData = {
+                name: car.locationName || `${car.wilaya} Location`,
+                address: car.locationAddress || `${car.wilaya}, Algeria`,
+                lat: parseFloat(coords.lat),
+                lng: parseFloat(coords.lng)
+              };
+              console.log('Using locationCoordinates property:', locationData);
+            } else if (Array.isArray(coords) && coords.length >= 2) {
+              locationData = {
+                name: car.locationName || `${car.wilaya} Location`,
+                address: car.locationAddress || `${car.wilaya}, Algeria`,
+                lat: parseFloat(coords[1]), // Assuming GeoJSON format [lng, lat]
+                lng: parseFloat(coords[0])
+              };
+              console.log('Using locationCoordinates array:', locationData);
+            }
+          } catch (e) {
+            console.error('Error parsing locationCoordinates:', e);
+          }
+        }
+        
         // If this is the highlighted car from URL and we have coordinates, use those
         if (isHighlightedCar && highlightLat && highlightLng) {
           locationData = {
@@ -439,15 +638,28 @@ const MapPage = () => {
           const wilaya = car.wilaya || wilayaName;
           console.log('No location data found, using pickup locations for wilaya:', wilaya);
           
+          // Try to extract coordinates from address using geocoding service (if available)
+          if (car.address || car.locationAddress) {
+            const address = car.address || car.locationAddress;
+            console.log('Attempting to use address for location:', address);
+            
+            // For now, we'll still use fallback mechanisms
+            // In a production app, you might want to integrate a geocoding service here
+          }
+          
           // Try to use one of the pickup locations for this wilaya
           if (pickupLocations[wilaya] && pickupLocations[wilaya].length > 0) {
-            // Randomly select a pickup location
-            const randomIndex = Math.floor(Math.random() * pickupLocations[wilaya].length);
-            const pickupLocation = pickupLocations[wilaya][randomIndex];
+            // Distribute cars evenly across pickup locations instead of random selection
+            // Use car._id to deterministically select a pickup location
+            const carIdSum = car._id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+            const pickupIndex = carIdSum % pickupLocations[wilaya].length;
+            const pickupLocation = pickupLocations[wilaya][pickupIndex];
             
             // Add small random offset to avoid all cars at the exact same spot
-            const latOffset = (Math.random() - 0.5) * 0.005;
-            const lngOffset = (Math.random() - 0.5) * 0.005;
+            // Use car._id to generate a consistent offset for the same car
+            const seedValue = carIdSum / 1000;
+            const latOffset = (((seedValue * 9301 + 49297) % 233280) / 233280 - 0.5) * 0.005;
+            const lngOffset = (((seedValue * 9301 + 49297) % 233280) / 233280 - 0.5) * 0.005;
             
             locationData = {
               name: pickupLocation.name,
@@ -455,13 +667,16 @@ const MapPage = () => {
               lat: pickupLocation.position[0] + latOffset,
               lng: pickupLocation.position[1] + lngOffset
             };
-            console.log('Using pickup location with offset:', locationData);
+            console.log('Using pickup location with deterministic offset:', locationData);
           } else {
-            // Fallback to wilaya coordinates with random offset
-            const wilayaConfig = wilayasConfig.find(w => w.name === wilaya);
+            // Fallback to wilaya coordinates with deterministic offset
+            const wilayaConfig = wilayasConfig.find(w => w.name === wilaya || w.name.toLowerCase() === wilaya.toLowerCase());
             if (wilayaConfig) {
-              const latOffset = (Math.random() - 0.5) * 0.01;
-              const lngOffset = (Math.random() - 0.5) * 0.01;
+              // Generate deterministic offset based on car._id
+              const carIdSum = car._id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+              const seedValue = carIdSum / 1000;
+              const latOffset = (((seedValue * 9301 + 49297) % 233280) / 233280 - 0.5) * 0.01;
+              const lngOffset = (((seedValue * 9301 + 49297) % 233280) / 233280 - 0.5) * 0.01;
               
               locationData = {
                 name: `${wilaya} Center`,
@@ -469,7 +684,23 @@ const MapPage = () => {
                 lat: wilayaConfig.coordinates[0] + latOffset,
                 lng: wilayaConfig.coordinates[1] + lngOffset
               };
-              console.log('Using wilaya coordinates with offset:', locationData);
+              console.log('Using wilaya coordinates with deterministic offset:', locationData);
+            } else {
+              // Last resort: use the selected wilaya's coordinates
+              if (selectedWilaya && selectedWilaya.coordinates) {
+                const carIdSum = car._id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+                const seedValue = carIdSum / 1000;
+                const latOffset = (((seedValue * 9301 + 49297) % 233280) / 233280 - 0.5) * 0.01;
+                const lngOffset = (((seedValue * 9301 + 49297) % 233280) / 233280 - 0.5) * 0.01;
+                
+                locationData = {
+                  name: `${wilayaName} Area`,
+                  address: `${wilayaName}, Algeria`,
+                  lat: selectedWilaya.coordinates[0] + latOffset,
+                  lng: selectedWilaya.coordinates[1] + lngOffset
+                };
+                console.log('Using selected wilaya coordinates with offset:', locationData);
+              }
             }
           }
         }
@@ -976,6 +1207,86 @@ const MapPage = () => {
             >
               
               {/* Leaflet Map */}
+              {/* Custom map controls */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '20px',
+                  right: '20px',
+                  zIndex: 1000,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1
+                }}
+              >
+                <Paper
+                  elevation={3}
+                  sx={{
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    bgcolor: 'white',
+                    border: '1px solid #e2e8f0'
+                  }}
+                >
+                  <IconButton
+                    onClick={() => {
+                      const map = getMap();
+                      if (map) map.zoomIn();
+                    }}
+                    sx={{
+                      color: '#475569',
+                      borderRadius: '8px 8px 0 0',
+                      p: 1,
+                      '&:hover': {
+                        bgcolor: '#f1f5f9'
+                      }
+                    }}
+                  >
+                    <ZoomInIcon />
+                  </IconButton>
+                  <Box sx={{ height: '1px', bgcolor: '#e2e8f0' }} />
+                  <IconButton
+                    onClick={() => {
+                      const map = getMap();
+                      if (map) map.zoomOut();
+                    }}
+                    sx={{
+                      color: '#475569',
+                      borderRadius: '0 0 8px 8px',
+                      p: 1,
+                      '&:hover': {
+                        bgcolor: '#f1f5f9'
+                      }
+                    }}
+                  >
+                    <ZoomOutIcon />
+                  </IconButton>
+                </Paper>
+                <Paper
+                  elevation={3}
+                  sx={{
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    bgcolor: 'white',
+                    border: '1px solid #e2e8f0'
+                  }}
+                >
+                  <IconButton
+                    onClick={getUserLocation}
+                    sx={{
+                      color: '#475569',
+                      borderRadius: '8px',
+                      p: 1,
+                      '&:hover': {
+                        bgcolor: '#f1f5f9'
+                      }
+                    }}
+                  >
+                    <MyLocationIcon />
+                  </IconButton>
+                </Paper>
+              </Box>
+              
               <Box 
                 sx={{ 
                   flexGrow: 1, 
@@ -988,9 +1299,19 @@ const MapPage = () => {
                     borderRadius: '0 0 8px 8px',
                     boxShadow: 'inset 0 0 20px rgba(71, 85, 105, 0.15)'
                   },
+                  '& .leaflet-control-zoom': {
+                    border: 'none',
+                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+                  },
                   '& .leaflet-control-zoom a': {
                     color: '#475569',
                     backgroundColor: 'white',
+                    border: '1px solid #e2e8f0',
+                    width: '36px',
+                    height: '36px',
+                    lineHeight: '36px',
+                    fontSize: '18px',
+                    fontWeight: 'bold',
                     '&:hover': {
                       color: '#334155',
                       backgroundColor: '#f1f5f9'
@@ -1019,16 +1340,17 @@ const MapPage = () => {
                   center={mapCenter} 
                   zoom={mapZoom} 
                   style={{ height: '600px', width: '100%' }}
-                  zoomControl={false}
-                  whenCreated={(map) => {
-                    mapRef.current = map;
-                  }}
+                  zoomControl={true}
+                  ref={mapRef}
                 >
                   {/* Blue-grey styled map from Carto */}
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                     url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                   />
+                  
+                  {/* Add zoom control */}
+                  <ZoomControl position="topright" />
                   
                   {/* Apply blue-grey overlay */}
                   <div style={{
@@ -1185,6 +1507,49 @@ const MapPage = () => {
                       </Marker>
                     ))
                   }
+                  
+                  {/* Car markers with clustering */}
+                  {/* Debug information */}
+                  {console.log('Rendering car markers, count:', carData.length)}
+                  {console.log('Car data sample:', carData.slice(0, 3))}
+                  
+                  {/* Direct markers without clustering first for testing */}
+                  {carData.map((car) => {
+                    console.log(`Rendering car marker for ${car._id} at position:`, [car.location.lat, car.location.lng]);
+                    return (
+                      <Marker
+                        key={`direct-${car._id}`}
+                        position={[car.location.lat, car.location.lng]}
+                        icon={car.isHighlighted ? highlightedCarIcon : carIcon}
+                      >
+                        <Popup>
+                          <Box sx={{ p: 1.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#334155' }}>
+                              {car.brand} {car.carName}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              {car.location.name || 'Car Location'}
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              fullWidth
+                              sx={{ 
+                                background: 'linear-gradient(135deg, #475569 0%, #334155 100%)',
+                                color: 'white',
+                                '&:hover': {
+                                  background: 'linear-gradient(135deg, #334155 0%, #1e293b 100%)'
+                                }
+                              }}
+                              onClick={() => window.location.href = `/car/${car._id}`}
+                            >
+                              View Details
+                            </Button>
+                          </Box>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
                   
                   {/* Car markers with clustering */}
                   {selectedWilaya && selectedWilaya.available && carData.length > 0 && (

@@ -31,6 +31,8 @@ import EventSeatIcon from '@mui/icons-material/EventSeat';
 import DoorFrontIcon from '@mui/icons-material/DoorFront';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import SettingsIcon from '@mui/icons-material/Settings';
+import MiscellaneousServicesIcon from '@mui/icons-material/MiscellaneousServices';
+import TuneIcon from '@mui/icons-material/Tune';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -339,7 +341,7 @@ export default function AllOffersPage() {
         (!sidebarFilters.brand || offer.brand === sidebarFilters.brand) &&
         (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
         (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
-        (!sidebarFilters.wilaya || offer.wilaya === sidebarFilters.wilaya) &&
+        (!sidebarFilters.wilaya || (offer.wilaya && offer.wilaya.toLowerCase() === sidebarFilters.wilaya.toLowerCase())) &&
         (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) &&
         (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
         (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
@@ -1076,32 +1078,38 @@ export default function AllOffersPage() {
                     return (
                       <Grid item xs={12} key={offer._id || offer.id} sx={{ width: '100%' }}>
                         <Card sx={{
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
                           borderRadius: 2,
-                          boxShadow: '0 6px 16px rgba(15, 23, 42, 0.04)',
-                          border: isOwnOffer ? '1.5px solid #ef4444' : '1px solid rgba(226, 232, 240, 0.6)',
-                          backgroundColor: isOwnOffer ? 'rgba(254, 242, 242, 0.8)' : 'rgba(255, 255, 255, 0.98)',
-                          backdropFilter: 'blur(10px)',
-                          transition: 'all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                          '&:hover': {
-                            boxShadow: '0 10px 24px rgba(15, 23, 42, 0.07)',
-                            transform: 'translateY(-3px)',
-                          },
-                          mb: 2.5,
-                          overflow: 'visible',
+                          boxShadow: '0 6px 16px rgba(15, 23, 42, 0.08)',
+                          border: isOwnOffer 
+                            ? '1px solid rgba(239, 68, 68, 0.15)' 
+                            : '1px solid rgba(148, 163, 184, 0.25)',
+                          bgcolor: isOwnOffer ? 'rgba(254, 242, 242, 0.6)' : 'rgba(248, 250, 252, 0.6)',
+                          backdropFilter: 'blur(8px)',
+                          transition: 'all 0.3s ease',
                           position: 'relative',
-                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          '&:hover': {
+                            boxShadow: '0 12px 24px rgba(15, 23, 42, 0.12)',
+                            transform: 'translateY(-3px)',
+                            border: isOwnOffer 
+                              ? '1px solid rgba(239, 68, 68, 0.3)' 
+                              : '1px solid rgba(71, 85, 105, 0.4)'
+                          },
                           '&::before': {
                             content: '""',
                             position: 'absolute',
                             left: 0,
                             top: 0,
-                            height: '100%',
-                            width: 3,
+                            bottom: 0,
+                            width: 4,
                             background: isOwnOffer 
                               ? 'linear-gradient(to bottom, #ef4444, #f87171)' 
                               : 'linear-gradient(to bottom, #475569, #64748b)',
                             borderRadius: '2px 0 0 2px',
-                            opacity: 0.85
+                            opacity: 0.9
                           },
                           '&::after': {
                             content: '""',
@@ -1160,6 +1168,8 @@ export default function AllOffersPage() {
                             position: 'relative',
                             borderRadius: 1.25,
                             overflow: 'hidden',
+                            border: '1px solid rgba(148, 163, 184, 0.3)',
+                            boxShadow: '0 4px 10px rgba(15, 23, 42, 0.06)',
                             '&::before': {
                               content: '""',
                               position: 'absolute',
@@ -1653,7 +1663,13 @@ export default function AllOffersPage() {
                                   }}
                                 />
                                 <Chip
-                                  icon={<SettingsIcon sx={{ color: '#475569', fontSize: '0.8rem' }} />}
+                                  icon={
+                                    offer.transmission && offer.transmission.toLowerCase() === 'manual' ? (
+                                      <TuneIcon sx={{ color: '#475569', fontSize: '0.8rem', transform: 'rotate(90deg)' }} />
+                                    ) : (
+                                      <MiscellaneousServicesIcon sx={{ color: '#475569', fontSize: '0.8rem' }} />
+                                    )
+                                  }
                                   label={offer.transmission || 'N/A'}
                                   size="small"
                                   sx={{
@@ -1754,32 +1770,9 @@ export default function AllOffersPage() {
                                 <Box sx={{
                                   display: 'flex',
                                   flexWrap: 'wrap',
-                                  gap: 0.75,
-                                  maxWidth: '100%'
+                                  gap: 0.75
                                 }}>
-                                  {Object.entries(offer.features)
-                                    .filter(([key, value]) => value === true)
-                                    .map(([featureId]) => {
-                                      const feature = carFeatures.find(f => f.id === featureId);
-                                      if (!feature) return null;
-
-                                      return (
-                                        <Chip
-                                          key={featureId}
-                                          size="small"
-                                          sx={{
-                                            height: 24,
-                                            bgcolor: '#e2e8f0',
-                                            color: '#334155',
-                                            fontWeight: 500,
-                                            fontSize: '0.75rem',
-                                            borderRadius: 1,
-                                            '& .MuiChip-label': { px: 1 }
-                                          }}
-                                          label={feature.label}
-                                        />
-                                      );
-                                    })}
+                                  {/* Feature chips would go here */}
                                 </Box>
                               </Box>
                             )}
