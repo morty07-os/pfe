@@ -33,59 +33,10 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
   border: 1px solid rgba(0, 0, 0, 0.05);
   position: relative;
   overflow: hidden;
-  cursor: pointer;
-  user-select: none;
-}
-
-.car-type-card.active {
-  border-color: #3f51b5;
-  box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.2), 0 10px 20px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-}
-
-.car-type-card.active .car-type {
-  color: #3f51b5;
-  font-weight: 600;
-}
-
-.car-type-card.active .car-advantage {
-  color: #3f51b5;
-}
-
-.car-type-card.active .car-card-image-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: #3f51b5;
-  border-radius: 4px 4px 0 0;
-}
-
-.car-type-card .checkmark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #3f51b5;
-  color: white;
-  margin-left: 8px;
-  font-size: 12px;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all 0.2s ease;
-}
-
-.car-type-card.active .checkmark {
-  opacity: 1;
-  transform: scale(1);
 }
 
 .car-advantage {
@@ -99,10 +50,6 @@
 .car-type-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
-  border-color: #3f51b5;
-}
-
-.car-type-card:hover:not(.active) {
   border-color: rgba(0, 0, 0, 0.08);
 }
 

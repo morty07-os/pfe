@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Slider from 'react-slick';
 import { Box, Card, CardContent, Typography, useTheme, useMediaQuery, IconButton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -239,50 +239,36 @@ const PrevArrow = ({ onClick }) => (
   </IconButton>
 );
 
-function CarTypesCarousel({ selectedType, onTypeSelect }) {
-  const [selectedCarType, setSelectedCarType] = useState(selectedType || '');
+function CarTypesCarousel() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  useEffect(() => {
-    if (selectedType !== undefined) {
-      setSelectedCarType(selectedType);
-    }
-  }, [selectedType]);
-
-  const handleCarTypeClick = (type) => {
-    const newType = selectedCarType === type ? '' : type;
-    setSelectedCarType(newType);
-    if (onTypeSelect) {
-      onTypeSelect(newType);
-    }
-  };
   const navigate = useNavigate();
 
   const settings = {
     dots: true,
     infinite: true,
     speed: 500,
-    slidesToShow: 3,
+    slidesToShow: isMobile ? 1 : 3,
     slidesToScroll: 1,
     nextArrow: <NextArrow />,
     prevArrow: <PrevArrow />,
+    autoplay: true,
+    autoplaySpeed: 4000,
+    pauseOnHover: true,
     responsive: [
       {
         breakpoint: 1024,
         settings: {
           slidesToShow: 2,
-          slidesToScroll: 1,
-        },
+        }
       },
       {
         breakpoint: 600,
         settings: {
           slidesToShow: 1,
-          slidesToScroll: 1,
-        },
-      },
-    ],
+        }
+      }
+    ]
   };
 
   return (
@@ -296,24 +282,28 @@ function CarTypesCarousel({ selectedType, onTypeSelect }) {
       <Box sx={{ maxWidth: '1200px', mx: 'auto', position: 'relative' }}>
         <Box sx={{ '.slick-track': { display: 'flex', '& .slick-slide': { height: 'auto', '& > div': { height: '100%' } } } }}>
         <Slider {...settings}>
-          {carTypes.map((carType, index) => (
-            <Box key={carType.type} sx={{ p: 2, height: '100%' }}>
+          {carTypes.map((car, index) => (
+            <Box key={car.type} sx={{ p: 2, height: '100%' }}>
               <Card
-                key={index}
-                className={`car-type-card ${selectedCarType === carType.type ? 'active' : ''}`}
-                onClick={() => handleCarTypeClick(carType.type)}
+                elevation={2}
+                onClick={() => navigate(`/offers?category=${car.type}`)}
                 sx={{
-                  cursor: 'pointer',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
                   position: 'relative',
-                  border: (theme) => `1px solid ${selectedCarType === carType.type ? theme.palette.primary.main : 'rgba(0, 0, 0, 0.05)'}`,
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
                   '&:hover': {
-                    boxShadow: 3,
-                    borderColor: (theme) => theme.palette.primary.main,
+                    transform: 'translateY(-8px)',
+                    boxShadow: (theme) => theme.shadows[8],
+                    '& .car-illustration': {
+                      transform: 'scale(1.05)'
+                    }
                   },
-                  '&.active': {
-                    borderColor: (theme) => theme.palette.primary.main,
-                    boxShadow: `0 0 0 2px ${theme.palette.primary.main}33`,
-                  },
+                  backgroundColor: '#ffffff',
+                  borderRadius: 2,
+                  overflow: 'hidden'
                 }}
               >
                 <Box
@@ -329,22 +319,19 @@ function CarTypesCarousel({ selectedType, onTypeSelect }) {
                     borderBottom: '1px solid #e2e8f0'
                   }}
                 >
-                  <Box 
-                    className="car-card-image-container"
+                  <Box
+                    className="car-illustration"
                     sx={{
-                      position: 'relative',
-                      '&::after': selectedCarType === carType.type ? {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '4px',
-                        background: (theme) => theme.palette.primary.main,
-                      } : {}
+                      transition: 'transform 0.3s ease',
+                      transform: 'scale(1)',
+                      '& svg': {
+                        width: '100%',
+                        height: '120px',
+                        maxWidth: '220px'
+                      }
                     }}
                   >
-                    {CarIllustrations[carType.type]()}
+                    {CarIllustrations[car.type]()}
                   </Box>
                 </Box>
 
@@ -359,31 +346,19 @@ function CarTypesCarousel({ selectedType, onTypeSelect }) {
                   }}
                 >
                   <Box>
-                    <Typography 
-                      variant="h6" 
-                      component="h3" 
-                      className="car-type"
+                    <Typography
+                      variant="h5"
                       sx={{
-                        color: (theme) => selectedCarType === carType.type 
-                          ? theme.palette.primary.main 
-                          : 'text.primary',
-                        fontWeight: selectedCarType === carType.type ? 700 : 600,
+                        fontWeight: 600,
+                        color: '#1a202c',
+                        mb: 0.75,
+                        fontSize: '1.25rem',
+                        height: '30px',
+                        display: 'flex',
+                        alignItems: 'center'
                       }}
                     >
-                      {carType.type}
-                      {selectedCarType === carType.type && (
-                        <Box 
-                          component="span" 
-                          sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            ml: 1,
-                            color: 'primary.main',
-                          }}
-                        >
-                          ✓
-                        </Box>
-                      )}
+                      {car.type}
                     </Typography>
                     <Typography
                       variant="body1"
@@ -396,7 +371,7 @@ function CarTypesCarousel({ selectedType, onTypeSelect }) {
                         fontSize: '0.95rem'
                       }}
                     >
-                      {carType.advantage}
+                      {car.advantage}
                     </Typography>
                     <Box
                       sx={{
@@ -410,7 +385,7 @@ function CarTypesCarousel({ selectedType, onTypeSelect }) {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
-                      <Typography variant="body2">{carType.specs}</Typography>
+                      <Typography variant="body2">{car.specs}</Typography>
                     </Box>
                   </Box>
 
