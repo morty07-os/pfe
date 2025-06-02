@@ -1,6 +1,7 @@
 import React from 'react';
 import Slider from 'react-slick';
 import { Box, Card, CardContent, Typography, useTheme, useMediaQuery, IconButton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import 'slick-carousel/slick/slick.css';
@@ -238,9 +239,10 @@ const PrevArrow = ({ onClick }) => (
   </IconButton>
 );
 
-function CarTypesCarousel({ onFilterChange }) {  // Add onFilterChange prop
+function CarTypesCarousel() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
 
   const settings = {
     dots: true,
@@ -284,7 +286,7 @@ function CarTypesCarousel({ onFilterChange }) {  // Add onFilterChange prop
             <Box key={car.type} sx={{ p: 2, height: '100%' }}>
               <Card
                 elevation={2}
-                onClick={() => onFilterChange({ carType: car.type.toUpperCase() })}  // Changed this line
+                onClick={() => navigate(`/offers?category=${car.type}`)}
                 sx={{
                   height: '100%',
                   display: 'flex',
@@ -425,5 +427,4 @@ function CarTypesCarousel({ onFilterChange }) {  // Add onFilterChange prop
     </Box>
   );
 }
-
 export default CarTypesCarousel;
