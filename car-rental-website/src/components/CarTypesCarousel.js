@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Slider from 'react-slick';
-import { Box, Card, CardContent, Typography, useTheme, useMediaQuery, IconButton, Tooltip } from '@mui/material';
+import { Box, Card, CardContent, Typography, useTheme, useMediaQuery, IconButton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import './CarTypesCarousel.css';
@@ -239,11 +239,10 @@ const PrevArrow = ({ onClick }) => (
   </IconButton>
 );
 
-function CarTypesCarousel({ onFilterChange, currentFilters = {} }) {
+function CarTypesCarousel() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-  const [selectedType, setSelectedType] = useState(currentFilters.carType || '');
+  const navigate = useNavigate();
 
   const settings = {
     dots: true,
@@ -272,19 +271,6 @@ function CarTypesCarousel({ onFilterChange, currentFilters = {} }) {
     ]
   };
 
-  const handleCardClick = (type) => {
-    const newType = selectedType === type ? '' : type; // Toggle selection
-    setSelectedType(newType);
-    
-    // Update the parent component with the new filter
-    if (onFilterChange) {
-      onFilterChange({
-        ...currentFilters,
-        carType: newType || undefined
-      });
-    }
-  };
-
   return (
     <Box
       sx={{
@@ -298,54 +284,28 @@ function CarTypesCarousel({ onFilterChange, currentFilters = {} }) {
         <Slider {...settings}>
           {carTypes.map((car, index) => (
             <Box key={car.type} sx={{ p: 2, height: '100%' }}>
-              <Tooltip title={selectedType === car.type ? 'Clear filter' : `Filter by ${car.type}`} arrow>
               <Card
-                key={index}
-                className="car-type-card"
-                onClick={() => handleCardClick(car.type)}
+                elevation={2}
+                onClick={() => navigate(`/offers?category=${car.type}`)}
                 sx={{
-                  cursor: 'pointer',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
                   position: 'relative',
-                  overflow: 'visible',
-                  border: selectedType === car.type ? '2px solid #3f51b5' : '1px solid rgba(0, 0, 0, 0.05)',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
                   '&:hover': {
                     transform: 'translateY(-8px)',
-                    '&::after': {
-                      opacity: 0.1,
-                      transform: 'scale(1.02)'
+                    boxShadow: (theme) => theme.shadows[8],
+                    '& .car-illustration': {
+                      transform: 'scale(1.05)'
                     }
                   },
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    borderRadius: '16px',
-                    background: 'linear-gradient(145deg, #3f51b5, #2196f3)',
-                    opacity: selectedType === car.type ? 0.1 : 0,
-                    transition: 'all 0.3s ease',
-                    zIndex: -1,
-                  },
-                  transition: 'all 0.3s ease',
+                  backgroundColor: '#ffffff',
+                  borderRadius: 2,
+                  overflow: 'hidden'
                 }}
               >
-                {selectedType === car.type && (
-                  <CheckCircleOutlineIcon 
-                    sx={{
-                      position: 'absolute',
-                      top: 10,
-                      right: 10,
-                      color: '#3f51b5',
-                      backgroundColor: 'white',
-                      borderRadius: '50%',
-                      padding: 0.5,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                      zIndex: 2
-                    }}
-                  />
-                )}
                 <Box
                   sx={{
                     bgcolor: '#f8fafc',
@@ -458,8 +418,7 @@ function CarTypesCarousel({ onFilterChange, currentFilters = {} }) {
                     </Typography>
                   </Box>
                 </CardContent>
-                </Card>
-            </Tooltip>
+              </Card>
             </Box>
           ))}
         </Slider>
