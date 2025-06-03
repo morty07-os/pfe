@@ -10,6 +10,7 @@ const PendingPage = () => {
   const [status, setStatus] = useState('pending');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // Add error state
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -49,7 +50,8 @@ const PendingPage = () => {
         }
       } catch (error) {
         console.error('Error checking status:', error);
-        setError('Failed to check status');
+        setMessage('Failed to check status'); // Use setMessage instead of setError
+        setStatus('error'); // Add error status
       } finally {
         setLoading(false);
       }
@@ -95,6 +97,12 @@ const PendingPage = () => {
         )}
 
         {status === 'rejected' && (
+          <Alert severity="error" sx={{ width: '100%' }}>
+            {message}
+          </Alert>
+        )}
+
+        {status === 'error' && (
           <Alert severity="error" sx={{ width: '100%' }}>
             {message}
           </Alert>
