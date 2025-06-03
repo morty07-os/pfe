@@ -288,7 +288,7 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Check if user is verified and approved
+        // Check if user is verified
         if (!user.isVerified) {
             console.log('User not verified:', email);
             return res.status(403).json({ 
@@ -298,9 +298,9 @@ export const login = async (req, res) => {
             });
         }
 
-        // Add status check
-        if (user.status !== 'approved') {
-            console.log('User not approved:', email);
+        // Only check approval status for new accounts that haven't been approved yet
+        if (user.status === 'pending') {
+            console.log('New user pending approval:', email);
             return res.status(403).json({ 
                 error: 'Account pending approval', 
                 isPending: true,

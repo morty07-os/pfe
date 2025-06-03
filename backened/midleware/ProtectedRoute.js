@@ -34,8 +34,8 @@ export const ProtectedRoute = (options = { required: true }) => async (req, res,
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Add status check
-        if (user.status !== 'approved') {
+        // Only check status for users with pending status
+        if (user.status === 'pending') {
             return res.status(403).json({ 
                 error: "Account pending approval",
                 isPending: true 
