@@ -12,7 +12,8 @@ const AdminWelcomePage = () => {
   const navigate = useNavigate();
   const [pendingUsers, setPendingUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null); // Changed from object to string or null
+  const [errorType, setErrorType] = useState('error'); // Added separate state for error type
   const [rejectDialog, setRejectDialog] = useState({ open: false, userId: null });
   const [rejectionReason, setRejectionReason] = useState('');
 
@@ -84,18 +85,19 @@ const AdminWelcomePage = () => {
       });
 
       if (response.ok) {
-        // Remove the approved user immediately from the list
         setPendingUsers(current => current.filter(user => user._id !== userId));
-        setError({ type: 'success', message: 'User approved successfully' });
+        setError('User approved successfully');
+        setErrorType('success');
         
-        // Fetch updated list of pending users
         fetchPendingUsers();
       } else {
         const data = await response.json();
-        setError({ type: 'error', message: data.error || 'Failed to approve user' });
+        setError(data.error || 'Failed to approve user');
+        setErrorType('error');
       }
     } catch (error) {
-      setError({ type: 'error', message: 'Failed to approve user' });
+      setError('Failed to approve user');
+      setErrorType('error');
     }
   };
 
@@ -131,7 +133,11 @@ const AdminWelcomePage = () => {
     <Container maxWidth="md" sx={{ mt: 8 }}>
       <Typography variant="h4" gutterBottom>Pending User Approvals</Typography>
       
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert severity={errorType} sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
       
       {loading ? (
         <CircularProgress />
