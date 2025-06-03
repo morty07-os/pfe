@@ -31,7 +31,14 @@ const PendingPage = () => {
         
         if (data.status === 'approved') {
           setStatus('approved');
-          setTimeout(() => navigate('/'), 2000);
+          setTimeout(() => {
+            navigate('/profile', { 
+              state: { 
+                showWelcome: true,
+                message: 'Welcome! Your account has been approved. You can now start using our services.'
+              }
+            });
+          }, 2000);
         } else if (data.status === 'rejected') {
           setStatus('rejected');
           setMessage(data.reason || 'Your application was rejected. Please sign up again with correct information.');

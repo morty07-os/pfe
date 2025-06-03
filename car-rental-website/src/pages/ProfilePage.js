@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, Paper, Avatar, CircularProgress, IconButton,
   Tooltip, Button, Chip, Container, Grid, Divider, Card, CardContent,
-  Tab, Tabs, Badge, LinearProgress, Rating, Link, TextField
+  Tab, Tabs, Badge, LinearProgress, Rating, Link, TextField,
+  Alert, Snackbar
 } from '@mui/material';
 import {
   Edit as EditIcon, Logout as LogoutIcon,
@@ -15,7 +16,7 @@ import {
   Chat as ChatIcon, Send as SendIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { PostCarDialog } from '../components/PostCarDialog';
 import ConversationDialog from '../components/ConversationDialog';
@@ -78,6 +79,9 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }));
 
 const ProfilePage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userCars, setUserCars] = useState([]);
@@ -85,7 +89,10 @@ const ProfilePage = () => {
   const [isPostCarDialogOpen, setIsPostCarDialogOpen] = useState(false); // New state for dialog
   const [conversations, setConversations] = useState([]); // New state for conversations
   const [selectedConversation, setSelectedConversation] = useState(null); // New state for selected conversation
-  const navigate = useNavigate();
+  const [welcomeAlert, setWelcomeAlert] = useState({
+    open: false,
+    message: ''
+  });
 
   const fetchProfile = async () => {
     try {
@@ -179,6 +186,17 @@ const ProfilePage = () => {
     fetchUserCars();
     fetchConversations(); // Fetch conversations on component mount
   }, []);
+
+  useEffect(() => {
+    if (location.state?.showWelcome) {
+      setWelcomeAlert({
+        open: true,
+        message: location.state.message
+      });
+      // Clear the state after showing the message
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state]);
 
   const handleLogout = async () => {
     try {
@@ -1187,6 +1205,27 @@ const ProfilePage = () => {
         open={isPostCarDialogOpen} 
         onClose={() => setIsPostCarDialogOpen(false)} 
       />
+      <Snackbar
+        open={welcomeAlert.open}
+        autoHideDuration={6000}
+        onClose={() => setWelcomeAlert(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setWelcomeAlert(prev => ({ ...prev, open: false }))}
+          severity="success"
+          variant="filled"
+          sx={{
+            width: '100%',
+            bgcolor: '#475569',
+            '& .MuiAlert-icon': {
+              color: '#fff'
+            }
+          }}
+        >
+          {welcomeAlert.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
