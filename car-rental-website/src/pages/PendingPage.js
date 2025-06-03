@@ -15,14 +15,16 @@ const PendingPage = () => {
     const checkStatus = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
+        const userEmail = localStorage.getItem('userEmail');
+        
+        if (!userEmail) {
           navigate('/');
           return;
         }
 
         const response = await fetch(`${apiUrl}/api/auth/check-status`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': token ? `Bearer ${token}` : '',
             'Content-Type': 'application/json'
           },
           credentials: 'include'
@@ -30,11 +32,16 @@ const PendingPage = () => {
         const data = await response.json();
         
         if (data.status === 'approved') {
+          // Only set full auth data after approval
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('userId', data.user._id);
+          localStorage.setItem('userRole', data.user.role);
+          
           setStatus('approved');
           setTimeout(() => navigate('/'), 2000);
         } else if (data.status === 'rejected') {
           setStatus('rejected');
-          setMessage(data.reason || 'Your application was rejected. Please sign up again with correct information.');
+          setMessage(data.reason || 'Your application was rejected.');
           setTimeout(() => {
             localStorage.clear();
             navigate('/signup');
@@ -42,6 +49,7 @@ const PendingPage = () => {
         }
       } catch (error) {
         console.error('Error checking status:', error);
+        setError('Failed to check status');
       } finally {
         setLoading(false);
       }

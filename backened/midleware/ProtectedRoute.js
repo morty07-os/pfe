@@ -2,7 +2,7 @@ import User from "../models/user.models.js";
 import jwt from "jsonwebtoken";
 
 // Middleware to protect routes and restrict access based on roles
-export const ProtectedRoute = (options = { required: true }) => (req, res, next) => {
+export const ProtectedRoute = (options = { required: true }) => async (req, res, next) => {
     let token = null;
 
     // 1. Try to get token from cookie
@@ -27,6 +27,22 @@ export const ProtectedRoute = (options = { required: true }) => (req, res, next)
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded; // Attach user info to the request (e.g., { userId: '...' })
+
+        const user = await User.findById(decoded.userId).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Add status check
+        if (user.status !== 'approved') {
+            return res.status(403).json({ 
+                error: "Account pending approval",
+                isPending: true 
+            });
+        }
+
+        req.user = { userId: user._id, role: user.role };
         next();
     } catch (error) {
         // If token verification fails

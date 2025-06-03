@@ -67,13 +67,14 @@ const VerificationPage = () => {
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
         
-        // Store user data in localStorage
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('userId', result.user._id);
+        // Store minimal user data
         localStorage.setItem('userEmail', result.user.email);
-        localStorage.setItem('userRole', result.user.role);
-        setMessage({ type: 'success', text: result.message });
-        window.dispatchEvent(new Event('loginStateChanged'));
+        
+        setMessage({ 
+          type: 'success', 
+          text: 'Email verified successfully. Your account is pending admin approval.' 
+        });
+        
         setTimeout(() => {
           navigate('/pending');
         }, 2000);

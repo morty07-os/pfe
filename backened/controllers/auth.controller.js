@@ -65,6 +65,7 @@ export const signup = async (req, res) => {
             verificationToken: hashedVerificationCode,
             verificationTokenExpires: verificationCodeExpires,
             isVerified: false,
+            status: 'pending' // Add pending status
         });
 
         await newUser.save();
@@ -287,12 +288,22 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Check if user is verified
+        // Check if user is verified and approved
         if (!user.isVerified) {
             console.log('User not verified:', email);
             return res.status(403).json({ 
                 error: 'Email not verified', 
                 needsVerification: true,
+                email: user.email
+            });
+        }
+
+        // Add status check
+        if (user.status !== 'approved') {
+            console.log('User not approved:', email);
+            return res.status(403).json({ 
+                error: 'Account pending approval', 
+                isPending: true,
                 email: user.email
             });
         }
@@ -729,9 +740,12 @@ export const checkStatus = async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
+        // Return more detailed status information
         res.status(200).json({
             status: user.status || 'pending',
-            reason: user.rejectionReason
+            isVerified: user.isVerified,
+            reason: user.rejectionReason,
+            canAccess: user.status === 'approved' && user.isVerified
         });
     } catch (error) {
         console.error("Error in checkStatus:", error);
