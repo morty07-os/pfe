@@ -30,6 +30,15 @@ const AdminWelcomePage = () => {
     fetchPendingUsers();
   }, [navigate]);
 
+  // Add refresh interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchPendingUsers();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   const fetchPendingUsers = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -69,7 +78,10 @@ const AdminWelcomePage = () => {
         credentials: 'include'
       });
       if (response.ok) {
-        fetchPendingUsers();
+        // Remove the approved user from the local state
+        setPendingUsers(current => current.filter(user => user._id !== userId));
+        // Show success message
+        setError('User approved successfully');
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to approve user');
@@ -92,9 +104,12 @@ const AdminWelcomePage = () => {
         body: JSON.stringify({ reason: rejectionReason })
       });
       if (response.ok) {
+        // Remove the rejected user from the local state
+        setPendingUsers(current => current.filter(user => user._id !== rejectDialog.userId));
         setRejectDialog({ open: false, userId: null });
         setRejectionReason('');
-        fetchPendingUsers();
+        // Show success message
+        setError('User rejected successfully');
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to reject user');

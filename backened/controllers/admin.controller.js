@@ -4,9 +4,10 @@ import sendEmail from '../utils/email.utils.js';
 export const getPendingUsers = async (req, res) => {
     try {
         const pendingUsers = await User.find({ 
-            isVerified: true,
-            status: 'pending' 
-        }).select('firstName lastName email phone residence licenceFront licenceBack createdAt');
+            isVerified: true, // User has verified their email
+            status: { $in: [null, 'pending'] } // Include both new users (null status) and pending users
+        }).select('firstName lastName email phone residence licenceFront licenceBack createdAt status')
+        .sort('-createdAt'); // Show newest users first
         
         res.status(200).json({ users: pendingUsers });
     } catch (error) {
@@ -18,7 +19,10 @@ export const approveUser = async (req, res) => {
     try {
         const user = await User.findByIdAndUpdate(
             req.params.userId,
-            { status: 'approved' },
+            { 
+                status: 'approved',
+                approvedAt: new Date() 
+            },
             { new: true }
         );
 
