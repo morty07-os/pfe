@@ -296,15 +296,14 @@ export const login = async (req, res) => {
                 needsVerification: true,
                 email: user.email
             });
-        }
-
-        // Only check approval status for new accounts that haven't been approved yet
-        if (user.status === 'pending') {
-            console.log('New user pending approval:', email);
+        }        // Check user approval status
+        if (user.status !== 'approved') {
+            console.log('User not approved or pending approval:', email);
             return res.status(403).json({ 
-                error: 'Account pending approval', 
+                error: 'Account not approved', 
                 isPending: true,
-                email: user.email
+                email: user.email,
+                status: user.status || 'pending'
             });
         }
 
