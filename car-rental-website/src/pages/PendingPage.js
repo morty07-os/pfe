@@ -18,15 +18,16 @@ const PendingPage = () => {
         const token = localStorage.getItem('token');
         const userEmail = localStorage.getItem('userEmail');
         
-        if (!userEmail) {
+        if (!userEmail || !token) {
           navigate('/');
           return;
         }
 
         const response = await fetch(`${apiUrl}/api/auth/check-status`, {
           headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
           credentials: 'include'
         });
@@ -50,8 +51,8 @@ const PendingPage = () => {
         }
       } catch (error) {
         console.error('Error checking status:', error);
-        setMessage('Failed to check status'); // Use setMessage instead of setError
-        setStatus('error'); // Add error status
+        setMessage('Failed to check status');
+        setStatus('error');
       } finally {
         setLoading(false);
       }

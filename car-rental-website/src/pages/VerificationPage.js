@@ -67,7 +67,9 @@ const VerificationPage = () => {
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
         
-        // Store minimal user data
+        // Store complete user data
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('userId', result.user._id);
         localStorage.setItem('userEmail', result.user.email);
         
         setMessage({ 
