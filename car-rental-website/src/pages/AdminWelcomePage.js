@@ -82,17 +82,20 @@ const AdminWelcomePage = () => {
         },
         credentials: 'include'
       });
+
       if (response.ok) {
-        // Remove the approved user from the local state
+        // Remove the approved user immediately from the list
         setPendingUsers(current => current.filter(user => user._id !== userId));
-        // Show success message
-        setError('User approved successfully');
+        setError({ type: 'success', message: 'User approved successfully' });
+        
+        // Fetch updated list of pending users
+        fetchPendingUsers();
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to approve user');
+        setError({ type: 'error', message: data.error || 'Failed to approve user' });
       }
     } catch (error) {
-      setError('Failed to approve user');
+      setError({ type: 'error', message: 'Failed to approve user' });
     }
   };
 

@@ -31,14 +31,19 @@ const PendingPage = () => {
         
         if (data.status === 'approved') {
           setStatus('approved');
+          // Clear interval before navigating
+          clearInterval(interval);
+          // Give user time to see approval message then redirect to profile
           setTimeout(() => {
             navigate('/profile', { 
               state: { 
                 showWelcome: true,
                 message: 'Welcome! Your account has been approved. You can now start using our services.'
-              }
+              },
+              replace: true // Replace the history entry so they can't go back to pending page
             });
           }, 2000);
+          return; // Exit early after setting timeout
         } else if (data.status === 'rejected') {
           setStatus('rejected');
           setMessage(data.reason || 'Your application was rejected. Please sign up again with correct information.');

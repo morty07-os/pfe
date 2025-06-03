@@ -21,7 +21,8 @@ export const approveUser = async (req, res) => {
             req.params.userId,
             { 
                 status: 'approved',
-                approvedAt: new Date() 
+                approvedAt: new Date(),
+                isVerified: true // Ensure user is marked as verified
             },
             { new: true }
         );
@@ -38,7 +39,14 @@ export const approveUser = async (req, res) => {
             </div>
         `);
 
-        res.status(200).json({ message: "User approved successfully", user });
+        res.status(200).json({ 
+            message: "User approved successfully", 
+            user: {
+                _id: user._id,
+                status: user.status,
+                isVerified: user.isVerified
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: "Error approving user" });
     }
