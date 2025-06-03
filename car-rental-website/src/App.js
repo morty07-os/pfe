@@ -24,7 +24,8 @@ import AddCarPage from './pages/AddCarPage';
 import VerificationPage from './pages/VerificationPage';
 import MapPage from './pages/MapPage';
 import EditProfilePage from './pages/EditProfilePage';
-import AdminWelcomePage from './pages/AdminWelcomePage'; // Import AdminWelcomePage
+import AdminWelcomePage from './pages/AdminWelcomePage';
+import PendingPage from './pages/PendingPage';
 
 // Routes component to handle navigation
 const AppRoutes = () => {
@@ -57,6 +58,7 @@ const AppRoutes = () => {
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/add-car" element={<AddCarPage />} />
             <Route path="/verify-email" element={<VerificationPage />} />
+            <Route path="/pending" element={<PendingPage />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/admin" element={<AdminWelcomePage />} /> {/* Add Admin route */}
       </Routes>
