@@ -4,7 +4,8 @@ import User from '../models/user.models.js';
 export const adminAuth = () => {
     return async (req, res, next) => {
         try {
-            const token = req.cookies.jwt;
+            // Check for token in both cookie and Authorization header
+            const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
 
             if (!token) {
                 return res.status(401).json({ error: "Unauthorized - No Token Provided" });

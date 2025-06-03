@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Container, Card, CardContent,
   Button, Stack, Dialog, DialogTitle, DialogContent,
@@ -8,6 +9,7 @@ import {
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
 const AdminWelcomePage = () => {
+  const navigate = useNavigate();
   const [pendingUsers, setPendingUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,19 +17,38 @@ const AdminWelcomePage = () => {
   const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
+    // Check if user is admin before fetching
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    
+    if (!token || userRole !== 'admin') {
+      setError('Unauthorized access');
+      navigate('/');
+      return;
+    }
+
     fetchPendingUsers();
-  }, []);
+  }, [navigate]);
 
   const fetchPendingUsers = async () => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${apiUrl}/api/admin/pending-users`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         credentials: 'include'
       });
       const data = await response.json();
       if (response.ok) {
         setPendingUsers(data.users);
       } else {
-        setError(data.error);
+        setError(data.error || 'Failed to fetch pending users');
+        if (response.status === 401) {
+          navigate('/');
+        }
       }
     } catch (error) {
       setError('Failed to fetch pending users');
@@ -38,12 +59,20 @@ const AdminWelcomePage = () => {
 
   const handleApprove = async (userId) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${apiUrl}/api/admin/approve-user/${userId}`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         credentials: 'include'
       });
       if (response.ok) {
         fetchPendingUsers();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to approve user');
       }
     } catch (error) {
       setError('Failed to approve user');
@@ -52,9 +81,13 @@ const AdminWelcomePage = () => {
 
   const handleReject = async () => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${apiUrl}/api/admin/reject-user/${rejectDialog.userId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
         body: JSON.stringify({ reason: rejectionReason })
       });
@@ -62,6 +95,9 @@ const AdminWelcomePage = () => {
         setRejectDialog({ open: false, userId: null });
         setRejectionReason('');
         fetchPendingUsers();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to reject user');
       }
     } catch (error) {
       setError('Failed to reject user');
