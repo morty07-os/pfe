@@ -47,20 +47,25 @@ const AdminWelcomePage = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         credentials: 'include'
       });
-      const data = await response.json();
-      if (response.ok) {
-        setPendingUsers(data.users);
-      } else {
-        setError(data.error || 'Failed to fetch pending users');
-        if (response.status === 401) {
-          navigate('/');
-        }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch pending users');
       }
+
+      const data = await response.json();
+      setPendingUsers(data.users || []);
+      setError(''); // Clear any existing error
     } catch (error) {
-      setError('Failed to fetch pending users');
+      console.error('Error fetching pending users:', error);
+      setError(error.message || 'Failed to fetch pending users');
+      if (error.message.includes('401') || error.message.includes('403')) {
+        navigate('/');
+      }
     } finally {
       setLoading(false);
     }

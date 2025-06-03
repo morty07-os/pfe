@@ -57,21 +57,31 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
-// Enable CORS for the frontend
+// Update CORS configuration
 app.use(cors({
-    origin: allowedOrigins,
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'https://pfe-delta.vercel.app',
+            'https://pfe-morty07-os-projects.vercel.app',
+            'https://pfe-git-main-morty07-os-projects.vercel.app'
+        ];
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            return callback(new Error('CORS not allowed'), false);
+        }
+        return callback(null, true);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
-// Handle preflight requests
-app.options('*', cors({
-    origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-}));
+// Ensure OPTIONS requests are handled properly
+app.options('*', cors());
 
 // Rate limiting middleware to prevent abuse
 const limiter = rateLimit({
