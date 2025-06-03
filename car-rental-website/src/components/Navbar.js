@@ -119,6 +119,9 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
         return false;
       }
       
+      // Optionally, check user status in localStorage if available
+      // If you store user status, check it here and return false if not 'approved'
+      // Otherwise, rely on backend protection
       return true;
     } catch (error) {
       console.error('Authentication check failed:', error);
@@ -661,9 +664,6 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             50% { opacity: 1; }
           }
           @keyframes gradientFlow {
-            0% { background: linear-gradient(to bottom, #94a3b8, #e2e8f0); }
-            100% { background: linear-gradient(to bottom, #e2e8f0, #94a3b8); }
-          }
           `
         }</style>
         <Box

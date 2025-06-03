@@ -151,6 +151,7 @@ const AdminWelcomePage = () => {
               <Typography>Email: {user.email}</Typography>
               <Typography>Phone: {user.phone}</Typography>
               <Typography>Residence: {user.residence}</Typography>
+              <Typography>Status: <b style={{color: user.status === 'approved' ? 'green' : user.status === 'pending' ? 'orange' : 'red'}}>{user.status}</b></Typography>
               <Box sx={{ mt: 2 }}>
                 <Typography variant="subtitle2">License Images:</Typography>
                 <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
@@ -163,6 +164,7 @@ const AdminWelcomePage = () => {
                   variant="contained"
                   color="success"
                   onClick={() => handleApprove(user._id)}
+                  disabled={user.status === 'approved'}
                 >
                   Approve
                 </Button>
@@ -170,6 +172,7 @@ const AdminWelcomePage = () => {
                   variant="contained"
                   color="error"
                   onClick={() => setRejectDialog({ open: true, userId: user._id })}
+                  disabled={user.status === 'rejected'}
                 >
                   Reject
                 </Button>

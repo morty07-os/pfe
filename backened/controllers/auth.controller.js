@@ -298,12 +298,14 @@ export const login = async (req, res) => {
             });
         }
 
-        // Only check approval status for new accounts that haven't been approved yet
-        if (user.status === 'pending') {
-            console.log('New user pending approval:', email);
+        // Only allow login if user is approved
+        if (user.status !== 'approved') {
+            console.log('User not approved:', email, 'Status:', user.status);
             return res.status(403).json({ 
-                error: 'Account pending approval', 
-                isPending: true,
+                error: 'Account not approved by admin', 
+                isPending: user.status === 'pending',
+                isRejected: user.status === 'rejected',
+                status: user.status,
                 email: user.email
             });
         }
@@ -385,6 +387,10 @@ export const verifyEmail = async (req, res) => {
 
         if (user.isVerified) {
             console.log(`Email already verified for user: ${user._id}`);
+            // If user is not approved, do not log in or issue token
+            if (user.status !== 'approved') {
+                return res.status(403).json({ error: "Account not approved by admin", status: user.status });
+            }
             return res.status(400).json({ error: "Email already verified" });
         }
 
@@ -412,6 +418,14 @@ export const verifyEmail = async (req, res) => {
         
         await user.save();
         console.log(`User ${user._id} verified successfully`);
+
+        // After verification, only allow login if user is approved
+        if (user.status !== 'approved') {
+            return res.status(403).json({
+                error: "Account not approved by admin",
+                status: user.status
+            });
+        }
 
         // Generate token and set it in the cookie after successful verification
         const token = generateTokenAndSetCookie(user._id, res);
