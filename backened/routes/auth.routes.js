@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword, updateProfile } from "../controllers/auth.controller.js";
+import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword, updateProfile, checkStatus } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { adminAuth } from "../midleware/adminAuth.js"; // Import adminAuth middleware
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
@@ -58,6 +58,7 @@ router.post("/logout", logout);
 router.post("/refresh-token", refreshToken);
 router.post("/verify-email", verifyEmail);
 router.post("/resend-verification-code", resendVerificationCode);
+router.get("/check-status", ProtectedRoute(), checkStatus); // Add this line
 
 // Forgot Password routes
 router.post("/forgot-password", forgotPassword); // New route to request reset code
