@@ -77,10 +77,13 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
       localStorage.removeItem('userEmail');
+      localStorage.removeItem('userRole');
+
       // Store user data in localStorage
       localStorage.setItem('token', result.token);
       localStorage.setItem('userId', result.user._id);
       localStorage.setItem('userEmail', result.user.email);
+      localStorage.setItem('userRole', result.user.role);
 
       console.log("Logged in user role:", result.user.role); // Log the user's role
 

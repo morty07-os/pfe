@@ -65,10 +65,13 @@ const VerificationPage = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
+        
         // Store user data in localStorage
         localStorage.setItem('token', result.token);
         localStorage.setItem('userId', result.user._id);
         localStorage.setItem('userEmail', result.user.email);
+        localStorage.setItem('userRole', result.user.role);
         setMessage({ type: 'success', text: result.message });
         window.dispatchEvent(new Event('loginStateChanged'));
         setTimeout(() => {
