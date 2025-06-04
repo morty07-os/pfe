@@ -94,7 +94,7 @@ export default function CarDetailsPage() {
     if (!isOwnCar && car && car.owner) {
       const ownerId = typeof car.owner === 'string' ? car.owner : car.owner._id;
       if (ownerId) {
-        navigate(`/conversation/${carId}/${ownerId}`);
+        navigate(`/booking/${carId}`);
       } else {
         console.error('Owner ID could not be determined from car.owner for navigation.');
         setSnackbar({
