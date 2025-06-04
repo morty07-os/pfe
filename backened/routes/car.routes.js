@@ -167,7 +167,8 @@ router.get("/getcars", async (req, res) => {
       search,
     } = req.query;
 
-    const query = { isDeleted: false };
+    // Add status filter to only show approved cars
+    const query = { isDeleted: false, status: 'approved' };
 
     // Handle text search across multiple fields
     if (search) {
