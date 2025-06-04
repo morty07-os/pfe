@@ -106,11 +106,6 @@ const carSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    status: {
-      type: String,
-      enum: ['awaiting_posting_approval', 'pending', 'accepted', 'rejected'],
-      default: 'awaiting_posting_approval',
-    },
     ownerName: {
       firstName: {
         type: String,

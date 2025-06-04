@@ -1,5 +1,4 @@
 import User from '../models/user.models.js';
-import Car from '../models/car.models.js';
 import sendEmail from '../utils/email.utils.js';
 
 export const getPendingUsers = async (req, res) => {
@@ -53,16 +52,6 @@ export const approveUser = async (req, res) => {
     }
 };
 
-export const getAllCarsAdmin = async (req, res) => {
-    try {
-        const cars = await Car.find({}).populate('owner', 'firstName lastName email').sort('-createdAt'); // Populate owner details and sort
-        res.status(200).json({ cars });
-    } catch (error) {
-        console.error('Error fetching all cars for admin:', error);
-        res.status(500).json({ message: 'Error fetching all cars', error: error.message });
-    }
-};
-
 export const rejectUser = async (req, res) => {
     try {
         const { reason } = req.body;
@@ -92,48 +81,5 @@ export const rejectUser = async (req, res) => {
         res.status(200).json({ message: "User rejected successfully", user });
     } catch (error) {
         res.status(500).json({ error: "Error rejecting user" });
-    }
-};
-
-export const updateCarStatusByAdmin = async (req, res) => {
-    try {
-        const { carId } = req.params;
-        const { status } = req.body; // Expected new status: 'pending', 'accepted', 'rejected'
-
-        const car = await Car.findById(carId);
-
-        if (!car) {
-            return res.status(404).json({ message: 'Car not found' });
-        }
-
-        const currentStatus = car.status;
-        let allowedTransitions = {};
-
-        // Define allowed transitions based on current status
-        if (currentStatus === 'awaiting_posting_approval') {
-            allowedTransitions = { 'pending': true, 'rejected': true };
-        } else if (currentStatus === 'pending') {
-            allowedTransitions = { 'accepted': true, 'rejected': true };
-        }
-        // Add more transitions here if needed, e.g., from 'accepted' back to 'pending' or 'rejected'
-
-        if (!allowedTransitions[status]) {
-            return res.status(400).json({
-                message: `Cannot change status from '${currentStatus}' to '${status}'. Allowed transitions: ${Object.keys(allowedTransitions).join(', ')}`
-            });
-        }
-
-        car.status = status;
-        // Optionally, add a field like 'statusUpdatedAt' or 'adminActionAt'
-        // car.statusUpdatedAt = new Date();
-        // car.adminApprover = req.user.userId; // Assuming admin user ID is in req.user
-
-        const updatedCar = await car.save();
-
-        res.status(200).json({ message: `Car status updated to '${status}' successfully.`, car: updatedCar });
-
-    } catch (error) {
-        console.error('Error updating car status by admin:', error);
-        res.status(500).json({ message: 'Error updating car status', error: error.message });
     }
 };

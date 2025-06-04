@@ -1,7 +1,6 @@
 import express from 'express';
 import { adminAuth } from '../midleware/adminAuth.js';
-import { getPendingUsers, approveUser, rejectUser, updateCarStatusByAdmin, getAllCarsAdmin } from '../controllers/admin.controller.js';
-
+import { getPendingUsers, approveUser, rejectUser } from '../controllers/admin.controller.js';
 
 const router = express.Router();
 
@@ -34,9 +33,5 @@ router.use((req, res, next) => {
 router.get('/pending-users', adminAuth(), getPendingUsers);
 router.post('/approve-user/:userId', adminAuth(), approveUser);
 router.post('/reject-user/:userId', adminAuth(), rejectUser);
-
-// Car management by admin
-router.get('/all', adminAuth(), getAllCarsAdmin); // New route to get all cars for admin
-router.put('/cars/:carId/status', adminAuth(), updateCarStatusByAdmin);
 
 export default router;
