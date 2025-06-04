@@ -91,13 +91,23 @@ export default function CarDetailsPage() {
       // Consider navigating to login: navigate('/login');
       return;
     }
-    if (!isOwnCar && car && car.user && car.user._id) {
-      navigate(`/conversation/${carId}/${car.user._id}`);
+    if (!isOwnCar && car && car.owner) {
+      const ownerId = typeof car.owner === 'string' ? car.owner : car.owner._id;
+      if (ownerId) {
+        navigate(`/conversation/${carId}/${ownerId}`);
+      } else {
+        console.error('Owner ID could not be determined from car.owner for navigation.');
+        setSnackbar({
+          open: true,
+          message: 'Could not start conversation. Owner details are missing.',
+          severity: 'error'
+        });
+      }
     } else if (!isOwnCar) {
-      console.error('Car details or owner ID not available for navigation.');
+      console.error('Car details or owner information not available for navigation.');
       setSnackbar({
         open: true,
-        message: 'Could not start conversation. Car details are missing.',
+        message: 'Could not start conversation. Car or owner details are missing.',
         severity: 'error'
       });
     }
