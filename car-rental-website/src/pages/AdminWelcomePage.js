@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Container, Card, CardContent,
   Button, Stack, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, CircularProgress, Alert
+  DialogActions, TextField, CircularProgress, Alert, Tabs, Tab
 } from '@mui/material';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
@@ -16,9 +16,9 @@ const AdminWelcomePage = () => {
   const [errorType, setErrorType] = useState('error'); // Added separate state for error type
   const [rejectDialog, setRejectDialog] = useState({ open: false, userId: null });
   const [rejectionReason, setRejectionReason] = useState('');
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
-    // Check if user is admin before fetching
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
     
@@ -28,17 +28,26 @@ const AdminWelcomePage = () => {
       return;
     }
 
-    fetchPendingUsers();
-  }, [navigate]);
+    if (activeTab === 0) { // Only fetch users if the User Approval tab is active
+      fetchPendingUsers();
+    }
+    // Add logic here to fetch data for other tabs when they are active
+    // e.g., if (activeTab === 1) { fetchPendingCarPostings(); }
+    // e.g., if (activeTab === 2) { fetchPendingBookings(); }
+  }, [navigate, activeTab]);
 
   // Add refresh interval
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchPendingUsers();
-    }, 30000); // Refresh every 30 seconds
+    let interval;
+    if (activeTab === 0) {
+      interval = setInterval(() => {
+        fetchPendingUsers();
+      }, 30000); // Refresh every 30 seconds for user approvals
+    }
+    // Add similar intervals for other tabs if needed
 
     return () => clearInterval(interval);
-  }, []);
+  }, [activeTab]);
 
   const fetchPendingUsers = async () => {
     try {
@@ -101,6 +110,10 @@ const AdminWelcomePage = () => {
     }
   };
 
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   const handleReject = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -130,54 +143,93 @@ const AdminWelcomePage = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 8 }}>
-      <Typography variant="h4" gutterBottom>Pending User Approvals</Typography>
-      
+    <Container maxWidth="lg" sx={{ mt: 8 }}> {/* Changed to lg for potentially wider content */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={activeTab} onChange={handleTabChange} aria-label="admin approval tabs">
+          <Tab label="User Approvals" id="tab-0" aria-controls="tabpanel-0" />
+          <Tab label="Car Posting Approvals" id="tab-1" aria-controls="tabpanel-1" />
+          <Tab label="Booking Approvals" id="tab-2" aria-controls="tabpanel-2" />
+        </Tabs>
+      </Box>
+
       {error && (
         <Alert severity={errorType} sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
-      
-      {loading ? (
-        <CircularProgress />
-      ) : pendingUsers.length === 0 ? (
-        <Typography>No pending users to review</Typography>
-      ) : (
-        pendingUsers.map((user) => (
-          <Card key={user._id} sx={{ mb: 2 }}>
-            <CardContent>
-              <Typography variant="h6">{user.firstName} {user.lastName}</Typography>
-              <Typography>Email: {user.email}</Typography>
-              <Typography>Phone: {user.phone}</Typography>
-              <Typography>Residence: {user.residence}</Typography>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2">License Images:</Typography>
-                <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
-                  <img src={user.licenceFront} alt="License Front" style={{ width: 150 }} />
-                  <img src={user.licenceBack} alt="License Back" style={{ width: 150 }} />
-                </Stack>
-              </Box>
-              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={() => handleApprove(user._id)}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => setRejectDialog({ open: true, userId: user._id })}
-                >
-                  Reject
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-        ))
-      )}
+
+      {/* Tab Panel for User Approvals */}
+      <Box role="tabpanel" hidden={activeTab !== 0} id="tabpanel-0" aria-labelledby="tab-0">
+        {activeTab === 0 && (
+          <Box>
+            <Typography variant="h5" gutterBottom>Pending User Approvals</Typography>
+            {loading ? (
+              <CircularProgress />
+            ) : pendingUsers.length === 0 ? (
+              <Typography>No pending users to review.</Typography>
+            ) : (
+              pendingUsers.map((user) => (
+                <Card key={user._id} sx={{ mb: 2 }}>
+                  <CardContent>
+                    <Typography variant="h6">{user.firstName} {user.lastName}</Typography>
+                    <Typography>Email: {user.email}</Typography>
+                    <Typography>Phone: {user.phone}</Typography>
+                    <Typography>Residence: {user.residence}</Typography>
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2">License Images:</Typography>
+                      <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
+                        {user.licenceFront && <img src={user.licenceFront} alt="License Front" style={{ width: 150, height: 'auto', border: '1px solid #ddd', borderRadius: '4px' }} />}
+                        {user.licenceBack && <img src={user.licenceBack} alt="License Back" style={{ width: 150, height: 'auto', border: '1px solid #ddd', borderRadius: '4px' }} />}
+                      </Stack>
+                    </Box>
+                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => handleApprove(user._id)}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => setRejectDialog({ open: true, userId: user._id })}
+                      >
+                        Reject
+                      </Button>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </Box>
+        )}
+      </Box>
+
+      {/* Tab Panel for Car Posting Approvals */}
+      <Box role="tabpanel" hidden={activeTab !== 1} id="tabpanel-1" aria-labelledby="tab-1">
+        {activeTab === 1 && (
+          <Box>
+            <Typography variant="h5" gutterBottom>Pending Car Posting Approvals</Typography>
+            {/* Placeholder: Add logic and UI for car posting approvals here */}
+            <Typography>Car posting approval functionality will be implemented here.</Typography>
+            {/* Example: You might fetch pending car posts similar to pending users */}
+            {/* <CircularProgress /> or <Typography>No pending car posts.</Typography> */}
+          </Box>
+        )}
+      </Box>
+
+      {/* Tab Panel for Booking Approvals */}
+      <Box role="tabpanel" hidden={activeTab !== 2} id="tabpanel-2" aria-labelledby="tab-2">
+        {activeTab === 2 && (
+          <Box>
+            <Typography variant="h5" gutterBottom>Pending Booking Approvals</Typography>
+            {/* Placeholder: Add logic and UI for booking approvals here */}
+            <Typography>Booking approval functionality will be implemented here.</Typography>
+            {/* Example: You might fetch pending bookings */}
+          </Box>
+        )}
+      </Box>
 
       <Dialog open={rejectDialog.open} onClose={() => setRejectDialog({ open: false, userId: null })}>
         <DialogTitle>Reject User</DialogTitle>
