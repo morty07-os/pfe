@@ -53,6 +53,16 @@ export const approveUser = async (req, res) => {
     }
 };
 
+export const getAllCarsAdmin = async (req, res) => {
+    try {
+        const cars = await Car.find({}).populate('owner', 'firstName lastName email').sort('-createdAt'); // Populate owner details and sort
+        res.status(200).json({ cars });
+    } catch (error) {
+        console.error('Error fetching all cars for admin:', error);
+        res.status(500).json({ message: 'Error fetching all cars', error: error.message });
+    }
+};
+
 export const rejectUser = async (req, res) => {
     try {
         const { reason } = req.body;
