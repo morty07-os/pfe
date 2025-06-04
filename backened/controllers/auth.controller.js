@@ -275,7 +275,8 @@ export const login = async (req, res) => {
 
         // Find the user by email (case insensitive)
         const user = await User.findOne({ email: email.toLowerCase() });
-        console.log('User fetched from DB:', user ? user.email : 'null', 'Role:', user ? user.role : 'undefined'); // Log user and role after fetch
+        console.log('User fetched from DB:', user ? user.email : 'null', 'Role:', user ? user.role : 'undefined');
+        
         if (!user) {
             console.log('User not found for email:', email);
             return res.status(401).json({ error: 'Invalid email or password' });
@@ -288,7 +289,7 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Check if user is verified
+        // First check: Email verification
         if (!user.isVerified) {
             console.log('User not verified:', email);
             return res.status(403).json({ 
@@ -296,18 +297,20 @@ export const login = async (req, res) => {
                 needsVerification: true,
                 email: user.email
             });
-        }        // Check user approval status
+        }
+
+        // Second check: Admin approval
         if (user.status !== 'approved') {
-            console.log('User not approved or pending approval:', email);
+            console.log('User not approved:', email);
             return res.status(403).json({ 
-                error: 'Account not approved', 
+                error: 'Account pending administrator approval', 
                 isPending: true,
                 email: user.email,
                 status: user.status || 'pending'
             });
         }
 
-        // Generate token and set it in the cookie
+        // Only generate token if both verification and approval checks pass
         const token = generateTokenAndSetCookie(user._id, res);
         
         if (!token) {
@@ -336,7 +339,6 @@ export const login = async (req, res) => {
         res.cookie('refreshToken', refreshToken, refreshTokenCookieOptions);
         console.log('Refresh token cookie set for user:', user._id);
 
-
         // Return user data without sensitive information
         const userResponse = {
             _id: user._id,
@@ -346,13 +348,14 @@ export const login = async (req, res) => {
             phone: user.phone,
             residence: user.residence,
             isVerified: user.isVerified,
-            role: user.role, // Include the user's role
+            role: user.role,
+            status: user.status,
             createdAt: user.createdAt
         };
 
         res.status(200).json({
             message: 'Login successful',
-            token, // This is the access token (JWT)
+            token,
             user: userResponse
         });
     } catch (error) {
