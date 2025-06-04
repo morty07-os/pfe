@@ -103,6 +103,7 @@ const AdminWelcomePage = () => {
       }
 
       const data = await response.json();
+      console.log('Pending cars data from API:', data); // Log the data
       setPendingCars(data);
     } catch (error) {
       setError(error.message);
