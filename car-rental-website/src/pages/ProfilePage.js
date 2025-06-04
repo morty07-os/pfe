@@ -647,6 +647,26 @@ const ProfilePage = () => {
                                       fontSize: '0.7rem'
                                     }}
                                   />
+                                  {car.status && (
+                                    <Chip
+                                      label={car.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} // Format status string
+                                      size="small"
+                                      sx={{
+                                        fontWeight: 500,
+                                        fontSize: '0.7rem',
+                                        color: 'white',
+                                        bgcolor: car.status === 'accepted'
+                                          ? '#22c55e' // green-500
+                                          : car.status === 'pending'
+                                          ? '#3b82f6' // blue-500
+                                          : car.status === 'rejected'
+                                          ? '#ef4444' // red-500
+                                          : car.status === 'awaiting_posting_approval'
+                                          ? '#f97316' // orange-500
+                                          : '#64748b', // slate-500 (default)
+                                      }}
+                                    />
+                                  )}
                                 </Box>
                               </Box>
                               <Button
@@ -841,13 +861,16 @@ const ProfilePage = () => {
                               key={car._id}
                               elevation={0}
                               sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
                                 p: 2,
+                                mb: 2,
                                 borderRadius: 2,
                                 border: '1px solid #e2e8f0',
-                                display: 'flex',
-                                gap: 2,
                                 transition: 'all 0.2s ease-in-out',
                                 '&:hover': {
+                                  borderColor: '#cbd5e1',
                                   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                                   transform: 'translateY(-2px)',
                                 }
@@ -897,6 +920,26 @@ const ProfilePage = () => {
                                       fontSize: '0.7rem'
                                     }}
                                   />
+                                  {car.status && (
+                                    <Chip
+                                      label={car.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} // Format status string
+                                      size="small"
+                                      sx={{
+                                        fontWeight: 500,
+                                        fontSize: '0.7rem',
+                                        color: 'white',
+                                        bgcolor: car.status === 'accepted'
+                                          ? '#22c55e' // green-500
+                                          : car.status === 'pending'
+                                          ? '#3b82f6' // blue-500
+                                          : car.status === 'rejected'
+                                          ? '#ef4444' // red-500
+                                          : car.status === 'awaiting_posting_approval'
+                                          ? '#f97316' // orange-500
+                                          : '#64748b', // slate-500 (default)
+                                      }}
+                                    />
+                                  )}
                                 </Box>
                               </Box>
                               <Button
