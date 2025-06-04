@@ -61,7 +61,18 @@ const userSchema = new mongoose.Schema({
     resetPasswordExpire: Date,
     verificationToken: String,
     verificationTokenExpires: Date,
-    refreshToken: String
+    refreshToken: String,
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
+    approvedAt: {
+        type: Date
+    },
+    rejectionReason: {
+        type: String
+    }
 }, {
     timestamps: true
 });

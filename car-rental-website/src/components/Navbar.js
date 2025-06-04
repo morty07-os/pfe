@@ -121,7 +121,12 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
       
       // Optionally, check user status in localStorage if available
       // If you store user status, check it here and return false if not 'approved'
-      // Otherwise, rely on backend protection
+      const userStatus = localStorage.getItem('userStatus');
+      if (userStatus !== 'approved') {
+        // If status is not 'approved' (e.g., 'pending', 'rejected', or null), treat as not authenticated for full access
+        // This is a client-side safeguard; backend protects actual login.
+        return false;
+      }
       return true;
     } catch (error) {
       console.error('Authentication check failed:', error);

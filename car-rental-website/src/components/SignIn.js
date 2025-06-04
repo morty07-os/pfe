@@ -68,6 +68,20 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
           navigate('/verify-email', { state: { email: result.email } });
           return;
         }
+        // Handle pending approval
+        if (response.status === 403 && result.isPending) {
+          console.log("Account pending approval, redirecting to pending page");
+          localStorage.setItem('userEmailForPending', result.email || formData.email.toLowerCase()); // Store email for PendingPage if needed
+          onClose();
+          navigate('/pending');
+          return;
+        }
+        // Handle rejected account
+        if (response.status === 403 && result.isRejected) {
+          console.log("Account rejected");
+          setMessage(result.error || 'Your account application has been rejected.');
+          return;
+        }
         throw new Error(result.error || 'Sign in failed');
       }
 
@@ -84,6 +98,7 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       localStorage.setItem('userId', result.user._id);
       localStorage.setItem('userEmail', result.user.email);
       localStorage.setItem('userRole', result.user.role);
+      localStorage.setItem('userStatus', result.user.status); // Store user status
 
       console.log("Logged in user role:", result.user.role); // Log the user's role
 

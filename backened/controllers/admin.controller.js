@@ -5,7 +5,7 @@ export const getPendingUsers = async (req, res) => {
     try {
         const pendingUsers = await User.find({ 
             isVerified: true, // User has verified their email
-            status: { $in: [null, 'pending'] } // Include both new users (null status) and pending users
+            status: 'pending' // Only fetch users explicitly marked as pending
         }).select('firstName lastName email phone residence licenceFront licenceBack createdAt status')
         .sort('-createdAt'); // Show newest users first
         

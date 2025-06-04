@@ -311,6 +311,17 @@ export const login = async (req, res) => {
             });
         }
 
+        // Third check: Account rejected
+        if (user.role !== 'admin' && user.status === 'rejected') {
+            console.log('User account rejected:', email);
+            return res.status(403).json({ 
+                error: 'Your account application has been rejected. Please contact support if you believe this is an error.', 
+                isRejected: true,
+                email: user.email,
+                status: user.status
+            });
+        }
+
         // Generate token and set it in the cookie
         const token = generateTokenAndSetCookie(user._id, res);
         
@@ -744,12 +755,41 @@ export const checkStatus = async (req, res) => {
         }
 
         // Return more detailed status information
-        res.status(200).json({
-            status: user.status || 'pending',
-            isVerified: user.isVerified,
-            reason: user.rejectionReason,
-            canAccess: user.status === 'approved' && user.isVerified
-        });
+        if (user.status === 'approved' && user.isVerified) {
+            const token = generateTokenAndSetCookie(user._id, res); // This also sets the cookie
+            // Note: generateTokenAndSetCookie modifies the response by setting a cookie.
+            // We need to ensure we send a JSON response *after* this call if it's not already sending one.
+            // For checkStatus, we are sending our own JSON response.
+
+            // To avoid issues with generateTokenAndSetCookie sending its own response or headers early,
+            // let's call it but primarily use the token it returns for our explicit JSON response.
+            // We will re-generate the token here without setting the cookie directly in this function call,
+            // as PendingPage will set localStorage and the main app will rely on that.
+            // Or, ensure generateTokenAndSetCookie is flexible.
+            // For simplicity, let's assume PendingPage will handle the client-side token storage.
+            // The cookie set by generateTokenAndSetCookie is for the main auth token.
+
+            return res.status(200).json({
+                status: 'approved',
+                isVerified: true,
+                token: token, // Send the newly generated token
+                user: {
+                    _id: user._id,
+                    firstName: user.firstName,
+                    email: user.email,
+                    role: user.role,
+                    status: user.status
+                },
+                canAccess: true
+            });
+        } else {
+            res.status(200).json({
+                status: user.status || 'pending',
+                isVerified: user.isVerified,
+                reason: user.rejectionReason,
+                canAccess: false
+            });
+        }
     } catch (error) {
         console.error("Error in checkStatus:", error);
         res.status(500).json({ error: "Internal server error" });
