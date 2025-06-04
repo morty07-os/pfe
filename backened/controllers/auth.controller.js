@@ -299,9 +299,10 @@ export const login = async (req, res) => {
             });
         }
 
-        // Second check: Admin approval
-        if (user.status !== 'approved') {
-            console.log('User not approved:', email);
+        // Second check: Admin approval - only for new users with pending status
+        // Skip approval check for admins and users who are already approved
+        if (user.role !== 'admin' && user.status === 'pending') {
+            console.log('New user pending approval:', email);
             return res.status(403).json({ 
                 error: 'Account pending administrator approval', 
                 isPending: true,
@@ -310,7 +311,7 @@ export const login = async (req, res) => {
             });
         }
 
-        // Only generate token if both verification and approval checks pass
+        // Generate token and set it in the cookie
         const token = generateTokenAndSetCookie(user._id, res);
         
         if (!token) {
@@ -334,7 +335,7 @@ export const login = async (req, res) => {
             httpOnly: true,
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             secure: process.env.NODE_ENV === 'production',
-            path: '/api/auth/refresh-token' // Set path to the refresh token endpoint
+            path: '/api/auth/refresh-token'
         };
         res.cookie('refreshToken', refreshToken, refreshTokenCookieOptions);
         console.log('Refresh token cookie set for user:', user._id);
