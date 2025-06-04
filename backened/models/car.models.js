@@ -116,6 +116,15 @@ const carSchema = new mongoose.Schema(
         required: true,
       },
     },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    rejectionReason: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -647,6 +647,18 @@ const ProfilePage = () => {
                                       fontSize: '0.7rem'
                                     }}
                                   />
+                                  <Chip
+                                    label={car.status}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: car.status === 'approved' ? '#4ade80' : 
+                                              car.status === 'rejected' ? '#ef4444' : '#cbd5e1',
+                                      color: car.status === 'approved' ? '#166534' :
+                                             car.status === 'rejected' ? '#7f1d1d' : '#475569',
+                                      fontWeight: 500,
+                                      fontSize: '0.7rem'
+                                    }}
+                                  />
                                 </Box>
                               </Box>
                               <Button
@@ -893,6 +905,18 @@ const ProfilePage = () => {
                                     sx={{
                                       bgcolor: '#f1f5f9',
                                       color: '#64748b',
+                                      fontWeight: 500,
+                                      fontSize: '0.7rem'
+                                    }}
+                                  />
+                                  <Chip
+                                    label={car.status}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: car.status === 'approved' ? '#4ade80' : 
+                                              car.status === 'rejected' ? '#ef4444' : '#cbd5e1',
+                                      color: car.status === 'approved' ? '#166534' :
+                                             car.status === 'rejected' ? '#7f1d1d' : '#475569',
                                       fontWeight: 500,
                                       fontSize: '0.7rem'
                                     }}

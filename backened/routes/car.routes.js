@@ -271,4 +271,70 @@ router.get("/details/:id", ProtectedRoute({ required: false }), async (req, res)
   }
 });
 
+// Admin routes for car approval
+router.get("/pending", ProtectedRoute(), async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    const pendingCars = await Car.find({ status: 'pending' })
+      .populate('owner', 'firstName lastName email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(pendingCars);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch pending cars" });
+  }
+});
+
+router.post("/approve/:id", ProtectedRoute(), async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    const car = await Car.findByIdAndUpdate(
+      req.params.id,
+      { status: 'approved' },
+      { new: true }
+    );
+
+    if (!car) {
+      return res.status(404).json({ error: "Car not found" });
+    }
+
+    res.status(200).json(car);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to approve car" });
+  }
+});
+
+router.post("/reject/:id", ProtectedRoute(), async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    const { reason } = req.body;
+    const car = await Car.findByIdAndUpdate(
+      req.params.id,
+      { 
+        status: 'rejected',
+        rejectionReason: reason
+      },
+      { new: true }
+    );
+
+    if (!car) {
+      return res.status(404).json({ error: "Car not found" });
+    }
+
+    res.status(200).json(car);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to reject car" });
+  }
+});
+
 export default router;

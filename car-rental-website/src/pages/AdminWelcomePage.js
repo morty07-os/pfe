@@ -11,10 +11,12 @@ const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 const AdminWelcomePage = () => {
   const navigate = useNavigate();
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [pendingCars, setPendingCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null); // Changed from object to string or null
   const [errorType, setErrorType] = useState('error'); // Added separate state for error type
   const [rejectDialog, setRejectDialog] = useState({ open: false, userId: null });
+  const [carRejectDialog, setCarRejectDialog] = useState({ open: false, carId: null });
   const [rejectionReason, setRejectionReason] = useState('');
   const [activeTab, setActiveTab] = useState(0);
 
@@ -30,9 +32,10 @@ const AdminWelcomePage = () => {
 
     if (activeTab === 0) { // Only fetch users if the User Approval tab is active
       fetchPendingUsers();
+    } else if (activeTab === 1) {
+      fetchPendingCars();
     }
     // Add logic here to fetch data for other tabs when they are active
-    // e.g., if (activeTab === 1) { fetchPendingCarPostings(); }
     // e.g., if (activeTab === 2) { fetchPendingBookings(); }
   }, [navigate, activeTab]);
 
@@ -43,6 +46,10 @@ const AdminWelcomePage = () => {
       interval = setInterval(() => {
         fetchPendingUsers();
       }, 30000); // Refresh every 30 seconds for user approvals
+    } else if (activeTab === 1) {
+      interval = setInterval(() => {
+        fetchPendingCars();
+      }, 30000); // Refresh every 30 seconds for car posting approvals
     }
     // Add similar intervals for other tabs if needed
 
@@ -81,6 +88,27 @@ const AdminWelcomePage = () => {
     }
   };
 
+  const fetchPendingCars = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/cars/pending`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending cars');
+      }
+
+      const data = await response.json();
+      setPendingCars(data);
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   const handleApprove = async (userId) => {
     try {
       const token = localStorage.getItem('token');
@@ -110,8 +138,28 @@ const AdminWelcomePage = () => {
     }
   };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+  const handleApproveCar = async (carId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/cars/approve/${carId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to approve car');
+      }
+
+      setPendingCars(current => current.filter(car => car._id !== carId));
+      setError('Car approved successfully');
+      setErrorType('success');
+    } catch (error) {
+      setError(error.message);
+      setErrorType('error');
+    }
   };
 
   const handleReject = async () => {
@@ -140,6 +188,37 @@ const AdminWelcomePage = () => {
     } catch (error) {
       setError('Failed to reject user');
     }
+  };
+
+  const handleRejectCar = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/cars/reject/${carRejectDialog.carId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason: rejectionReason })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reject car');
+      }
+
+      setPendingCars(current => current.filter(car => car._id !== carRejectDialog.carId));
+      setCarRejectDialog({ open: false, carId: null });
+      setRejectionReason('');
+      setError('Car rejected successfully');
+      setErrorType('success');
+    } catch (error) {
+      setError(error.message);
+      setErrorType('error');
+    }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
   };
 
   return (
@@ -211,10 +290,44 @@ const AdminWelcomePage = () => {
         {activeTab === 1 && (
           <Box>
             <Typography variant="h5" gutterBottom>Pending Car Posting Approvals</Typography>
-            {/* Placeholder: Add logic and UI for car posting approvals here */}
-            <Typography>Car posting approval functionality will be implemented here.</Typography>
-            {/* Example: You might fetch pending car posts similar to pending users */}
-            {/* <CircularProgress /> or <Typography>No pending car posts.</Typography> */}
+            {pendingCars.length === 0 ? (
+              <Typography>No pending car postings to review.</Typography>
+            ) : (
+              pendingCars.map((car) => (
+                <Card key={car._id} sx={{ mb: 2 }}>
+                  <CardContent>
+                    <Typography variant="h6">{car.carName}</Typography>
+                    <Typography>Owner: {car.owner.firstName} {car.owner.lastName}</Typography>
+                    <Typography>Brand: {car.brand}</Typography>
+                    <Typography>Price: ${car.price}/day</Typography>
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2">Car Images:</Typography>
+                      <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
+                        {car.images.map((image, index) => (
+                          <img key={index} src={image} alt={`Car ${index + 1}`} style={{ width: 150, height: 'auto' }} />
+                        ))}
+                      </Stack>
+                    </Box>
+                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => handleApproveCar(car._id)}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => setCarRejectDialog({ open: true, carId: car._id })}
+                      >
+                        Reject
+                      </Button>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </Box>
         )}
       </Box>
@@ -248,6 +361,26 @@ const AdminWelcomePage = () => {
         <DialogActions>
           <Button onClick={() => setRejectDialog({ open: false, userId: null })}>Cancel</Button>
           <Button onClick={handleReject} color="error">Reject</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={carRejectDialog.open} onClose={() => setCarRejectDialog({ open: false, carId: null })}>
+        <DialogTitle>Reject Car Posting</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Reason for rejection"
+            fullWidth
+            multiline
+            rows={4}
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCarRejectDialog({ open: false, carId: null })}>Cancel</Button>
+          <Button onClick={handleRejectCar} color="error">Reject</Button>
         </DialogActions>
       </Dialog>
     </Container>
