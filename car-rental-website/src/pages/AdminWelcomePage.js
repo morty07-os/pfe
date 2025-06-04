@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Container, Card, CardContent,
   Button, Stack, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, CircularProgress, Alert, Tabs, Tab, Chip
+  DialogActions, TextField, CircularProgress, Alert, Tabs, Tab
 } from '@mui/material';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
@@ -103,7 +103,6 @@ const AdminWelcomePage = () => {
       }
 
       const data = await response.json();
-      console.log('Pending cars data from API:', data); // Log the data
       setPendingCars(data);
     } catch (error) {
       setError(error.message);
@@ -281,7 +280,7 @@ const AdminWelcomePage = () => {
                   </CardContent>
                 </Card>
               ))
-            }
+            )}
           </Box>
         )}
       </Box>
@@ -298,106 +297,18 @@ const AdminWelcomePage = () => {
                 <Card key={car._id} sx={{ mb: 2 }}>
                   <CardContent>
                     <Typography variant="h6">{car.carName}</Typography>
-                    <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                      Owner: {car.owner?.firstName || 'N/A'} {car.owner?.lastName || ''}
-                    </Typography>
-                    
-                    <Typography variant="body2"><strong>Brand:</strong> {car.brand}</Typography>
-                    <Typography variant="body2"><strong>Description:</strong> {car.description}</Typography>
-                    <Typography variant="body2"><strong>Price:</strong> DZD{car.price}/day</Typography>
-                    <Typography variant="body2"><strong>Energy:</strong> {car.energy}</Typography>
-                    <Typography variant="body2"><strong>Seats:</strong> {car.seats}</Typography>
-                    <Typography variant="body2"><strong>Doors:</strong> {car.doors}</Typography>
-                    <Typography variant="body2"><strong>Transmission:</strong> {car.transmission}</Typography>
-                    <Typography variant="body2"><strong>Mileage:</strong> {car.mileage} km</Typography>
-                    <Typography variant="body2"><strong>Engine:</strong> {car.engine}</Typography>
-                    <Typography variant="body2"><strong>Wilaya:</strong> {car.wilaya}</Typography>
-                    <Typography variant="body2"><strong>Car Type:</strong> {car.carType}</Typography>
-                    <Typography variant="body2">
-                      <strong>Availability:</strong> {new Date(car.availabilityStart).toLocaleDateString()} - {new Date(car.availabilityEnd).toLocaleDateString()}
-                    </Typography>
-                    <Typography variant="body2" sx={{ mb: 1 }}> 
-                        <strong>Status:</strong> 
-                        <Chip 
-                            label={car.status}
-                            size="small"
-                            sx={{
-                                ml: 1,
-                                bgcolor: car.status === 'approved' ? '#4ade80' : 
-                                         car.status === 'pending' ? '#facc15' : 
-                                         car.status === 'rejected' ? '#ef4444' : '#cbd5e1',
-                                color: car.status === 'approved' ? '#166534' :
-                                       car.status === 'pending' ? '#713f12' :
-                                       car.status === 'rejected' ? '#7f1d1d' : '#475569',
-                                fontWeight: 500,
-                                fontSize: '0.7rem'
-                            }}
-                        />
-                    </Typography>
-
-                    {/* Documentation Images - Updated Section */}
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1, color: 'error.main' }}>
-                        Car Documentation (Required for Approval)
-                      </Typography>
-                      {car.documentationImages && car.documentationImages.length > 0 ? (
-                        <Box>
-                          <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap', gap: 2 }}>
-                            {car.documentationImages.map((docImage, index) => (
-                              <Box key={`doc-img-${index}`} sx={{ position: 'relative' }}>
-                                <Typography variant="caption" sx={{ position: 'absolute', top: -20, left: 0 }}>
-                                  Document {index + 1}
-                                </Typography>
-                                <img 
-                                  src={docImage} 
-                                  alt={`Documentation ${index + 1}`} 
-                                  style={{ 
-                                    width: 200,
-                                    height: 'auto',
-                                    border: '2px solid #d32f2f',
-                                    borderRadius: '8px',
-                                    objectFit: 'cover',
-                                    cursor: 'pointer'
-                                  }}
-                                  onClick={() => window.open(docImage, '_blank')}
-                                />
-                              </Box>
-                            ))}
-                          </Stack>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                            Click on images to view in full size
-                          </Typography>
-                        </Box>
-                      ) : (
-                        <Alert severity="warning" sx={{ mt: 1 }}>
-                          No documentation images provided. This is required for approval.
-                        </Alert>
-                      )}
-                    </Box>
-                    
-                    {/* Car Images - Keep existing section */}
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                        Car Images
-                      </Typography>
-                      <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                        {car.images && car.images.length > 0 ? (
-                          car.images.map((image, index) => (
-                            <img 
-                              key={`car-img-${index}`} 
-                              src={image} 
-                              alt={`${car.carName} image ${index + 1}`} 
-                              style={{ width: 100, height: 'auto', border: '1px solid #ddd', borderRadius: '4px', objectFit: 'cover' }} 
-                            />
-                          ))
-                        ) : (
-                          <Typography variant="caption">No car images provided.</Typography>
-                        )}
+                    <Typography>Owner: {car.owner.firstName} {car.owner.lastName}</Typography>
+                    <Typography>Brand: {car.brand}</Typography>
+                    <Typography>Price: ${car.price}/day</Typography>
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2">Car Images:</Typography>
+                      <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
+                        {car.images.map((image, index) => (
+                          <img key={index} src={image} alt={`Car ${index + 1}`} style={{ width: 150, height: 'auto' }} />
+                        ))}
                       </Stack>
                     </Box>
-
-                    {/* Action Buttons */}
-                    <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
                       <Button
                         variant="contained"
                         color="success"
