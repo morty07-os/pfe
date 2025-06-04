@@ -356,7 +356,7 @@ const AdminWelcomePage = () => {
                     {/* Documentation Images */}
                     {car.documentationImages && car.documentationImages.length > 0 && (
                       <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2">Documentation Images:</Typography>
+                        <Typography variant="subtitle2">Car Documentation (Images):</Typography>
                         <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
                           {car.documentationImages.map((docImage, index) => (
                             <img 
