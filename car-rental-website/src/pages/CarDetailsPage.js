@@ -81,6 +81,28 @@ export default function CarDetailsPage() {
   
   const navigate = useNavigate();
 
+  const handleBookNowClick = () => {
+    if (!isAuthenticated()) {
+      setSnackbar({
+        open: true,
+        message: 'Please log in to book or start a conversation.',
+        severity: 'warning'
+      });
+      // Consider navigating to login: navigate('/login');
+      return;
+    }
+    if (!isOwnCar && car && car.user && car.user._id) {
+      navigate(`/conversation/${carId}/${car.user._id}`);
+    } else if (!isOwnCar) {
+      console.error('Car details or owner ID not available for navigation.');
+      setSnackbar({
+        open: true,
+        message: 'Could not start conversation. Car details are missing.',
+        severity: 'error'
+      });
+    }
+  };
+
   // Function to check if user is authenticated
   const isAuthenticated = () => {
     const token = localStorage.getItem('token');
@@ -728,7 +750,7 @@ export default function CarDetailsPage() {
                       <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button
                           variant="contained"
-                          onClick={handleBookNow}
+                          onClick={handleBookNowClick}
                           disabled={isOwnCar}
                           sx={{
                             borderRadius: 99,
