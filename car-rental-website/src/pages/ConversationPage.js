@@ -19,6 +19,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import SendIcon from '@mui/icons-material/Send';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import dayjs from 'dayjs';
 import Navbar from '../components/Navbar';
@@ -37,6 +38,8 @@ const ConversationPage = () => {
   const chatEndRef = useRef(null);
   const [conversationId, setConversationId] = useState('');
   const [bookingDetails, setBookingDetails] = useState(null);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   const fetchMessages = React.useCallback(async (page = 1, limit = 10) => {
     if (!carId || !conversationId) {
@@ -137,25 +140,41 @@ const ConversationPage = () => {
   };
 
   const handleSendChat = async () => {
+    if (!chatInput.trim() && !selectedImageFile) {
+      console.log("Cannot send empty message without an image.");
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(`${apiUrl}/api/messages/save`, {
-        carId: carId,
-        receiver: owner._id,
-        text: chatInput,
-        conversationId: conversationId
-      }, {
+      const formData = new FormData();
+      formData.append('carId', carId);
+      formData.append('receiver', owner._id);
+      formData.append('text', chatInput);
+      formData.append('conversationId', conversationId);
+
+      if (selectedImageFile) {
+        formData.append('image', selectedImageFile);
+      }
+
+      const response = await axios.post(`${apiUrl}/api/messages/save`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          // 'Content-Type': 'multipart/form-data' is set automatically by axios for FormData
         }
       });
 
       setChatMessages(prev => [...prev, response.data]);
       setChatInput('');
-      await fetchMessages();
+      setSelectedImageFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''; // Reset file input
+      }
+      // fetchMessages might be redundant if WebSocket updates are implemented later,
+      // but good for now to ensure the sender sees their message with image URL from server.
+      await fetchMessages(); 
     } catch (error) {
       console.error("Error sending message:", error);
+      // Add user feedback here, e.g., a snackbar message
     }
   };
 
@@ -659,7 +678,23 @@ const ConversationPage = () => {
                             },
                           }}
                         >
-                          <Typography variant="body2" sx={{ fontWeight: 400 }}>{msg.text}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 400 }}>{msg.text}
+            {msg.image && (
+              <Box mt={1}>
+                <img 
+                  src={msg.image} 
+                  alt="Chat attachment" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '200px', 
+                    borderRadius: '8px', 
+                    objectFit: 'cover',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => window.open(msg.image, '_blank')} // Open image in new tab
+                />
+              </Box>
+            )}</Typography>
                           <Typography variant="caption" sx={{ opacity: 0.7, fontSize: '0.7rem', display: 'block', mt: 0.5, textAlign: isUser ? 'right' : 'left' }}>
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </Typography>
@@ -728,6 +763,20 @@ const ConversationPage = () => {
                     }}
                   >
                     <SendIcon />
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            ref={fileInputRef}
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                setSelectedImageFile(e.target.files[0]);
+              }
+            }}
+          />
+          <IconButton color="primary" onClick={() => fileInputRef.current && fileInputRef.current.click()} sx={{ ml: 1 }}>
+            <AttachFileIcon />
+          </IconButton>
                   </IconButton>
                 </Box>
               </Paper>
