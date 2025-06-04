@@ -16,37 +16,48 @@ const AdminWelcomePage = () => {
   const [errorType, setErrorType] = useState('error'); // Added separate state for error type
   const [rejectDialog, setRejectDialog] = useState({ open: false, userId: null });
   const [rejectionReason, setRejectionReason] = useState('');
+  const [pendingCars, setPendingCars] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
-    
+
     if (!token || userRole !== 'admin') {
       setError('Unauthorized access');
       navigate('/');
       return;
     }
 
-    if (activeTab === 0) { // Only fetch users if the User Approval tab is active
+    setLoading(true);
+    setError(null);
+
+    if (activeTab === 0) {
       fetchPendingUsers();
+      setPendingCars([]); // Clear cars when switching to user tab
+    } else if (activeTab === 1) {
+      fetchPendingCarPostings();
+      setPendingUsers([]); // Clear users when switching to car tab
+    } else if (activeTab === 2) {
+      // Placeholder for booking approvals
+      setPendingUsers([]);
+      setPendingCars([]);
+      setLoading(false); // No data to load for this tab yet
+      // fetchPendingBookings();
     }
-    // Add logic here to fetch data for other tabs when they are active
-    // e.g., if (activeTab === 1) { fetchPendingCarPostings(); }
-    // e.g., if (activeTab === 2) { fetchPendingBookings(); }
   }, [navigate, activeTab]);
 
   // Add refresh interval
   useEffect(() => {
-    let interval;
+    let intervalId;
     if (activeTab === 0) {
-      interval = setInterval(() => {
-        fetchPendingUsers();
-      }, 30000); // Refresh every 30 seconds for user approvals
+      intervalId = setInterval(fetchPendingUsers, 30000); // Refresh users every 30s
+    } else if (activeTab === 1) {
+      intervalId = setInterval(fetchPendingCarPostings, 30000); // Refresh cars every 30s
     }
     // Add similar intervals for other tabs if needed
 
-    return () => clearInterval(interval);
+    return () => clearInterval(intervalId);
   }, [activeTab]);
 
   const fetchPendingUsers = async () => {
@@ -139,6 +150,99 @@ const AdminWelcomePage = () => {
       }
     } catch (error) {
       setError('Failed to reject user');
+    }
+  };
+
+  const fetchPendingCarPostings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/cars/admin/all`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch car postings');
+      }
+
+      const allCars = await response.json();
+      // Ensure allCars is an array and then filter
+      const carsToApprove = Array.isArray(allCars) ? allCars.filter(car => car.status === 'awaiting_posting_approval' && !car.isDeleted) : [];
+      setPendingCars(carsToApprove);
+      setError(''); // Clear any existing error
+    } catch (err) {
+      console.error('Error fetching pending car postings:', err);
+      setError(err.message || 'Failed to fetch car postings');
+      if (err.message.includes('401') || err.message.includes('403')) {
+        navigate('/');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveCar = async (carId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/cars/admin/cars/${carId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'accepted' }),
+      });
+
+      if (response.ok) {
+        setPendingCars(current => current.filter(car => car._id !== carId));
+        setError('Car approved successfully');
+        setErrorType('success');
+        // Optionally re-fetch or rely on local state update
+        // fetchPendingCarPostings(); 
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Failed to approve car');
+        setErrorType('error');
+      }
+    } catch (err) {
+      console.error('Error approving car:', err);
+      setError('An error occurred while approving the car.');
+      setErrorType('error');
+    }
+  };
+
+  const handleRejectCar = async (carId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/cars/admin/cars/${carId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'rejected' }),
+      });
+
+      if (response.ok) {
+        setPendingCars(current => current.filter(car => car._id !== carId));
+        setError('Car rejected successfully');
+        setErrorType('success');
+        // Optionally re-fetch or rely on local state update
+        // fetchPendingCarPostings();
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Failed to reject car');
+        setErrorType('error');
+      }
+    } catch (err) {
+      console.error('Error rejecting car:', err);
+      setError('An error occurred while rejecting the car.');
+      setErrorType('error');
     }
   };
 
@@ -250,6 +354,53 @@ const AdminWelcomePage = () => {
           <Button onClick={handleReject} color="error">Reject</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Tab Panel for Car Posting Approvals */}
+      <Box role="tabpanel" hidden={activeTab !== 1} id="tabpanel-1" aria-labelledby="tab-1">
+        {activeTab === 1 && (
+          <Box>
+            <Typography variant="h5" gutterBottom>Pending Car Posting Approvals</Typography>
+            {loading ? (
+              <CircularProgress />
+            ) : pendingCars.length === 0 ? (
+              <Typography>No pending car postings to review.</Typography>
+            ) : (
+              pendingCars.map((car) => (
+                <Card key={car._id} sx={{ mb: 2 }}>
+                  <CardContent>
+                    <Typography variant="h6">{car.carName} - {car.brand}</Typography>
+                    {car.ownerName && <Typography>Owner: {car.ownerName.firstName} {car.ownerName.lastName}</Typography>}
+                    <Typography>Price: {car.price} / day</Typography>
+                    <Typography>Location: {car.wilaya}</Typography>
+                    <Typography>Type: {car.carType}</Typography>
+                    {car.images && car.images.length > 0 && (
+                      <Box sx={{ mt: 2, mb: 1 }}>
+                        <img src={car.images[0]} alt={car.carName} style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: '4px' }} />
+                      </Box>
+                    )}
+                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => handleApproveCar(car._id)}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => handleRejectCar(car._id)}
+                      >
+                        Reject
+                      </Button>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </Box>
+        )}
+      </Box>
     </Container>
   );
 };

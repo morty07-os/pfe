@@ -71,6 +71,11 @@ const carSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: String,
+      enum: ['awaiting_posting_approval', 'accepted', 'rejected'],
+      default: 'awaiting_posting_approval',
+    },
     images: {
       type: [String], // Array of Cloudinary URLs
       required: true,
@@ -124,6 +129,7 @@ const carSchema = new mongoose.Schema(
 carSchema.index({ wilaya: 1 });
 carSchema.index({ price: 1 });
 carSchema.index({ carType: 1 });
+carSchema.index({ status: 1 });
 carSchema.index({ isDeleted: 1 });
 
 const Car = mongoose.model("Car", carSchema);
