@@ -19,6 +19,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import SendIcon from '@mui/icons-material/Send';
+
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import dayjs from 'dayjs';
 import Navbar from '../components/Navbar';
@@ -135,31 +136,29 @@ const ConversationPage = () => {
   const handleGoBack = () => {
     navigate(-1);
   };
-
-  const handleSendChat = async () => {
-    try {
-      const token = localStorage.getItem('token');
+const handleSendChat = async () => {
+try {
+ const token = localStorage.getItem('token');
       const response = await axios.post(`${apiUrl}/api/messages/save`, {
         carId: carId,
         receiver: owner._id,
         text: chatInput,
         conversationId: conversationId
       }, {
-        headers: {
+ headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+     }
       });
-
-      setChatMessages(prev => [...prev, response.data]);
+   setChatMessages(prev => [...prev, response.data]);
       setChatInput('');
       await fetchMessages();
-    } catch (error) {
+  } catch (error) {
       console.error("Error sending message:", error);
+      // Add user feedback here, e.g., a snackbar message
     }
   };
-
-  if (loading) {
+ if (loading) {
     return (
       <>
         <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
@@ -660,10 +659,10 @@ const ConversationPage = () => {
                           }}
                         >
                           <Typography variant="body2" sx={{ fontWeight: 400 }}>{msg.text}</Typography>
-                          <Typography variant="caption" sx={{ opacity: 0.7, fontSize: '0.7rem', display: 'block', mt: 0.5, textAlign: isUser ? 'right' : 'left' }}>
+ <Typography variant="caption" sx={{ opacity: 0.7, fontSize: '0.7rem', display: 'block', mt: 0.5, textAlign: isUser ? 'right' : 'left' }}>
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </Typography>
-                        </Box>
+ </Box>
                       );
                     })
                   )}
@@ -728,7 +727,7 @@ const ConversationPage = () => {
                     }}
                   >
                     <SendIcon />
-                  </IconButton>
+  </IconButton>
                 </Box>
               </Paper>
             </Grid>
