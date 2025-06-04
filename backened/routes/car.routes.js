@@ -133,6 +133,7 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
       price,
       carType,
       images: imageUrls, // Store Cloudinary URLs
+      documentationImages: documentationImageUrls, // Add this line to store documentation images
       owner: req.user.userId,
       ownerName: {
         firstName: user.firstName,

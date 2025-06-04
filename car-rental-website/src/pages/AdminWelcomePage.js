@@ -281,7 +281,7 @@ const AdminWelcomePage = () => {
                   </CardContent>
                 </Card>
               ))
-            )}
+            }
           </Box>
         )}
       </Box>
@@ -335,9 +335,51 @@ const AdminWelcomePage = () => {
                         />
                     </Typography>
 
-                    {/* Car Images */}
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2">Car Images:</Typography>
+                    {/* Documentation Images - Updated Section */}
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1, color: 'error.main' }}>
+                        Car Documentation (Required for Approval)
+                      </Typography>
+                      {car.documentationImages && car.documentationImages.length > 0 ? (
+                        <Box>
+                          <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap', gap: 2 }}>
+                            {car.documentationImages.map((docImage, index) => (
+                              <Box key={`doc-img-${index}`} sx={{ position: 'relative' }}>
+                                <Typography variant="caption" sx={{ position: 'absolute', top: -20, left: 0 }}>
+                                  Document {index + 1}
+                                </Typography>
+                                <img 
+                                  src={docImage} 
+                                  alt={`Documentation ${index + 1}`} 
+                                  style={{ 
+                                    width: 200,
+                                    height: 'auto',
+                                    border: '2px solid #d32f2f',
+                                    borderRadius: '8px',
+                                    objectFit: 'cover',
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={() => window.open(docImage, '_blank')}
+                                />
+                              </Box>
+                            ))}
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                            Click on images to view in full size
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Alert severity="warning" sx={{ mt: 1 }}>
+                          No documentation images provided. This is required for approval.
+                        </Alert>
+                      )}
+                    </Box>
+                    
+                    {/* Car Images - Keep existing section */}
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                        Car Images
+                      </Typography>
                       <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
                         {car.images && car.images.length > 0 ? (
                           car.images.map((image, index) => (
@@ -354,23 +396,6 @@ const AdminWelcomePage = () => {
                       </Stack>
                     </Box>
 
-                    {/* Documentation Images */}
-                    {car.documentationImages && car.documentationImages.length > 0 && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2">Car Documentation (Images):</Typography>
-                        <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                          {car.documentationImages.map((docImage, index) => (
-                            <img 
-                              key={`doc-img-${index}`} 
-                              src={docImage} 
-                              alt={`Documentation ${index + 1}`} 
-                              style={{ width: 100, height: 'auto', border: '1px solid #ddd', borderRadius: '4px', objectFit: 'cover' }} 
-                            />
-                          ))}
-                        </Stack>
-                      </Box>
-                    )}
-                    
                     {/* Action Buttons */}
                     <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
                       <Button
