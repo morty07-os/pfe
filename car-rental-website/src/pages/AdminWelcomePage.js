@@ -296,18 +296,42 @@ const AdminWelcomePage = () => {
               pendingCars.map((car) => (
                 <Card key={car._id} sx={{ mb: 2 }}>
                   <CardContent>
+                    {/* Car Main Info */}
                     <Typography variant="h6">{car.carName}</Typography>
-                    <Typography>Owner: {car.owner.firstName} {car.owner.lastName}</Typography>
+                    <Typography>Owner: {car.owner?.firstName} {car.owner?.lastName}</Typography>
                     <Typography>Brand: {car.brand}</Typography>
-                    <Typography>Price: ${car.price}/day</Typography>
+                    <Typography>Wilaya: {car.wilaya}</Typography>
+                    <Typography>Price: {car.price} DZD/day</Typography>
+                    <Typography>Description: {car.description}</Typography>
+                    <Typography>Energy: {car.energy}</Typography>
+                    <Typography>Seats: {car.seats}</Typography>
+                    <Typography>Doors: {car.doors}</Typography>
+                    <Typography>Transmission: {car.transmission}</Typography>
+                    <Typography>Mileage: {car.mileage}</Typography>
+                    <Typography>Engine: {car.engine}</Typography>
+                    <Typography>Available: {car.availabilityStart} to {car.availabilityEnd}</Typography>
+                    <Typography>Car Type: {car.carType}</Typography>
+                    {/* Car Images Section */}
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="subtitle2">Car Images:</Typography>
                       <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                        {car.images.map((image, index) => (
-                          <img key={index} src={image} alt={`Car ${index + 1}`} style={{ width: 150, height: 'auto' }} />
+                        {(car.images || []).map((image, index) => (
+                          <img key={index} src={image} alt={`Car ${index + 1}`} style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
                         ))}
                       </Stack>
                     </Box>
+                    {/* Documentation Images Section */}
+                    {car.documentationImages && car.documentationImages.length > 0 && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="subtitle2">Documentation Images:</Typography>
+                        <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
+                          {car.documentationImages.map((docImg, idx) => (
+                            <img key={idx} src={docImg} alt={`Doc ${idx + 1}`} style={{ width: 100, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                          ))}
+                        </Stack>
+                      </Box>
+                    )}
+                    {/* Action Buttons */}
                     <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
                       <Button
                         variant="contained"
