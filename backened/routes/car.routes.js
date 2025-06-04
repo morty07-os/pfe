@@ -167,7 +167,7 @@ router.get("/getcars", async (req, res) => {
       search,
     } = req.query;
 
-    const query = { isDeleted: false };
+    const query = { isDeleted: false, status: 'accepted' }; // Ensure only accepted cars are fetched for public view
 
     // Handle text search across multiple fields
     if (search) {
