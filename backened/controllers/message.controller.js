@@ -1,5 +1,4 @@
 import Message from '../models/message.models.js';
-import { uploadImageToCloudinary } from '../../utils/cloudinary.js';
 import mongoose from 'mongoose';
 
 // Save a new message
@@ -9,21 +8,9 @@ export const saveMessage = async (req, res) => {
     const sender = req.user.userId;
     
     // Handle image if it exists in the request
-    let imageUrl = null;
+    let imagePath = null;
     if (req.file) {
-      const localImagePath = req.file.path;
-      try {
-        const cloudinaryResult = await uploadImageToCloudinary(localImagePath);
-        if (cloudinaryResult && cloudinaryResult.secure_url) {
-          imageUrl = cloudinaryResult.secure_url;
-        } else {
-          console.error('Cloudinary upload failed or did not return a secure_url. Message will be saved without image.');
-          // uploadImageToCloudinary should have deleted the local file already
-        }
-      } catch (uploadError) {
-        console.error('Error during Cloudinary upload:', uploadError);
-        // Message will be saved without image, local file should be cleaned up by uploadImageToCloudinary
-      }
+      imagePath = `uploads/${req.file.filename}`;
     }
 
     let convoId = conversationId;
@@ -41,8 +28,8 @@ export const saveMessage = async (req, res) => {
     });
 
     // Add image to message if available
-    if (imageUrl) {
-      newMessage.image = imageUrl;
+    if (imagePath) {
+      newMessage.image = imagePath;
     }
 
     if (carId && mongoose.Types.ObjectId.isValid(carId)) {
