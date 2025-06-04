@@ -24,8 +24,21 @@ export const signup = async (req, res) => {
             return res.status(400).json({ error: "Driving licence images are required" });
         }
 
-        const licenceFront = req.files.licenceFront[0].path;
-        const licenceBack = req.files.licenceBack[0].path;
+        const localLicenceFrontPath = req.files.licenceFront[0].path;
+        const localLicenceBackPath = req.files.licenceBack[0].path;
+
+        // Upload images to Cloudinary
+        const cloudinaryFrontResult = await uploadImageToCloudinary(localLicenceFrontPath);
+        const cloudinaryBackResult = await uploadImageToCloudinary(localLicenceBackPath);
+
+        if (!cloudinaryFrontResult || !cloudinaryBackResult) {
+            console.error('Failed to upload one or both license images to Cloudinary.');
+            // uploadImageToCloudinary should have cleaned up local files
+            return res.status(500).json({ error: 'Failed to upload license images. Please try again.' });
+        }
+
+        const licenceFrontUrl = cloudinaryFrontResult.secure_url;
+        const licenceBackUrl = cloudinaryBackResult.secure_url;
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.toLowerCase())) {
@@ -60,8 +73,8 @@ export const signup = async (req, res) => {
             residence,
             email: email.toLowerCase(),
             password: password,
-            licenceFront,
-            licenceBack,
+            licenceFront: licenceFrontUrl,
+            licenceBack: licenceBackUrl,
             verificationToken: hashedVerificationCode,
             verificationTokenExpires: verificationCodeExpires,
             isVerified: false,
