@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Container, Card, CardContent,
   Button, Stack, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, CircularProgress, Alert, Tabs, Tab
+  DialogActions, TextField, CircularProgress, Alert, Tabs, Tab, Grid
 } from '@mui/material';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
@@ -19,6 +19,7 @@ const AdminWelcomePage = () => {
   const [carRejectDialog, setCarRejectDialog] = useState({ open: false, carId: null });
   const [rejectionReason, setRejectionReason] = useState('');
   const [activeTab, setActiveTab] = useState(0);
+  const [imageDialog, setImageDialog] = useState({ open: false, image: null });
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -221,10 +222,35 @@ const AdminWelcomePage = () => {
     setActiveTab(newValue);
   };
 
+  const handleImageClick = (image) => {
+    setImageDialog({ open: true, image });
+  };
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 8 }}> {/* Changed to lg for potentially wider content */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={activeTab} onChange={handleTabChange} aria-label="admin approval tabs">
+    <Container maxWidth="lg" sx={{ mt: 8, mb: 4 }}>
+      <Box sx={{ 
+        borderBottom: 1, 
+        borderColor: 'divider', 
+        mb: 3,
+        backgroundColor: '#f5f5f5',
+        borderRadius: '8px 8px 0 0',
+        p: 1
+      }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={handleTabChange} 
+          aria-label="admin approval tabs"
+          variant="fullWidth"
+          sx={{
+            '& .MuiTab-root': {
+              fontWeight: 600,
+              color: 'text.secondary',
+              '&.Mui-selected': {
+                color: 'primary.main',
+              }
+            }
+          }}
+        >
           <Tab label="User Approvals" id="tab-0" aria-controls="tabpanel-0" />
           <Tab label="Car Posting Approvals" id="tab-1" aria-controls="tabpanel-1" />
           <Tab label="Booking Approvals" id="tab-2" aria-controls="tabpanel-2" />
@@ -248,24 +274,85 @@ const AdminWelcomePage = () => {
               <Typography>No pending users to review.</Typography>
             ) : (
               pendingUsers.map((user) => (
-                <Card key={user._id} sx={{ mb: 2 }}>
+                <Card key={user._id} sx={{ 
+                  mb: 2,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  borderRadius: 2,
+                  '&:hover': {
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    transform: 'translateY(-2px)',
+                    transition: 'all 0.3s ease'
+                  }
+                }}>
                   <CardContent>
-                    <Typography variant="h6">{user.firstName} {user.lastName}</Typography>
-                    <Typography>Email: {user.email}</Typography>
-                    <Typography>Phone: {user.phone}</Typography>
-                    <Typography>Residence: {user.residence}</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
+                      <Box>
+                        <Typography variant="h6" color="primary.main">{user.firstName} {user.lastName}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          <strong>Email:</strong> {user.email}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>Phone:</strong> {user.phone}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>Residence:</strong> {user.residence}
+                        </Typography>
+                      </Box>
+                    </Box>
                     <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2">License Images:</Typography>
-                      <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                        {user.licenceFront && <img src={user.licenceFront} alt="License Front" style={{ width: 150, height: 'auto', border: '1px solid #ddd', borderRadius: '4px' }} />}
-                        {user.licenceBack && <img src={user.licenceBack} alt="License Back" style={{ width: 150, height: 'auto', border: '1px solid #ddd', borderRadius: '4px' }} />}
+                      <Typography variant="subtitle2" color="primary.main" gutterBottom>License Images:</Typography>
+                      <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+                        {user.licenceFront && (
+                          <Box
+                            component="img"
+                            src={user.licenceFront}
+                            alt="License Front"
+                            onClick={() => handleImageClick(user.licenceFront)}
+                            sx={{
+                              width: 150,
+                              height: 100,
+                              objectFit: 'cover',
+                              borderRadius: 1,
+                              cursor: 'pointer',
+                              '&:hover': {
+                                opacity: 0.8,
+                                transform: 'scale(1.05)',
+                                transition: 'all 0.2s ease'
+                              }
+                            }}
+                          />
+                        )}
+                        {user.licenceBack && (
+                          <Box
+                            component="img"
+                            src={user.licenceBack}
+                            alt="License Back"
+                            onClick={() => handleImageClick(user.licenceBack)}
+                            sx={{
+                              width: 150,
+                              height: 100,
+                              objectFit: 'cover',
+                              borderRadius: 1,
+                              cursor: 'pointer',
+                              '&:hover': {
+                                opacity: 0.8,
+                                transform: 'scale(1.05)',
+                                transition: 'all 0.2s ease'
+                              }
+                            }}
+                          />
+                        )}
                       </Stack>
                     </Box>
-                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                    <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
                       <Button
                         variant="contained"
                         color="success"
                         onClick={() => handleApprove(user._id)}
+                        sx={{
+                          px: 4,
+                          '&:hover': { transform: 'translateY(-2px)', transition: 'all 0.2s ease' }
+                        }}
                       >
                         Approve
                       </Button>
@@ -273,6 +360,10 @@ const AdminWelcomePage = () => {
                         variant="contained"
                         color="error"
                         onClick={() => setRejectDialog({ open: true, userId: user._id })}
+                        sx={{
+                          px: 4,
+                          '&:hover': { transform: 'translateY(-2px)', transition: 'all 0.2s ease' }
+                        }}
                       >
                         Reject
                       </Button>
@@ -294,49 +385,67 @@ const AdminWelcomePage = () => {
               <Typography>No pending car postings to review.</Typography>
             ) : (
               pendingCars.map((car) => (
-                <Card key={car._id} sx={{ mb: 2 }}>
+                <Card key={car._id} sx={{ 
+                  mb: 2,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  borderRadius: 2,
+                  '&:hover': {
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    transform: 'translateY(-2px)',
+                    transition: 'all 0.3s ease'
+                  }
+                }}>
                   <CardContent>
-                    {/* Car Main Info */}
-                    <Typography variant="h6">{car.carName}</Typography>
-                    <Typography>Owner: {car.owner?.firstName} {car.owner?.lastName}</Typography>
-                    <Typography>Brand: {car.brand}</Typography>
-                    <Typography>Wilaya: {car.wilaya}</Typography>
-                    <Typography>Price: {car.price} DZD/day</Typography>
-                    <Typography>Description: {car.description}</Typography>
-                    <Typography>Energy: {car.energy}</Typography>
-                    <Typography>Seats: {car.seats}</Typography>
-                    <Typography>Doors: {car.doors}</Typography>
-                    <Typography>Transmission: {car.transmission}</Typography>
-                    <Typography>Mileage: {car.mileage}</Typography>
-                    <Typography>Engine: {car.engine}</Typography>
-                    <Typography>Available: {car.availabilityStart} to {car.availabilityEnd}</Typography>
-                    <Typography>Car Type: {car.carType}</Typography>
-                    {/* Car Images Section */}
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2">Car Images:</Typography>
-                      <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                        {(car.images || []).map((image, index) => (
-                          <img key={index} src={image} alt={`Car ${index + 1}`} style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
-                        ))}
-                      </Stack>
-                    </Box>
-                    {/* Documentation Images Section */}
-                    {car.documentationImages && car.documentationImages.length > 0 && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2">Documentation Images:</Typography>
-                        <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                          {car.documentationImages.map((docImg, idx) => (
-                            <img key={idx} src={docImg} alt={`Doc ${idx + 1}`} style={{ width: 100, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="h6" color="primary.main">{car.carName}</Typography>
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          <strong>Owner:</strong> {car.owner?.firstName} {car.owner?.lastName}
+                        </Typography>
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2"><strong>Brand:</strong> {car.brand}</Typography>
+                          <Typography variant="body2"><strong>Price:</strong> {car.price} DZD/day</Typography>
+                          <Typography variant="body2"><strong>Wilaya:</strong> {car.wilaya}</Typography>
+                          <Typography variant="body2"><strong>Energy:</strong> {car.energy}</Typography>
+                          <Typography variant="body2"><strong>Transmission:</strong> {car.transmission}</Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" color="primary.main" gutterBottom>Car Images:</Typography>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          {(car.images || []).map((image, index) => (
+                            <Box
+                              key={index}
+                              component="img"
+                              src={image}
+                              alt={`Car ${index + 1}`}
+                              onClick={() => handleImageClick(image)}
+                              sx={{
+                                width: 120,
+                                height: 80,
+                                objectFit: 'cover',
+                                borderRadius: 1,
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  opacity: 0.8,
+                                  transform: 'scale(1.05)',
+                                  transition: 'all 0.2s ease'
+                                }
+                              }}
+                            />
                           ))}
-                        </Stack>
-                      </Box>
-                    )}
-                    {/* Action Buttons */}
-                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                    <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
                       <Button
                         variant="contained"
                         color="success"
                         onClick={() => handleApproveCar(car._id)}
+                        sx={{
+                          px: 4,
+                          '&:hover': { transform: 'translateY(-2px)', transition: 'all 0.2s ease' }
+                        }}
                       >
                         Approve
                       </Button>
@@ -344,6 +453,10 @@ const AdminWelcomePage = () => {
                         variant="contained"
                         color="error"
                         onClick={() => setCarRejectDialog({ open: true, carId: car._id })}
+                        sx={{
+                          px: 4,
+                          '&:hover': { transform: 'translateY(-2px)', transition: 'all 0.2s ease' }
+                        }}
                       >
                         Reject
                       </Button>
@@ -405,6 +518,30 @@ const AdminWelcomePage = () => {
         <DialogActions>
           <Button onClick={() => setCarRejectDialog({ open: false, carId: null })}>Cancel</Button>
           <Button onClick={handleRejectCar} color="error">Reject</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Image Dialog */}
+      <Dialog
+        open={imageDialog.open}
+        onClose={() => setImageDialog({ open: false, image: null })}
+        maxWidth="lg"
+      >
+        <DialogContent sx={{ p: 0 }}>
+          <Box
+            component="img"
+            src={imageDialog.image}
+            alt="Enlarged view"
+            sx={{
+              width: '100%',
+              height: 'auto',
+              maxHeight: '80vh',
+              objectFit: 'contain'
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setImageDialog({ open: false, image: null })}>Close</Button>
         </DialogActions>
       </Dialog>
     </Container>
