@@ -18,6 +18,8 @@ const AdminWelcomePage = () => {
   const [rejectDialog, setRejectDialog] = useState({ open: false, userId: null });
   const [carRejectDialog, setCarRejectDialog] = useState({ open: false, carId: null });
   const [rejectionReason, setRejectionReason] = useState('');
+  const [openImageModal, setOpenImageModal] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState('');
   const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
@@ -190,6 +192,16 @@ const AdminWelcomePage = () => {
     }
   };
 
+  const handleOpenImageModal = (imageUrl) => {
+    setSelectedImageUrl(imageUrl);
+    setOpenImageModal(true);
+  };
+
+  const handleCloseImageModal = () => {
+    setOpenImageModal(false);
+    setSelectedImageUrl('');
+  };
+
   const handleRejectCar = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -222,7 +234,23 @@ const AdminWelcomePage = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 8 }}> {/* Changed to lg for potentially wider content */}
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      {/* Image Viewer Modal */}
+      <Dialog open={openImageModal} onClose={handleCloseImageModal} maxWidth="md" fullWidth>
+        <DialogTitle>Document Image</DialogTitle>
+        <DialogContent dividers sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {selectedImageUrl && (
+            <img 
+              src={selectedImageUrl} 
+              alt="Selected Document" 
+              style={{ maxHeight: '80vh', maxWidth: '100%', objectFit: 'contain' }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseImageModal}>Close</Button>
+        </DialogActions>
+      </Dialog>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={handleTabChange} aria-label="admin approval tabs">
           <Tab label="User Approvals" id="tab-0" aria-controls="tabpanel-0" />
@@ -326,7 +354,20 @@ const AdminWelcomePage = () => {
                         <Typography variant="subtitle2">Documentation Images:</Typography>
                         <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
                           {car.documentationImages.map((docImg, idx) => (
-                            <img key={idx} src={docImg} alt={`Doc ${idx + 1}`} style={{ width: 100, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                            <img 
+                              key={idx} 
+                              src={docImg} 
+                              alt={`Doc ${idx + 1}`} 
+                              style={{ 
+                                width: 100, 
+                                height: 72, 
+                                objectFit: 'cover', 
+                                borderRadius: 8, 
+                                border: '1px solid #e2e8f0', 
+                                cursor: 'pointer' 
+                              }}
+                              onClick={() => handleOpenImageModal(docImg)}
+                            />
                           ))}
                         </Stack>
                       </Box>
