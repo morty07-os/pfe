@@ -34,7 +34,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import MiscellaneousServicesIcon from '@mui/icons-material/MiscellaneousServices';
 import TuneIcon from '@mui/icons-material/Tune';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import AirlineSeatReclineNormalIcon from '@mui/icons-material/AirlineSeatReclineNormal';
@@ -415,7 +414,7 @@ export default function AllOffersPage() {
 
   const getFilterDisplayValue = (key, value) => {
     if (key === 'priceRange') {
-      return `€${value[0]} - €${value[1]}`;
+      return `${value[0]} DZD - ${value[1]} DZD`;
     } else if (key === 'availableFrom' || key === 'availableTo') {
       return dayjs(value).format('DD/MM/YYYY');
     }
@@ -439,7 +438,7 @@ export default function AllOffersPage() {
       case 'doors':
         return <MeetingRoomIcon fontSize="small" />;
       case 'priceRange':
-        return <AttachMoneyIcon fontSize="small" />;
+        return <MiscellaneousServicesIcon fontSize="small" />;
       case 'availableFrom':
       case 'availableTo':
         return <CalendarMonthIcon fontSize="small" />;
@@ -509,7 +508,7 @@ export default function AllOffersPage() {
               maxWidth: '1200px',
               width: '100%',
               mx: 'auto',
-              transform: 'translateY(-15px)',
+              transform: 'translateY(-25px)',
               position: 'relative',
               '&::before': {
               content: '""',
@@ -529,7 +528,7 @@ export default function AllOffersPage() {
             '&::after': {
               content: '""',
               position: 'absolute',
-              top: 6,
+              bottom: 6,
               left: '5%',
               right: '5%',
               bottom: 0,
@@ -702,10 +701,12 @@ export default function AllOffersPage() {
                       position: 'absolute',
                       bottom: 0,
                       left: '10%',
-                      width: '80%',
-                      height: '1px',
-                      background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.2), transparent)',
-                      opacity: 0.5
+                      right: '10%',
+                      bottom: 0,
+                      borderRadius: '16px',
+                      boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.18)',
+                      filter: 'blur(10px)',
+                      zIndex: -2
                     }
                   }}
                 >

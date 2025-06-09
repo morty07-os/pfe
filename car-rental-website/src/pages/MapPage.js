@@ -54,15 +54,65 @@ const carRentalIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+// Custom marker icon for user location
+const userLocationIcon = new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/128/684/684908.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -35],
+  shadowSize: [41, 41],
+  className: 'blue-grey-icon'
+});
+
 // Helper component to recenter map when city changes
 function ChangeMapView({ center, zoom }) {
   const map = useMap();
-  map.setView(center, zoom);
+  useEffect(() => {
+    if (map) { // Ensure map instance exists
+      map.setView(center, zoom);
+    }
+  }, [map, center, zoom]); // Dependencies: map, center, zoom
   return null;
 }
 
 // Helper component to handle map controls
-function MapControls({ onZoomIn, onZoomOut, onMyLocation }) {
+function MapControls() {
+  const map = useMap();
+  
+  const handleZoomIn = () => {
+    console.log('handleZoomIn called in MapControls. map:', map);
+    if (map) {
+      map.zoomIn();
+    }
+  };
+  
+  const handleZoomOut = () => {
+    console.log('handleZoomOut called in MapControls. map:', map);
+    if (map) {
+      map.zoomOut();
+    }
+  };
+  
+  const handleMyLocation = () => {
+    console.log('handleMyLocation called in MapControls');
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('User location:', latitude, longitude);
+          map.setView([latitude, longitude], 15);
+          window.dispatchEvent(new CustomEvent('updateUserLocation', { detail: { lat: latitude, lng: longitude } }));
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        }
+      );
+    } else {
+      console.error('Geolocation is not supported by this browser.');
+    }
+  };
+  
   return (
     <Box 
       sx={{ 
@@ -88,14 +138,14 @@ function MapControls({ onZoomIn, onZoomOut, onMyLocation }) {
         <IconButton 
           size="small" 
           sx={{ color: '#475569' }}
-          onClick={onZoomIn}
+          onClick={handleZoomIn}
         >
           <ZoomInIcon />
         </IconButton>
         <IconButton 
           size="small" 
           sx={{ color: '#475569' }}
-          onClick={onZoomOut}
+          onClick={handleZoomOut}
         >
           <ZoomOutIcon />
         </IconButton>
@@ -110,7 +160,7 @@ function MapControls({ onZoomIn, onZoomOut, onMyLocation }) {
         <IconButton 
           size="small" 
           sx={{ color: '#475569' }}
-          onClick={onMyLocation}
+          onClick={handleMyLocation}
         >
           <MyLocationIcon />
         </IconButton>
@@ -125,6 +175,7 @@ const MapPage = () => {
   const [selectedWilaya, setSelectedWilaya] = useState(null);
   const [mapCenter, setMapCenter] = useState([36.7538, 3.0588]); // Default center (Algiers)
   const [mapZoom, setMapZoom] = useState(6); // Start with a wider view of Algeria
+  const [userLocation, setUserLocation] = useState(null); // Store user's location
   const mapRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredWilayas, setFilteredWilayas] = useState([]);
@@ -164,27 +215,14 @@ const MapPage = () => {
     setSelectedWilaya(newValue);
   };
   
-  const handleZoomIn = () => {
-    if (mapRef.current && mapZoom < 18) {
-      const newZoom = mapZoom + 1;
-      setMapZoom(newZoom);
-    }
-  };
-  
-  const handleZoomOut = () => {
-    if (mapRef.current && mapZoom > 3) {
-      const newZoom = mapZoom - 1;
-      setMapZoom(newZoom);
-    }
-  };
-  
   const handleMyLocation = () => {
+    console.log('handleMyLocation called in MapPage');
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          setMapCenter([latitude, longitude]);
-          setMapZoom(15);
+          console.log('User location:', latitude, longitude);
+          setUserLocation([latitude, longitude]); // Update state with user's location
         },
         (error) => {
           console.error('Error getting location:', error);
@@ -194,15 +232,26 @@ const MapPage = () => {
       console.error('Geolocation is not supported by this browser.');
     }
   };
+  
+  useEffect(() => {
+    const handleUpdateUserLocation = (event) => {
+      const { lat, lng } = event.detail;
+      setUserLocation([lat, lng]);
+      setMapCenter([lat, lng]);
+      setMapZoom(15);
+    };
+
+    window.addEventListener('updateUserLocation', handleUpdateUserLocation);
+    return () => window.removeEventListener('updateUserLocation', handleUpdateUserLocation);
+  }, []);
 
   return (
     <>
       <Navbar />
-      <QuickSearch />
+      <QuickSearch noBackground />
       <Box sx={{
         width: '100%',
-        background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-        pt: 4,
+        mt: 6, // Increased top margin
         pb: 8
       }}>
         <Container maxWidth={false} disableGutters sx={{ 
@@ -211,14 +260,6 @@ const MapPage = () => {
           flexDirection: 'column'
         }}>
           {/* Page Title */}
-          <Box sx={{ width: '95%', mx: 'auto', mb: 4, maxWidth: '1200px', textAlign: 'center' }}>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
-              Find Pickup Locations
-            </Typography>
-            <Typography variant="subtitle1" sx={{ color: '#64748b', mb: 3, maxWidth: '700px', mx: 'auto' }}>
-              Select a wilaya to view available car rental pickup locations and find the perfect starting point for your journey
-            </Typography>
-          </Box>
           
           {/* Wilaya Selector */}
           <Box sx={{ width: '95%', mx: 'auto', mb: 4, maxWidth: '1200px' }}>
@@ -422,15 +463,24 @@ const MapPage = () => {
                 <MapContainer 
                   center={mapCenter} 
                   zoom={mapZoom} 
+                  minZoom={3}
+                  maxZoom={18}
                   style={{ height: '600px', width: '100%' }}
                   zoomControl={false}
-                  whenCreated={(map) => {
-                    mapRef.current = map;
+                  whenCreated={(mapInstance) => {
+                    console.log('MapContainer whenCreated - mapInstance:', mapInstance);
+                    mapRef.current = mapInstance;
+                    console.log('MapContainer whenCreated - mapRef.current set to:', mapRef.current);
+                  }}
+                  onZoomEnd={() => {
+                    if (mapRef.current) {
+                      setMapZoom(mapRef.current.getZoom());
+                    }
                   }}
                 >
                   <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                   />
                   
                   {/* Display markers for the selected wilaya */}
@@ -477,16 +527,28 @@ const MapPage = () => {
                     ))
                   }
                   
+                  {/* Display marker for user's location if available */}
+                  {userLocation && (
+                    <Marker 
+                      position={userLocation} 
+                      icon={userLocationIcon}
+                    >
+                      <Popup>
+                        <Box sx={{ p: 1.5 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#334155' }}>
+                            Your Location
+                          </Typography>
+                        </Box>
+                      </Popup>
+                    </Marker>
+                  )}
+                  
                   {/* Update map view when center changes */}
                   <ChangeMapView center={mapCenter} zoom={mapZoom} />
+                  
+                  {/* Custom map controls */}
+                  <MapControls />
                 </MapContainer>
-                
-                {/* Custom map controls */}
-                <MapControls 
-                  onZoomIn={handleZoomIn}
-                  onZoomOut={handleZoomOut}
-                  onMyLocation={handleMyLocation}
-                />
                 
                 {/* Overlay for when no wilaya is selected */}
                 {!selectedWilaya && (

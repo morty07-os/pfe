@@ -86,7 +86,7 @@ export default function OfferDetailsPage() {
   // Format data for display
   const details = [
     ['Brand', offer.brand || 'N/A'],
-    ['Price (DZD)', offer.price || 'N/A'],
+    ['Price', `${offer.price || 'N/A'} DZD`],
     ['Location', offer.wilaya || offer.location || 'N/A'],
     ['Seats', offer.seats || 'N/A'],
     ['Doors', offer.doors || 'N/A'],
@@ -167,6 +167,31 @@ export default function OfferDetailsPage() {
     });
   };
 
+  const BookNowButton = () => (
+    <Button
+      variant="contained"
+      fullWidth
+      onClick={handleBookNow}
+      sx={{
+        mt: 2,
+        py: 1.5,
+        bgcolor: '#475569',
+        color: 'white',
+        fontWeight: 700,
+        borderRadius: 2,
+        boxShadow: '0 4px 6px rgba(71, 85, 105, 0.1)',
+        '&:hover': {
+          bgcolor: '#334155',
+          transform: 'translateY(-2px)',
+          boxShadow: '0 6px 10px rgba(71, 85, 105, 0.2)',
+        },
+        transition: 'all 0.3s ease'
+      }}
+    >
+      Book Now
+    </Button>
+  );
+
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', my: 4, p: 2 }}>
       <Typography variant="h4" sx={{ fontWeight: 900, mb: 2, color: '#475569' }}>
@@ -175,34 +200,29 @@ export default function OfferDetailsPage() {
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" sx={{ color: '#475569', fontWeight: 700, mb: 1 }}>Images</Typography>
         <Box sx={{ display: 'flex', overflowX: 'auto', gap: 2, pb: 1 }}>
-          {/* Handle different image data structures */}
-          {(offer.images || offer.photos || []).map((img, idx) => {
-            // Handle both string images and object images with url property
-            const imgSrc = typeof img === 'string' ? img : (img?.url || img?.src || '');
-            return (
-              <Box key={idx} sx={{ 
-                minWidth: 260, 
-                height: 180, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                bgcolor: '#eceff1', 
-                borderRadius: 2, 
-                boxShadow: '0 4px 8px rgba(0,0,0,0.1)' 
-              }}>
-                <img 
-                  src={imgSrc} 
-                  alt={`${offer.brand || ''} ${offer.model || ''} ${idx + 1}`} 
-                  style={{ 
-                    maxHeight: 160, 
-                    maxWidth: 240, 
-                    borderRadius: 12,
-                    objectFit: 'cover' 
-                  }} 
-                />
-              </Box>
-            );
-          })}
+          {(offer.images || offer.photos || []).map((img, idx) => (
+            <Box key={idx} sx={{ 
+              minWidth: 260, 
+              height: 180, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              bgcolor: '#eceff1', 
+              borderRadius: 2, 
+              boxShadow: '0 4px 8px rgba(0,0,0,0.1)' 
+            }}>
+              <img 
+                src={typeof img === 'string' ? img : (img?.url || img?.src || '')} 
+                alt={`${offer.brand || ''} ${offer.model || ''} ${idx + 1}`} 
+                style={{ 
+                  maxHeight: 160, 
+                  maxWidth: 240, 
+                  borderRadius: 12,
+                  objectFit: 'cover' 
+                }} 
+              />
+            </Box>
+          ))}
           
           {/* Show placeholder if no images */}
           {(!offer.images && !offer.photos || (offer.images || offer.photos || []).length === 0) && (
@@ -264,28 +284,7 @@ export default function OfferDetailsPage() {
       </TableContainer>
 
       {/* Book Now Button */}
-      <Button
-        variant="contained"
-        fullWidth
-        onClick={handleBookNow}
-        sx={{
-          mt: 2,
-          py: 1.5,
-          bgcolor: '#475569',
-          color: 'white',
-          fontWeight: 700,
-          borderRadius: 2,
-          boxShadow: '0 4px 6px rgba(71, 85, 105, 0.1)',
-          '&:hover': {
-            bgcolor: '#334155',
-            transform: 'translateY(-2px)',
-            boxShadow: '0 6px 10px rgba(71, 85, 105, 0.2)',
-          },
-          transition: 'all 0.3s ease'
-        }}
-      >
-        Book Now
-      </Button>
+      <BookNowButton />
 
       {/* Snackbar for login prompt */}
       <Snackbar

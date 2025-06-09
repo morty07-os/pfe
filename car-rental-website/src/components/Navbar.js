@@ -308,7 +308,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
 
   return (
     <>
-      <AppBar position="fixed" sx={{ backgroundColor: '#000', zIndex: 9999, ...sx }}>
+      <AppBar position="relative" sx={{ backgroundColor: '#000', zIndex: 1200, ...sx }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <IconButton
             size="large"
@@ -398,60 +398,21 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                 horizontal: 'right',
               }}
             >
-              {!isLoggedIn ? (
-                <>
-                  <MenuItem
-                    onClick={handleSignInClick}
-                    sx={{
-                      color: '#333',
-                      minWidth: '150px',
-                      gap: 1.5,
-                    }}
-                  >
-                    <LoginIcon fontSize="small" sx={{ color: '#333' }} />
-                    Sign In
-                  </MenuItem>
-                  <MenuItem
-                    onClick={handleSignUpClick}
-                    sx={{
-                      color: '#333',
-                      minWidth: '150px',
-                      gap: 1.5,
-                    }}
-                  >
-                    <PersonAddIcon fontSize="small" sx={{ color: '#333' }} />
-                    Sign Up
-                  </MenuItem>
-                </>
-              ) : (
-                <>
-                  <MenuItem
-                    onClick={() => {
-                      handleClose();
-                      navigate('/profile');
-                    }}
-                    sx={{
-                      color: '#333',
-                      minWidth: '150px',
-                      gap: 1.5,
-                    }}
-                  >
-                    <AccountCircleIcon fontSize="small" sx={{ color: '#333' }} />
-                    Profile
-                  </MenuItem>
-                  <MenuItem
-                    onClick={handleLogout}
-                    sx={{
-                      color: '#e74c3c',
-                      minWidth: '150px',
-                      gap: 1.5,
-                    }}
-                  >
-                    <LogoutIcon fontSize="small" sx={{ color: '#e74c3c' }} />
-                    Logout
-                  </MenuItem>
-                </>
-              )}
+              {isLoggedIn ? [
+                <MenuItem key="profile" onClick={() => { handleClose(); navigate('/profile'); }} sx={{ py: 1.5, borderRadius: 1, mx: 1, my: 0.5, '&:hover': { bgcolor: 'rgba(71, 85, 105, 0.08)', color: '#475569' } }}>
+                  <AccountCircleIcon sx={{ mr: 1, fontSize: 20, color: '#64748b' }} /> Profile
+                </MenuItem>,
+                <MenuItem key="logout" onClick={handleLogout} sx={{ py: 1.5, borderRadius: 1, mx: 1, my: 0.5, '&:hover': { bgcolor: 'rgba(71, 85, 105, 0.08)', color: '#475569' } }}>
+                  <LogoutIcon sx={{ mr: 1, fontSize: 20, color: '#64748b' }} /> Logout
+                </MenuItem>
+              ] : [
+                <MenuItem key="signin" onClick={handleSignInClick} sx={{ py: 1.5, borderRadius: 1, mx: 1, my: 0.5, '&:hover': { bgcolor: 'rgba(71, 85, 105, 0.08)', color: '#475569' } }}>
+                  <LoginIcon sx={{ mr: 1, fontSize: 20, color: '#64748b' }} /> Sign In
+                </MenuItem>,
+                <MenuItem key="signup" onClick={handleSignUpClick} sx={{ py: 1.5, borderRadius: 1, mx: 1, my: 0.5, '&:hover': { bgcolor: 'rgba(71, 85, 105, 0.08)', color: '#475569' } }}>
+                  <PersonAddIcon sx={{ mr: 1, fontSize: 20, color: '#64748b' }} /> Sign Up
+                </MenuItem>
+              ]}
             </Menu>
           </Box>
         </Toolbar>
@@ -555,8 +516,13 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   right: 0,
                   bottom: 0,
                   background: 'linear-gradient(90deg, rgba(100, 116, 139, 0.15), transparent)',
-                  borderRadius: '0 32px 32px 0',
-                  animation: 'pulseGradient 1.5s infinite alternate',
+                  opacity: 0,
+                  transform: 'scale(0.8)',
+                  transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  mask: 'url(#icon-mask)',
+                  maskSize: 'cover',
+                  WebkitMask: 'url(#icon-mask)',
+                  WebkitMaskSize: 'cover',
                 },
                 '& .MuiListItemIcon-root': {
                   color: '#e2e8f0',
@@ -816,10 +782,13 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   width: '40%',
                   height: 2,
                   background: 'linear-gradient(to right, #94a3b8, transparent)',
-                  transition: 'width 0.6s ease'
+                  transform: 'scaleX(0)',
+                  opacity: 0,
+                  transition: 'transform 0.6s ease, opacity 0.4s ease'
                 },
                 '&:hover::after': {
-                  width: '100%'
+                  width: '100%',
+                  opacity: 1
                 }
               }}
             >
