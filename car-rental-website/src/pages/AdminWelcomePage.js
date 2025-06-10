@@ -11,7 +11,7 @@ const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
 // Image Viewer Dialog for gallery
 const ImageViewerDialog = ({ open, images, initialIndex = 0, onClose }) => {
-  const [current, setCurrent] = useState(initialIndex);
+  const [current, setCurrent] = useState(initialIndex); 
   useEffect(() => { setCurrent(initialIndex); }, [initialIndex, open]);
   if (!images || images.length === 0) return null;
   return (
