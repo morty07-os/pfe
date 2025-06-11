@@ -30,12 +30,11 @@ const PORT = process.env.PORT || 5001;
 
 // Define allowed origins for CORS
 const allowedOrigins = [
-    'http://localhost:3000',
+    'http://localhost:5001',
     'https://pfe-delta.vercel.app',
     'https://pfe-morty07-os-projects.vercel.app',
     'https://pfe-git-main-morty07-os-projects.vercel.app',
-    'https://pfe-morty07.vercel.app',
-    'https://pfe-uhbw.onrender.com'
+    'https://pfe-morty07.vercel.app'
 ];
 
 // Create HTTP server
@@ -61,15 +60,20 @@ app.use(helmet({
 // Update CORS configuration
 app.use(cors({
     origin: function(origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'https://pfe-delta.vercel.app',
+            'https://pfe-morty07-os-projects.vercel.app',
+            'https://pfe-git-main-morty07-os-projects.vercel.app'
+        ];
+        
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        // Check if the origin is either pfe-delta.vercel.app or localhost:3000
-        if (origin === 'https://pfe-delta.vercel.app' || origin === 'http://localhost:3000') {
-            return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            return callback(new Error('CORS not allowed'), false);
         }
-        
-        return callback(new Error('CORS not allowed'), false);
+        return callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
@@ -103,11 +107,17 @@ app.use('/uploads', express.static(uploadsDir, {
         res.set('Cross-Origin-Opener-Policy', 'unsafe-none');
         
         // Get the origin from the request
-        const origin = res.req.headers.origin;
+        const origin = res.req.headers.origin || '';
         
-        // Set the Access-Control-Allow-Origin header based on the request origin
-        if (origin === 'https://pfe-delta.vercel.app' || origin === 'http://localhost:3000') {
+        // Check if the origin is in our allowed list
+        if (allowedOrigins.some(allowedOrigin => origin.includes(allowedOrigin.replace(/^https?:\/\//, '')))) {
             res.set('Access-Control-Allow-Origin', origin);
+        } else if (process.env.NODE_ENV === 'production') {
+            // Default to the main production domain if origin not in allowed list
+            res.set('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
+        } else {
+            // In development, allow any origin
+            res.set('Access-Control-Allow-Origin', '*');
         }
         
         // CORS headers
