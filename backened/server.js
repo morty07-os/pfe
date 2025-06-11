@@ -30,7 +30,7 @@ const PORT = process.env.PORT || 5001;
 
 // Define allowed origins for CORS
 const allowedOrigins = [
-    'http://localhost:5001',
+    'http://localhost:3000',
     'https://pfe-delta.vercel.app',
     'https://pfe-morty07-os-projects.vercel.app',
     'https://pfe-git-main-morty07-os-projects.vercel.app',
