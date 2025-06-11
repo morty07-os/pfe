@@ -34,7 +34,8 @@ const allowedOrigins = [
     'https://pfe-delta.vercel.app',
     'https://pfe-morty07-os-projects.vercel.app',
     'https://pfe-git-main-morty07-os-projects.vercel.app',
-    'https://pfe-morty07.vercel.app'
+    'https://pfe-morty07.vercel.app',
+    'https://pfe-uhbw.onrender.com'
 ];
 
 // Create HTTP server
@@ -60,13 +61,6 @@ app.use(helmet({
 // Update CORS configuration
 app.use(cors({
     origin: function(origin, callback) {
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'https://pfe-delta.vercel.app',
-            'https://pfe-morty07-os-projects.vercel.app',
-            'https://pfe-git-main-morty07-os-projects.vercel.app'
-        ];
-        
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
