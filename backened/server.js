@@ -64,10 +64,12 @@ app.use(cors({
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        if (allowedOrigins.indexOf(origin) === -1) {
-            return callback(new Error('CORS not allowed'), false);
+        // Check if the origin is either pfe-delta.vercel.app or localhost:3000
+        if (origin === 'https://pfe-delta.vercel.app' || origin === 'http://localhost:3000') {
+            return callback(null, true);
         }
-        return callback(null, true);
+        
+        return callback(new Error('CORS not allowed'), false);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
@@ -101,18 +103,11 @@ app.use('/uploads', express.static(uploadsDir, {
         res.set('Cross-Origin-Opener-Policy', 'unsafe-none');
         
         // Get the origin from the request
-        const origin = res.req.headers.origin || '';
+        const origin = res.req.headers.origin;
         
-        // Check if the origin is in our allowed list
-        if (allowedOrigins.some(allowedOrigin => origin.includes(allowedOrigin.replace(/^https?:\/\//, '')))) {
+        // Set the Access-Control-Allow-Origin header based on the request origin
+        if (origin === 'https://pfe-delta.vercel.app' || origin === 'http://localhost:3000') {
             res.set('Access-Control-Allow-Origin', origin);
-        } else if (process.env.NODE_ENV === 'production') {
-            // Default to the main production domain if origin not in allowed list
-            res.set('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
-            res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
-        } else {
-            // In development, allow any origin
-            res.set('Access-Control-Allow-Origin', '*');
         }
         
         // CORS headers
