@@ -115,6 +115,7 @@ app.use('/uploads', express.static(uploadsDir, {
         } else if (process.env.NODE_ENV === 'production') {
             // Default to the main production domain if origin not in allowed list
             res.set('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
+            res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
         } else {
             // In development, allow any origin
             res.set('Access-Control-Allow-Origin', '*');
