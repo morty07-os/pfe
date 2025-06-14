@@ -26,7 +26,7 @@ import adminRoutes from "./routes/admin.routes.js"; // Import admin routes
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5001;
 
 // Define allowed origins for CORS
 const allowedOrigins = [
