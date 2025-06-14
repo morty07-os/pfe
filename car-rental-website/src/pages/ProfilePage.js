@@ -117,6 +117,11 @@ const ProfilePage = () => {
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error.message);
+      // Ensure token is cleared and user is redirected on any profile fetch error
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userEmail');
+      navigate('/');
     } finally {
       setLoading(false);
     }
@@ -125,7 +130,13 @@ const ProfilePage = () => {
   const fetchUserCars = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
+        navigate('/');
+        return;
+      }
 
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/cars/user-cars`, {
@@ -138,6 +149,13 @@ const ProfilePage = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        // Clear token and redirect if unauthorized
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userEmail');
+          navigate('/');
+        }
         throw new Error(errorData.error || 'Failed to fetch user cars');
       }
 
@@ -151,7 +169,13 @@ const ProfilePage = () => {
   const fetchConversations = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
+        navigate('/');
+        return;
+      }
 
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/messages/conversations`, {
@@ -164,6 +188,13 @@ const ProfilePage = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        // Clear token and redirect if unauthorized
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userEmail');
+          navigate('/');
+        }
         throw new Error(errorData.error || 'Failed to fetch conversations');
       }
 
