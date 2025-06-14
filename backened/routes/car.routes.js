@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
+import { createCar, getCars, updateCar, deleteCar, updateCarBookingStatus } from "../controllers/car.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Car from "../models/car.models.js";
 import cloudinary from "cloudinary";
@@ -343,5 +343,8 @@ router.post("/reject/:id", ProtectedRoute(), async (req, res) => {
     res.status(500).json({ error: "Failed to reject car" });
   }
 });
+
+// Update car booking status
+router.put("/booking-status/:carId", ProtectedRoute(), updateCarBookingStatus);
 
 export default router;

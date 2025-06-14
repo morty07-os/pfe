@@ -121,6 +121,11 @@ const carSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+    bookingStatus: {
+      type: String,
+      enum: ["available", "booked"],
+      default: "available",
+    },
     rejectionReason: {
       type: String,
       default: null,

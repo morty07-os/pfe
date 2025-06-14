@@ -1,5 +1,6 @@
 import Car from "../models/car.models.js";
 import cloudinary from "cloudinary";
+import mongoose from "mongoose";
 
 // Configure Cloudinary (redundant if already in router, but included for completeness)
 cloudinary.v2.config({
@@ -118,5 +119,35 @@ export const deleteCar = async (req, res) => {
   } catch (error) {
     console.error("Error deleting car:", error.message);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Update car booking status
+export const updateCarBookingStatus = async (req, res) => {
+  try {
+    const { carId } = req.params;
+    const { bookingStatus } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(carId)) {
+      return res.status(400).json({ message: 'Invalid car ID format.' });
+    }
+
+    const validStatuses = ['available', 'booked'];
+    if (!bookingStatus || !validStatuses.includes(bookingStatus)) {
+      return res.status(400).json({ message: 'Invalid or missing booking status.' });
+    }
+
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ message: 'Car not found.' });
+    }
+
+    car.bookingStatus = bookingStatus;
+    await car.save();
+
+    res.status(200).json({ message: `Car booking status updated to ${bookingStatus}.`, car });
+  } catch (error) {
+    console.error("Error in updateCarBookingStatus:", error);
+    res.status(500).json({ message: 'Failed to update car booking status.', error: error.message });
   }
 };

@@ -447,8 +447,10 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
       
       if (bothConfirmed) {
         try {
-          const deleteResponse = await axios.delete(
-            `${apiUrl}/api/cars/delete/${carId}`,
+          // Update car booking status instead of deleting
+          const updateResponse = await axios.put(
+            `${apiUrl}/api/cars/booking-status/${carId}`,
+            { bookingStatus: 'booked' },
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -457,7 +459,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
             }
           );
           
-          const finalMessage = `Booking for ${carName} has been confirmed by both parties. The car has been removed from listings.`;
+          const finalMessage = `Booking for ${carName} has been confirmed by both parties. The car is now marked as booked.`;
           await handleSendMessage(finalMessage);
           
           try {
@@ -505,9 +507,9 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
           
           setBookingConfirmed(true);
           
-          alert('Booking confirmed by both parties! The car has been removed from listings.');
+          alert('Booking confirmed by both parties! The car has been marked as booked.');
           
-          window.dispatchEvent(new CustomEvent('carRemoved', { detail: { carId } }));
+          window.dispatchEvent(new CustomEvent('carBooked', { detail: { carId } }));
 
         } catch (error) {
           console.error('Error during car booking confirmation:', error);
@@ -518,12 +520,9 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
           ? 'Your confirmation has been recorded. Waiting for renter to confirm.' 
           : 'Your confirmation has been recorded. Waiting for owner to confirm.');
       }
-      
-      setConfirmDialogOpen(false);
     } catch (error) {
-      console.error('Error confirming booking:', error);
-      alert(`Error confirming booking: ${error.message}`);
-      setConfirmDialogOpen(false);
+      console.error('Error in handleConfirmBooking:', error);
+      alert('An error occurred while confirming the booking. Please try again.');
     }
   };
   
@@ -1160,7 +1159,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
                   {isCarOwner 
                     ? `You (as the car owner) and the renter have both confirmed the booking for ${carName}.` 
                     : `You (as the renter) and the car owner have both confirmed the booking for ${carName}.`}
-                  {" This car has been removed from listings."}
+                  {" This car has been marked as booked."}
                 </Typography>
                 
                 {(ownerConfirmed && renterConfirmed) && (
