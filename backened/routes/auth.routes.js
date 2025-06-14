@@ -55,7 +55,13 @@ router.get("/profile", ProtectedRoute(), getMe);
 router.put("/profile", ProtectedRoute(), upload.fields([
   { name: "licenceFront", maxCount: 1 },
   { name: "licenceBack", maxCount: 1 }
-]), updateProfile); // New route for profile updates
+]), updateProfile);
+
+// Authentication routes with explicit OPTIONS handling
+router.options(["/signup", "/login", "/logout"], (req, res) => {
+  res.status(200).end();
+});
+
 router.post("/signup",
   upload.fields([
     { name: "licenceFront", maxCount: 1 }, 
@@ -63,7 +69,12 @@ router.post("/signup",
   ]), 
   signup
 );
-router.post("/login", login);
+
+router.post("/login", (req, res, next) => {
+  console.log("Login request received:", req.body);
+  login(req, res, next);
+});
+
 router.post("/logout", logout);
 router.post("/refresh-token", refreshToken);
 router.post("/verify-email", verifyEmail);

@@ -32,7 +32,11 @@ const allowedOrigins = [
 ];
 
 // Middleware
-const corsOptions = {
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
@@ -50,22 +54,16 @@ const corsOptions = {
         if (isAllowed) {
             callback(null, true);
         } else {
-            console.log('Not allowed by CORS:', origin);
-            callback(new Error('Not allowed by CORS'));
+            callback(new Error('CORS policy violation'), false);
         }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    exposedHeaders: ['Content-Range', 'X-Content-Range']
-};
-
-app.use(cors(corsOptions));
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 
 // Handle preflight requests
-app.options('*', cors(corsOptions));
-app.use(express.json()); // To parse JSON payloads
-app.use(cookieParser());
+app.options('*', cors());
 
 // Routes
 app.use('/api/auth', authRoutes);
