@@ -35,14 +35,12 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import TuneIcon from '@mui/icons-material/Tune';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import PersonIcon from '@mui/icons-material/Person';
 import SpeedIcon from '@mui/icons-material/Speed';
 import AcUnitIcon from '@mui/icons-material/AcUnit';
 import PhoneIcon from '@mui/icons-material/Phone';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import dayjs from 'dayjs';
 import Navbar from '../components/Navbar';
@@ -337,10 +335,17 @@ export default function CarDetailsPage() {
               </Box>
               
               <Box sx={{ p: 3 }}>
-                <Grid container spacing={4}>
+                <Grid container spacing={4} justifyContent="center">
                   <Grid item xs={12} md={6}>
                     <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />
-                    <Box sx={{ display: 'flex', gap: 2, mt: 2, overflowX: 'auto', pb: 1 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      gap: 2, 
+                      mt: 2, 
+                      justifyContent: 'flex-start', 
+                      overflowX: 'auto', 
+                      pb: 1
+                    }}>
                       {[1, 2, 3, 4].map((_, index) => (
                         <Skeleton key={index} variant="rectangular" width={80} height={80} sx={{ borderRadius: 2 }} />
                       ))}
@@ -623,7 +628,7 @@ export default function CarDetailsPage() {
               </Box>
 
               <Box sx={{ p: { xs: 2, sm: 3 }, pt: 0 }}> {/* Main content area for Grid */}
-                <Grid container spacing={{ xs: 2, md: 4 }}>
+                <Grid container spacing={{ xs: 2, md: 4 }} justifyContent="center">
                   <Grid item xs={12} md={6}>
                     <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
                       <CardMedia
@@ -631,12 +636,15 @@ export default function CarDetailsPage() {
                         image={car.images?.[selectedImageIndex] || car.images?.[0] || '/placeholder.jpg'}
                         alt={car.carName}
                         sx={{
-                          borderRadius: 2,
-                          boxShadow: '0 3px 18px rgba(71, 85, 105, 0.1)',
-                          border: '1px solid #e3e8ee',
+                          borderRadius: 3,
+                          boxShadow: '0 6px 24px rgba(30, 41, 59, 0.15)',
+                          border: '2px solid #cbd5e1',
                           height: { xs: 220, sm: 300, md: 340 },
                           objectFit: 'cover',
-                          transition: 'transform 0.3s ease',
+                          transition: 'transform 0.4s ease',
+                          '&:hover': {
+                            transform: 'scale(1.02)',
+                          },
                         }}
                       />
                       
@@ -646,36 +654,42 @@ export default function CarDetailsPage() {
                             onClick={handlePrevImage}
                             sx={{
                               position: 'absolute',
-                              left: 10,
+                              left: 12,
                               top: '50%',
                               transform: 'translateY(-50%)',
-                              bgcolor: 'rgba(255, 255, 255, 0.8)',
+                              bgcolor: 'rgba(30, 41, 59, 0.7)',
+                              color: '#fff',
                               '&:hover': {
-                                bgcolor: 'rgba(255, 255, 255, 0.95)',
+                                bgcolor: 'rgba(30, 41, 59, 0.85)',
+                                transform: 'translateY(-50%) scale(1.1)',
                               },
-                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                              transition: 'transform 0.2s ease',
+                              boxShadow: '0 3px 12px rgba(0, 0, 0, 0.25)',
                               zIndex: 2,
                             }}
                           >
-                            <ArrowBackIcon />
+                            <ArrowBackIcon sx={{ fontSize: 28 }} />
                           </IconButton>
                           
                           <IconButton 
                             onClick={handleNextImage}
                             sx={{
                               position: 'absolute',
-                              right: 10,
+                              right: 12,
                               top: '50%',
                               transform: 'translateY(-50%)',
-                              bgcolor: 'rgba(255, 255, 255, 0.8)',
+                              bgcolor: 'rgba(30, 41, 59, 0.7)',
+                              color: '#fff',
                               '&:hover': {
-                                bgcolor: 'rgba(255, 255, 255, 0.95)',
+                                bgcolor: 'rgba(30, 41, 59, 0.85)',
+                                transform: 'translateY(-50%) scale(1.1)',
                               },
-                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                              transition: 'transform 0.2s ease',
+                              boxShadow: '0 3px 12px rgba(0, 0, 0, 0.25)',
                               zIndex: 2,
                             }}
                           >
-                            <ArrowForwardIosIcon />
+                            <ArrowBackIcon sx={{ fontSize: 28, transform: 'scaleX(-1)' }} />
                           </IconButton>
                         </>
                       )}
@@ -686,6 +700,7 @@ export default function CarDetailsPage() {
                         display: 'flex', 
                         gap: 1.5, 
                         mt: 2, 
+                        justifyContent: 'flex-start',
                         overflowX: 'auto', 
                         pb: 1,
                         '&::-webkit-scrollbar': {
@@ -741,11 +756,12 @@ export default function CarDetailsPage() {
                       mt: 3,
                       p: { xs: 2, sm: 3 },
                       borderRadius: 2,
-                      background: 'linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 100%)',
-                      boxShadow: '0 2px 10px rgba(71, 85, 105, 0.08)',
+                      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                      border: '1px solid rgba(100,116,139,0.15)',
+                      boxShadow: '0 6px 18px rgba(71, 85, 105, 0.12)',
+                      backdropFilter: 'blur(6px)',
                     }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <AttachMoneyIcon sx={{ color: '#1e293b', fontSize: { xs: 24, sm: 28 } }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Typography
                           variant="h5"
                           sx={{
@@ -764,10 +780,10 @@ export default function CarDetailsPage() {
                           disabled={isOwnCar}
                           sx={{
                             borderRadius: 99,
-                            background: isOwnCar 
-                              ? '#e0e0e0' 
-                              : 'linear-gradient(90deg, #1e293b 0%, #475569 100%)',
-                            color: isOwnCar ? '#a0a0a0' : '#fff',
+                            background: isOwnCar
+                              ? '#e0e0e0'
+                              : 'linear-gradient(180deg, #1e293b 0%, #475569 60%, #64748b 100%)',
+                            color: isOwnCar ? '#a0a0a0' : '#ffffff',
                             fontWeight: 600,
                             py: { xs: 0.8, sm: 1 },
                             px: { xs: 2, sm: 3 },
@@ -775,16 +791,16 @@ export default function CarDetailsPage() {
                             fontSize: { xs: '0.8rem', sm: '0.9rem' },
                             whiteSpace: 'nowrap',
                             '&:hover': {
-                              background: isOwnCar 
-                                ? '#e0e0e0' 
-                                : 'linear-gradient(90deg, #0f172a 0%, #334155 100%)',
+                              background: isOwnCar
+                                ? '#e0e0e0'
+                                : 'linear-gradient(180deg, #334155 0%, #475569 60%, #64748b 100%)',
                               boxShadow: isOwnCar ? 'none' : '0 4px 12px rgba(0,0,0,0.2)',
                             },
                             transition: 'all 0.2s ease-in-out',
                             cursor: isOwnCar ? 'not-allowed' : 'pointer',
                           }}
                         >
-                          {isOwnCar ? "Your Own Car" : "Book Now"}
+                          {isOwnCar ? 'Your Own Car' : 'Book Now'}
                         </Button>
                       </Box>
                     </Box>
@@ -1048,7 +1064,7 @@ export default function CarDetailsPage() {
                                 
                                 const ownerId = typeof car.owner === 'string' ? car.owner : (car.owner._id || '');
                                 const ownerName = typeof car.owner === 'string' ? 
-                                  (car.ownerName || 'Unknown Owner') : 
+                                  (car.ownerName || 'Owner') : 
                                   (car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : (car.ownerName || 'Unknown Owner'));
                                 
                                 handleOpenUserRatingDialog(ownerId, ownerName);

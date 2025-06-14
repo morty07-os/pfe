@@ -12,7 +12,7 @@ import {
   AddCircle as AddCircleIcon, Verified as VerifiedIcon, 
   Notifications as NotificationsIcon, Star as StarIcon,
   Dashboard as DashboardIcon, EventAvailable as EventAvailableIcon,
-  Chat as ChatIcon, Send as SendIcon
+  Chat as ChatIcon, Send as SendIcon, AdminPanelSettings as AdminPanelSettingsIcon
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
@@ -86,6 +86,9 @@ const ProfilePage = () => {
   const [conversations, setConversations] = useState([]); // New state for conversations
   const [selectedConversation, setSelectedConversation] = useState(null); // New state for selected conversation
   const navigate = useNavigate();
+
+  // Determine if the current user has admin role
+  const isAdmin = (profile?.role === 'admin') || (localStorage.getItem('userRole') === 'admin');
 
   const fetchProfile = async () => {
     try {
@@ -278,7 +281,7 @@ const ProfilePage = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%23ffffff\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-.895-3-2-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-.895-3-2-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-.895-3-2-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-.895-3-2-3-3 1.343-3 3 1.343 3 3 3zM6 34c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%23ffffff\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           backgroundSize: '24px 24px',
           zIndex: 1,
         }
@@ -364,7 +367,7 @@ const ProfilePage = () => {
             <Grid item xs={12} md={3} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' }, mt: { xs: 2, md: 0 } }}>
               <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'row', md: 'column' } }}>
                 <Button
-                  variant="contained"
+                  variant="contained" 
                   startIcon={<EditIcon />}
                   sx={{
                     bgcolor: 'rgba(226, 232, 240, 0.1)',
@@ -434,7 +437,17 @@ const ProfilePage = () => {
               }}
             >
               <StyledTab icon={<DashboardIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Dashboard" />
-              <StyledTab icon={<DirectionsCarIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="My Vehicles" />
+              {/* Show My Vehicles for normal users; Admin page tab for admins */}
+              {isAdmin ? (
+                <StyledTab 
+                  icon={<AdminPanelSettingsIcon sx={{ fontSize: 20 }} />} 
+                  iconPosition="start" 
+                  label="Admin" 
+                  onClick={() => navigate('/admin')} 
+                />
+              ) : (
+                <StyledTab icon={<DirectionsCarIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="My Vehicles" />
+              )}
               <StyledTab icon={<ChatIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Chats" />
             </Tabs>
           </Box>
@@ -531,8 +544,51 @@ const ProfilePage = () => {
                   </StyledCard>
                 </Grid>
                 
+                {/* Admin Card (visible only for admin) */}
+                {isAdmin && (
+                  <Grid item xs={12} md={4}>
+                    <StyledCard>
+                      <CardHeader sx={{ 
+                        background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+                      }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AdminPanelSettingsIcon /> Admin Panel
+                        </Typography>
+                        {/* Empty action space for consistency */}
+                      </CardHeader>
+                      
+                      <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+                        <Typography variant="body1" sx={{ color: '#64748b', mb: 2 }}>
+                          Manage users, cars, and platform settings.
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          onClick={() => navigate('/admin')}
+                          sx={{
+                            px: 4,
+                            py: 1.5,
+                            background: 'linear-gradient(135deg, #374151 0%, #64748b 100%)',
+                            color: '#fff',
+                            fontWeight: 600,
+                            borderRadius: 3,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            textTransform: 'none',
+                            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                            '&:hover': {
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 6px 16px rgba(0,0,0,0.25)',
+                            }
+                          }}
+                        >
+                          Open
+                        </Button>
+                      </CardContent>
+                    </StyledCard>
+                  </Grid>
+                )}
+                
                 {/* My Vehicles Card */}
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={4} sx={{ display: isAdmin ? 'none' : 'block' }}>
                   <StyledCard>
                     <CardHeader sx={{ 
                       background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
@@ -557,7 +613,7 @@ const ProfilePage = () => {
                       </Button>
                     </CardHeader> 
                     
-                    <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 180 }}>
                       {userCars.length === 0 ? (
                         <Box sx={{ textAlign: 'center', py: 4 }}>
                           <DirectionsCarIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
@@ -578,7 +634,8 @@ const ProfilePage = () => {
                               px: 3,
                               py: 1,
                               textTransform: 'none',
-                              fontWeight: 600
+                              fontWeight: 600,
+                              mt: 3
                             }}
                           >
                             Add Your First Vehicle
@@ -611,7 +668,7 @@ const ProfilePage = () => {
                                   overflow: 'hidden',
                                   flexShrink: 0
                                 }}
-                                >
+                              >
                                 <img
                                   src={car.images?.[0] || '/placeholder.jpg'}
                                   alt={car.carName}
@@ -718,6 +775,7 @@ const ProfilePage = () => {
                       <Button 
                         variant="contained" 
                         size="small"
+                        onClick={() => navigate('/messages') }
                         sx={{ 
                           bgcolor: 'rgba(226, 232, 240, 0.15)', 
                           color: 'white',
@@ -768,7 +826,7 @@ const ProfilePage = () => {
           
           {/* Other tab content would go here */}
           {activeTab === 1 && (
-            <Box>
+            <Box sx={{ display: isAdmin ? 'block' : 'none' }}>
               <Typography 
                 variant="h5" 
                 component="h2" 
@@ -790,7 +848,7 @@ const ProfilePage = () => {
                   }
                 }}
               >
-                My Vehicles
+                Admin
               </Typography>
               
               <Grid container spacing={3}>
@@ -800,13 +858,11 @@ const ProfilePage = () => {
                       background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
                     }}>
                       <Typography variant="h6" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <DirectionsCarIcon /> My Vehicles
+                        <AdminPanelSettingsIcon /> Admin
                       </Typography>
                       <Button 
                         variant="contained" 
                         size="small"
-                        startIcon={<AddCircleIcon />}
-                        onClick={() => setIsPostCarDialogOpen(true)} // Open dialog
                         sx={{ 
                           bgcolor: 'rgba(226, 232, 240, 0.15)', 
                           color: 'white',
@@ -815,155 +871,39 @@ const ProfilePage = () => {
                           fontWeight: 600
                         }}
                       >
-                        Add Vehicle
+                        View All
                       </Button>
                     </CardHeader>
                     
-                    <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      {userCars.length === 0 ? (
-                        <Box sx={{ textAlign: 'center', py: 4 }}>
-                          <DirectionsCarIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
-                          <Typography variant="h6" sx={{ color: '#64748b', fontWeight: 600, mb: 1 }}>
-                            No Vehicles Listed
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3 }}>
-                            List your vehicle and start earning today!
-                          </Typography>
-                          <Button
-                            variant="contained"
-                            startIcon={<AddCircleIcon />}
-                            onClick={() => setIsPostCarDialogOpen(true)} // Open dialog
-                            sx={{
-                              bgcolor: '#334155',
-                              '&:hover': { bgcolor: '#1e293b' },
-                              borderRadius: 2,
-                              px: 3,
-                              py: 1,
-                              textTransform: 'none',
-                              fontWeight: 600
-                            }}
-                          >
-                            Add Your First Vehicle
-                          </Button>
-                        </Box>
-                      ) : (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          {userCars.map((car) => (
-                            <Paper
-                              key={car._id}
-                              elevation={0}
-                              sx={{
-                                p: 2,
-                                borderRadius: 2,
-                                border: '1px solid #e2e8f0',
-                                display: 'flex',
-                                gap: 2,
-                                transition: 'all 0.2s ease-in-out',
-                                '&:hover': {
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                  transform: 'translateY(-2px)',
-                                }
-                              }}
-                            >
-                              <Box
-                                sx={{
-                                  width: 80,
-                                  height: 80,
-                                  borderRadius: 1,
-                                  overflow: 'hidden',
-                                  flexShrink: 0
-                                }}
-                              >
-                                <img
-                                  src={car.images?.[0] || '/placeholder.jpg'}
-                                  alt={car.carName}
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                  }}
-                                />
-                              </Box>
-                              <Box sx={{ flex: 1 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#334155' }}>
-                                  {car.carName}
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
-                                  <Chip
-                                    label={car.brand}
-                                    size="small"
-                                    sx={{
-                                      bgcolor: '#e2e8f0',
-                                      color: '#475569',
-                                      fontWeight: 500,
-                                      fontSize: '0.7rem'
-                                    }}
-                                  />
-                                  <Chip
-                                    label={`DZD${car.price}/day`}
-                                    size="small"
-                                    sx={{
-                                      bgcolor: '#f1f5f9',
-                                      color: '#64748b',
-                                      fontWeight: 500,
-                                      fontSize: '0.7rem'
-                                    }}
-                                  />
-                                  <Chip
-                                    label={car.status}
-                                    size="small"
-                                    sx={{
-                                      bgcolor: car.status === 'approved' ? '#4ade80' : 
-                                              car.status === 'rejected' ? '#ef4444' : '#cbd5e1',
-                                      color: car.status === 'approved' ? '#166534' :
-                                             car.status === 'rejected' ? '#7f1d1d' : '#475569',
-                                      fontWeight: 500,
-                                      fontSize: '0.7rem'
-                                    }}
-                                  />
-                                </Box>
-                              </Box>
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={() => navigate(`/car-details/${car._id}`)}
-                                sx={{
-                                  alignSelf: 'center',
-                                  borderColor: '#64748b',
-                                  color: '#64748b',
-                                  borderRadius: 1,
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                  '&:hover': {
-                                    borderColor: '#475569',
-                                    bgcolor: 'rgba(100, 116, 139, 0.04)'
-                                  }
-                                }}
-                              >
-                                View
-                              </Button>
-                            </Paper>
-                          ))}
-                          <Button
-                            variant="contained"
-                            startIcon={<AddCircleIcon />}
-                            onClick={() => setIsPostCarDialogOpen(true)} // Open dialog
-                            sx={{
-                              alignSelf: 'flex-start',
-                              mt: 2,
-                              bgcolor: '#475569',
-                              '&:hover': { bgcolor: '#334155' },
-                              borderRadius: 2,
-                              px: 2,
-                              py: 0.75,
-                              textTransform: 'none',
-                              fontWeight: 600
-                            }}
-                          >
-                            Add Another Vehicle
-                          </Button>
-                        </Box>
-                      )}
+                    <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center' }}>
+                      <Box sx={{ textAlign: 'center', py: 4 }}>
+                        <AdminPanelSettingsIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
+                        <Typography variant="h6" sx={{ color: '#64748b', fontWeight: 600, mb: 1 }}>
+                          Admin Page
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3 }}>
+                          This is the admin page
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          onClick={() => navigate('/admin')}
+                          sx={{
+                            borderColor: '#475569',
+                            color: '#475569',
+                            borderRadius: 2,
+                            px: 3,
+                            py: 1,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            '&:hover': {
+                              borderColor: '#334155',
+                              bgcolor: 'rgba(71, 85, 105, 0.04)'
+                            }
+                          }}
+                        >
+                          Go to Admin
+                        </Button>
+                      </Box>
                     </CardContent>
                   </StyledCard>
                 </Grid>
@@ -1047,7 +987,8 @@ const ProfilePage = () => {
                           </Typography>
                           <Typography variant="body2" sx={{ 
                             color: '#94a3b8', 
-                            mb: 3,
+                            mb: 3, 
+                            textAlign: 'center',
                             fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.875rem' },
                             display: { xs: 'none', sm: 'block' }
                           }}>

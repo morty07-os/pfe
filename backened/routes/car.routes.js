@@ -243,7 +243,7 @@ router.get("/details/:id", ProtectedRoute({ required: false }), async (req, res)
     const { id } = req.params;
     const car = await Car.findById(id)
       .select("-__v")
-      .populate("owner", "firstName lastName email");
+      .populate("owner", "firstName lastName email createdAt");
 
     if (!car) {
       return res.status(404).json({ error: "Car not found" });
@@ -259,6 +259,11 @@ router.get("/details/:id", ProtectedRoute({ required: false }), async (req, res)
     // Add isAvailable property to the response
     const carResponse = car.toObject();
     carResponse.isAvailable = isAvailable;
+
+    // Inject joinDate field for frontend compatibility
+    if (carResponse.owner && carResponse.owner.createdAt) {
+      carResponse.owner.joinDate = carResponse.owner.createdAt;
+    }
 
     // Get user ID from request if authenticated
     const userId = req.user?.userId || null;

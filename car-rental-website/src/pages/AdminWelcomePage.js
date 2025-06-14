@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Typography, Container, Card, CardContent,
-  Button, Stack, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, CircularProgress, Alert, Tabs, Tab
+  Box, Typography, Container, Card, CardContent, CardHeader, Grid,
+  Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress, Alert, Tabs, Tab, CardActions, IconButton, Avatar, Chip, Tooltip, Rating
 } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { styled } from '@mui/material/styles';
+import Navbar from '../components/Navbar';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
@@ -14,9 +18,19 @@ const ImageViewerDialog = ({ open, images, initialIndex = 0, onClose }) => {
   const [current, setCurrent] = useState(initialIndex); 
   useEffect(() => { setCurrent(initialIndex); }, [initialIndex, open]);
   if (!images || images.length === 0) return null;
+  const total = images.length;
+  const prev = () => setCurrent((current-1+total)%total);
+  const next = () => setCurrent((current+1)%total);
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: '#f8fafc', p: 2 }}>
+      <Box sx={{ position:'relative', display:'flex', flexDirection:'column', alignItems:'center', bgcolor: '#f8fafc', p: 2 }}>
+        {/* arrows */}
+        <IconButton onClick={prev} sx={{ position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', bgcolor:'#fff8', '&:hover':{bgcolor:'#ffffff'} }}>
+          <ArrowBackIosNewIcon />
+        </IconButton>
+        <IconButton onClick={next} sx={{ position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', bgcolor:'#fff8', '&:hover':{bgcolor:'#ffffff'} }}>
+          <ArrowForwardIosIcon />
+        </IconButton>
         <img
           src={images[current]}
           alt={`Gallery ${current + 1}`}
@@ -46,6 +60,99 @@ const ImageViewerDialog = ({ open, images, initialIndex = 0, onClose }) => {
     </Dialog>
   );
 };
+
+const ContainerStyled = styled(Container)({
+  marginTop: 8,
+  marginBottom: 8,
+  background: 'linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%)',
+  borderRadius: 16,
+  boxShadow: '0 10px 30px -15px rgba(71, 85, 105, 0.15), 0 5px 15px -5px rgba(71, 85, 105, 0.1)',
+  padding: '40px !important',
+  position: 'relative',
+  overflow: 'hidden',
+  '&:before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '4px',
+    background: 'linear-gradient(90deg, #475569, #64748b)',
+  },
+});
+
+const CardStyled = styled(Card)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+  borderRadius: 12,
+  overflow: 'hidden',
+  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+  boxShadow: '0 5px 15px -5px rgba(71, 85, 105, 0.1), 0 2px 6px -2px rgba(71, 85, 105, 0.05)',
+  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: '0 10px 25px -5px rgba(71, 85, 105, 0.15), 0 5px 10px -2px rgba(71, 85, 105, 0.1)',
+  },
+  '& .MuiCardHeader-root': {
+    padding: theme.spacing(2, 3),
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
+  '& .MuiCardHeader-title': {
+    fontWeight: 600,
+    color: '#334155',
+  },
+  '& .MuiCardHeader-subheader': {
+    fontWeight: 500,
+    color: '#64748b',
+  },
+  '& .MuiCardContent-root': {
+    padding: theme.spacing(3),
+  },
+}));
+
+const ActionButton = styled(Button)(({ theme, color = 'primary' }) => ({
+  borderRadius: 8,
+  textTransform: 'none',
+  fontWeight: 600,
+  padding: theme.spacing(1, 3),
+  boxShadow: '0 2px 5px -1px rgba(71, 85, 105, 0.15)',
+  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  marginLeft: theme.spacing(1),
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 10px -2px rgba(71, 85, 105, 0.2)',
+  },
+  '&:active': {
+    transform: 'translateY(1px)',
+    boxShadow: '0 1px 3px -1px rgba(71, 85, 105, 0.1)',
+  },
+  ...(color === 'primary' && {
+    backgroundColor: '#475569',
+    color: '#ffffff',
+    '&:hover': {
+      backgroundColor: '#334155',
+    },
+  }),
+  ...(color === 'secondary' && {
+    backgroundColor: '#64748b',
+    color: '#ffffff',
+    '&:hover': {
+      backgroundColor: '#475569',
+    },
+  }),
+}));
+
+const InfoRow = ({ label, value }) => (
+  <Grid container sx={{ mb:1.2, borderRadius:3, overflow:'hidden', position:'relative', boxShadow:'inset 0 0 0 1px #cbd5e1, 0 1px 3px rgba(71,85,105,0.08)' }}>
+    {/* left accent */}
+    <Box sx={{ position:'absolute', left:0, top:0, bottom:0, width:4, background:`linear-gradient(180deg, #475569 0%, #64748b 100%)` }} />
+    <Grid item xs={6} sx={{ backgroundColor:'#e7ecf3', px:1.4, py:0.9, pl:2.8, display:'flex', alignItems:'center' }}>
+      <Typography variant="body2" sx={{ fontWeight:600, color:'#334155', fontSize:'0.8rem', textTransform:'capitalize', letterSpacing:0.2 }}>{label}</Typography>
+    </Grid>
+    <Grid item xs={6} sx={{ backgroundColor:'#f9fbfd', px:1.4, py:0.9, textAlign:'right', display:'flex', alignItems:'center', justifyContent:'flex-end' }}>
+      <Typography variant="body2" sx={{ fontWeight:500, color:'#475569', fontSize:'0.8rem' }}>{value && value!=='N/A' && value!=='undefined' ? value : 'Not specified'}</Typography>
+    </Grid>
+  </Grid>
+);
 
 const AdminWelcomePage = () => {
   const navigate = useNavigate();
@@ -261,216 +368,310 @@ const AdminWelcomePage = () => {
     setActiveTab(newValue);
   };
 
+  const openImageViewer = (images, initialIndex) => {
+    setImageViewer({ open: true, images, initial: initialIndex });
+  };
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 8, mb: 8 }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={activeTab} onChange={handleTabChange} aria-label="admin approval tabs">
-          <Tab label="User Approvals" id="tab-0" aria-controls="tabpanel-0" />
-          <Tab label="Car Posting Approvals" id="tab-1" aria-controls="tabpanel-1" />
-          <Tab label="Booking Approvals" id="tab-2" aria-controls="tabpanel-2" />
-        </Tabs>
-      </Box>
+    <>
+      <Navbar />
+      <ContainerStyled maxWidth="lg">
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 5 }}>
+          <Tabs value={activeTab} onChange={handleTabChange} aria-label="admin approval tabs" sx={{
+            '& .MuiTab-root': {
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              padding: '16px 24px',
+              color: '#64748b',
+              '&.Mui-selected': {
+                color: '#334155',
+              },
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: '#475569',
+              height: 4,
+              borderRadius: '4px 4px 0 0',
+            },
+          }}>
+            <Tab label="User Approvals" id="tab-0" aria-controls="tabpanel-0" />
+            <Tab label="Car Posting Approvals" id="tab-1" aria-controls="tabpanel-1" />
+            <Tab label="Booking Approvals" id="tab-2" aria-controls="tabpanel-2" />
+          </Tabs>
+        </Box>
 
-      {error && (
-        <Alert severity={errorType} sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Tab Panel for User Approvals */}
-      <Box role="tabpanel" hidden={activeTab !== 0} id="tabpanel-0" aria-labelledby="tab-0">
-        {activeTab === 0 && (
-          <Box>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#334155', mb: 3 }}>Pending User Approvals</Typography>
-            {loading ? (
-              <CircularProgress />
-            ) : pendingUsers.length === 0 ? (
-              <Typography>No pending users to review.</Typography>
-            ) : (
-              <Stack spacing={3}>
-                {pendingUsers.map((user) => (
-                  <Card key={user._id} elevation={3} sx={{
-                    borderRadius: 4,
-                    border: '1px solid #e2e8f0',
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    boxShadow: '0 4px 24px rgba(30,41,59,0.07)',
-                    transition: 'box-shadow 0.2s',
-                    '&:hover': { boxShadow: '0 8px 32px rgba(30,41,59,0.13)' },
-                  }}>
-                    <CardContent>
-                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="flex-start">
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 700 }}>{user.firstName} {user.lastName}</Typography>
-                          <Typography sx={{ color: '#64748b', mb: 1 }}>{user.email}</Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Phone: <b>{user.phone}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Residence: <b>{user.residence}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Role: <b>{user.role}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Created: <b>{new Date(user.createdAt).toLocaleDateString()}</b></Typography>
-                        </Box>
-                        <Box sx={{ minWidth: 180 }}>
-                          <Typography variant="subtitle2" sx={{ color: '#475569', mb: 1 }}>License Images:</Typography>
-                          <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
-                            {user.licenceFront && (
-                              <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => setImageViewer({ open: true, images: [user.licenceFront, user.licenceBack].filter(Boolean), initial: 0 })}>
-                                <img src={user.licenceFront} alt="License Front" style={{ width: 100, height: 70, borderRadius: 6, border: '1.5px solid #cbd5e1', objectFit: 'cover', boxShadow: '0 2px 8px #47556922' }} />
-                                <ZoomInIcon sx={{ position: 'absolute', bottom: 6, right: 6, color: '#475569', bgcolor: '#f8fafc', borderRadius: '50%', p: 0.3, fontSize: 22, opacity: 0.85 }} />
-                              </Box>
-                            )}
-                            {user.licenceBack && (
-                              <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => setImageViewer({ open: true, images: [user.licenceFront, user.licenceBack].filter(Boolean), initial: 1 })}>
-                                <img src={user.licenceBack} alt="License Back" style={{ width: 100, height: 70, borderRadius: 6, border: '1.5px solid #cbd5e1', objectFit: 'cover', boxShadow: '0 2px 8px #47556922' }} />
-                                <ZoomInIcon sx={{ position: 'absolute', bottom: 6, right: 6, color: '#475569', bgcolor: '#f8fafc', borderRadius: '50%', p: 0.3, fontSize: 22, opacity: 0.85 }} />
-                              </Box>
-                            )}
-                          </Stack>
-                        </Box>
-                        <Stack direction="column" spacing={2} sx={{ minWidth: 160, mt: { xs: 2, md: 0 } }}>
-                          <Button variant="contained" color="success" sx={{ borderRadius: 2, fontWeight: 600 }} onClick={() => handleApprove(user._id)}>Approve</Button>
-                          <Button variant="contained" color="error" sx={{ borderRadius: 2, fontWeight: 600 }} onClick={() => setRejectDialog({ open: true, userId: user._id })}>Reject</Button>
-                        </Stack>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Stack>
-            )}
-          </Box>
+        {error && (
+          <Alert severity={errorType} variant="filled" sx={{ mb: 3, backgroundColor: errorType === 'success' ? '#475569' : '#64748b', color: '#fff', '& .MuiAlert-icon': { color: '#fff' }, borderRadius: 2, boxShadow: '0 2px 10px rgba(71, 85, 105, 0.2)' }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
         )}
-      </Box>
 
-      {/* Tab Panel for Car Posting Approvals */}
-      <Box role="tabpanel" hidden={activeTab !== 1} id="tabpanel-1" aria-labelledby="tab-1">
-        {activeTab === 1 && (
-          <Box>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#334155', mb: 3 }}>Pending Car Posting Approvals</Typography>
-            {pendingCars.length === 0 ? (
-              <Typography>No pending car postings to review.</Typography>
-            ) : (
-              <Stack spacing={3}>
-                {pendingCars.map((car) => (
-                  <Card key={car._id} elevation={3} sx={{
-                    borderRadius: 4,
-                    border: '1px solid #e2e8f0',
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                    boxShadow: '0 4px 24px rgba(30,41,59,0.07)',
-                    transition: 'box-shadow 0.2s',
-                    '&:hover': { boxShadow: '0 8px 32px rgba(30,41,59,0.13)' },
-                  }}>
+        {/* Tab Panel for User Approvals */}
+        <Box role="tabpanel" hidden={activeTab !== 0} id="tabpanel-0" aria-labelledby="tab-0">
+          {activeTab === 0 && (
+            <Box>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#334155', mb: 3 }}>Pending User Approvals</Typography>
+              {loading ? (
+                <Box display="flex" justifyContent="center" my={5}>
+                  <CircularProgress sx={{ color: '#475569' }} />
+                </Box>
+              ) : pendingUsers.length === 0 ? (
+                <Alert severity="info" variant="filled" sx={{ backgroundColor: '#64748b', color: '#fff', '& .MuiAlert-icon': { color: '#fff' }, borderRadius: 2, boxShadow: '0 2px 10px rgba(71, 85, 105, 0.2)', py: 3, px: 4, fontSize: '1rem' }}>
+                  No pending user approvals.
+                </Alert>
+              ) : (
+                pendingUsers.map(user => (
+                  <CardStyled key={user._id}>
                     <CardContent>
-                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="flex-start">
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 700 }}>{car.carName}</Typography>
-                          <Typography sx={{ color: '#64748b', mb: 1 }}>Owner: {car.owner?.firstName} {car.owner?.lastName}</Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Brand: <b>{car.brand}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Wilaya: <b>{car.wilaya}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Price: <b>{car.price} DZD/day</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Description: <b>{car.description}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Energy: <b>{car.energy}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Seats: <b>{car.seats}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Doors: <b>{car.doors}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Transmission: <b>{car.transmission}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Mileage: <b>{car.mileage}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Engine: <b>{car.engine}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Available: <b>{car.availabilityStart} to {car.availabilityEnd}</b></Typography>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>Car Type: <b>{car.carType}</b></Typography>
-                        </Box>
-                        <Box sx={{ minWidth: 180 }}>
-                          <Typography variant="subtitle2" sx={{ color: '#475569', mb: 1 }}>Car Images:</Typography>
-                          <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
-                            {(car.images || []).map((img, idx) => (
-                              <Box key={idx} sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => setImageViewer({ open: true, images: car.images, initial: idx })}>
-                                <img src={img} alt={`Car ${idx + 1}`} style={{ width: 100, height: 70, borderRadius: 6, border: '1.5px solid #cbd5e1', objectFit: 'cover', boxShadow: '0 2px 8px #47556922' }} />
-                                <ZoomInIcon sx={{ position: 'absolute', bottom: 6, right: 6, color: '#475569', bgcolor: '#f8fafc', borderRadius: '50%', p: 0.3, fontSize: 22, opacity: 0.85 }} />
-                              </Box>
-                            ))}
-                          </Stack>
-                          {car.documentationImages && car.documentationImages.length > 0 && (
-                            <Box sx={{ mt: 2 }}>
-                              <Typography variant="subtitle2" sx={{ color: '#475569', mb: 1 }}>Documentation Images:</Typography>
-                              <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
-                                {car.documentationImages.map((img, idx) => (
-                                  <Box key={idx} sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => setImageViewer({ open: true, images: car.documentationImages, initial: idx })}>
-                                    <img src={img} alt={`Doc ${idx + 1}`} style={{ width: 80, height: 60, borderRadius: 6, border: '1.5px solid #cbd5e1', objectFit: 'cover', boxShadow: '0 2px 8px #47556922' }} />
-                                    <ZoomInIcon sx={{ position: 'absolute', bottom: 4, right: 4, color: '#475569', bgcolor: '#f8fafc', borderRadius: '50%', p: 0.2, fontSize: 18, opacity: 0.85 }} />
-                                  </Box>
-                                ))}
-                              </Stack>
+                      <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 700 }}>{user.firstName} {user.lastName}</Typography>
+                      <Typography sx={{ color: '#64748b', mb: 1 }}>{user.email}</Typography>
+                      <Typography variant="body2" sx={{ color: '#334155' }}>Phone: <b>{user.phone}</b></Typography>
+                      <Typography variant="body2" sx={{ color: '#334155' }}>Residence: <b>{user.residence}</b></Typography>
+                      <Typography variant="body2" sx={{ color: '#334155' }}>Role: <b>{user.role}</b></Typography>
+                      <Typography variant="body2" sx={{ color: '#334155' }}>Created: <b>{new Date(user.createdAt).toLocaleDateString()}</b></Typography>
+                    </CardContent>
+                    <CardActions sx={{ justifyContent: 'center', gap:2, px: 3, py: 2, backgroundColor: '#f1f5f9' }}>
+                      <ActionButton variant="contained" color="secondary" onClick={() => setRejectDialog({ open: true, userId: user._id })}>
+                        Reject
+                      </ActionButton>
+                      <ActionButton variant="contained" color="primary" onClick={() => handleApprove(user._id)}>
+                        Approve
+                      </ActionButton>
+                    </CardActions>
+                  </CardStyled>
+                ))
+              )}
+            </Box>
+          )}
+        </Box>
+
+        {/* Tab Panel for Car Posting Approvals */}
+        <Box role="tabpanel" hidden={activeTab !== 1} id="tabpanel-1" aria-labelledby="tab-1">
+          {activeTab === 1 && (
+            <Box>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#334155', mb: 3 }}>Pending Car Posting Approvals</Typography>
+              {pendingCars.length === 0 ? (
+                <Alert severity="info" variant="filled" sx={{ backgroundColor: '#64748b', color: '#fff', '& .MuiAlert-icon': { color: '#fff' }, borderRadius: 2, boxShadow: '0 2px 10px rgba(71, 85, 105, 0.2)', py: 3, px: 4, fontSize: '1rem' }}>
+                  No pending car postings to review.
+                </Alert>
+              ) : (
+                <Stack spacing={3}>
+                  {pendingCars.map((car) => (
+                    <CardStyled key={car._id}>
+                      <CardHeader
+                        title={`${car.manufacturer} ${car.model} (${car.year})`}
+                        subheader={`Owner: ${typeof car.ownerName==='object' ? `${car.ownerName.firstName} ${car.ownerName.lastName}` : car.ownerName} | Category: ${car.category}`}
+                        sx={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}
+                      />
+                      <CardContent sx={{ padding: 0 }}>
+                        {(()=>{ /* compute simple risk */ })()}
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} md={3} sx={{ order:{md:1}, p: 1, pr:1.5, borderRight: { md: '1px solid #e2e8f0' }, backgroundColor:'#ffffff', borderRadius:2, boxShadow:'0 2px 8px rgba(0,0,0,0.05)', maxWidth:220, maxHeight:420, overflowY:'auto', scrollbarWidth:'thin', scrollbarColor:'#94a3b8 #f1f5f9', '&::-webkit-scrollbar':{ width:'6px' }, '&::-webkit-scrollbar-track':{ background:'#f1f5f9', borderRadius:3 }, '&::-webkit-scrollbar-thumb':{ background:'#94a3b8', borderRadius:3 }, '&::-webkit-scrollbar-thumb:hover':{ background:'#64748b' } }}>
+                            <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 700, mb: 1.2, letterSpacing:0.3, borderBottom: '2px solid #475569', pb: 0.4 }}>Car Details & Specs</Typography>
+                            
+                            <Typography variant="subtitle2" sx={{ color: '#475569', fontWeight: 700, mt: 1, mb: 0.3, fontSize:'0.7rem', letterSpacing:0.4 }}>REGISTRATION</Typography>
+                            <InfoRow label="Location" value={car.location} />
+                            <InfoRow label="Status" value={car.status} />
+
+                            <Typography variant="subtitle2" sx={{ color: '#475569', fontWeight: 700, mt: 1, mb: 0.3, fontSize:'0.7rem', letterSpacing:0.4 }}>PRICING</Typography>
+                            <InfoRow label="Price per Day" value={`${car.pricePerDay} DZD`} />
+
+                            <Typography variant="subtitle2" sx={{ color: '#475569', fontWeight: 700, mt: 1, mb: 0.3, fontSize:'0.7rem', letterSpacing:0.4 }}>SPECIFICATIONS</Typography>
+                            <InfoRow label="Category" value={car.category} />
+                            <InfoRow label="Transmission" value={car.transmission} />
+                            <InfoRow label="Energy" value={car.energy} />
+                            <InfoRow label="Seats" value={car.seats} />
+                            <InfoRow label="Doors" value={car.doors} />
+                            
+                            <Typography variant="subtitle2" sx={{ color: '#475569', fontWeight: 700, mt: 1, mb: 0.3, fontSize:'0.7rem', letterSpacing:0.4 }}>POSTING INFO</Typography>
+                            <InfoRow label="Posted On" value={new Date(car.createdAt).toLocaleDateString()} />
+                          </Grid>
+                          {/* Owner Snapshot Column */}
+                          <Grid item xs={12} md={4} sx={{ order:{md:2}, display:'flex', flexDirection:'column', alignItems:'center', gap:1.5, p:2, textAlign:'center', mx:{md:'auto'} }}>
+                            {(()=>{const displayName=(car.ownerName&&typeof car.ownerName==='object')?`${car.ownerName.firstName} ${car.ownerName.lastName}`: (car.ownerName||''); const initial=displayName.charAt(0).toUpperCase(); return (
+                              <Avatar src={car.ownerAvatar || undefined} sx={{ width:90, height:90, mb:1, boxShadow:'0 2px 6px rgba(30,41,59,0.15)', bgcolor:'#cbd5e1', color:'#334155', fontSize:36 }}>
+                                {!car.ownerAvatar && initial}
+                              </Avatar>
+                            );})()}
+                            <Typography variant="subtitle1" sx={{ fontWeight:700, color:'#334155', letterSpacing:0.3 }}>
+                              {car.ownerName && typeof car.ownerName === 'object' ? `${car.ownerName.firstName} ${car.ownerName.lastName}` : car.ownerName}
+                            </Typography>
+                            {(()=>{const phone=car.ownerPhone || car.phone || (car.owner&&car.owner.phone) || car.ownerPhoneNumber; return phone ? (
+                              <Typography variant="body2" sx={{ color:'#475569' }}>
+                                📞 {phone}
+                              </Typography>
+                            ) : null;})()}
+                            {car.ownerEmail && typeof car.ownerEmail === 'string' && (
+                              <Typography variant="body2" sx={{ color:'#64748b' }}>{car.ownerEmail}</Typography>
+                            )}
+                            {/* Rating & stats */}
+                            <Box sx={{ display:'flex', flexDirection:'column', alignItems:'center', gap:0.3, mt:0.5 }}>
+                              {(()=>{const rating=car.ownerRating || 0; const reviews=car.ownerReviews || 0; return (
+                                <Box sx={{ display:'flex', alignItems:'center', gap:0.5 }}>
+                                  <Rating value={rating} precision={0.1} readOnly size="small" />
+                                  <Typography variant="caption" sx={{ color:'#475569' }}>({reviews})</Typography>
+                                </Box>
+                              );})()}
+                              <Typography variant="caption" sx={{ color:'#475569' }}>Avg Response: {car.ownerAvgResponseTime || '—'}</Typography>
+                              <Typography variant="caption" sx={{ color:'#475569' }}>Cancellations: {car.ownerCancellationCount ?? 0}</Typography>
                             </Box>
-                          )}
-                        </Box>
-                        <Stack direction="column" spacing={2} sx={{ minWidth: 160, mt: { xs: 2, md: 0 } }}>
-                          <Button variant="contained" color="success" sx={{ borderRadius: 2, fontWeight: 600 }} onClick={() => handleApproveCar(car._id)}>Approve</Button>
-                          <Button variant="contained" color="error" sx={{ borderRadius: 2, fontWeight: 600 }} onClick={() => setCarRejectDialog({ open: true, carId: car._id })}>Reject</Button>
-                        </Stack>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Stack>
-            )}
-          </Box>
-        )}
-      </Box>
+                            <Typography variant="body2" sx={{ color:'#475569' }}>Total Rentals: {car.ownerTotalRentals || 0}</Typography>
+                            {/* Risk Score */}
+                            {(()=>{
+                              const levels=['Low','Medium','High'];
+                              let score='Low';
+                              if(car.mileage>150000||car.year<2010){score='High';}
+                              else if(car.mileage>100000||car.year<2015){score='Medium';}
+                              return (
+                                <Box sx={{ display:'flex', border:'1px solid rgba(71,85,105,0.4)', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:240, backdropFilter:'blur(2px)', boxShadow:'inset 0 0 4px rgba(0,0,0,0.04)' }}>
+                                  {levels.map((l,idx)=> (
+                                    <Box key={l} sx={{
+                                      flex:1,
+                                      backgroundColor: l===score ? '#475569' : 'transparent',
+                                      color: l===score ? '#ffffff' : '#475569',
+                                      textAlign:'center',
+                                      py:0.7,
+                                      fontSize:'0.8rem',
+                                      fontWeight:600,
+                                      borderLeft: idx!==0 ? '1px solid rgba(71,85,105,0.15)' : 'none',
+                                      transition:'background-color 0.25s ease',
+                                      '&:hover':{ backgroundColor: l===score ? '#475569' : 'rgba(71,85,105,0.08)' }
+                                    }}>
+                                      {l}
+                                    </Box>
+                                  ))}
+                                </Box>
+                              );})()}
+                            <Tooltip title="Low: mileage < 100k & year ≥ 2015 | Medium: 100k-150k or 2010-2014 | High: >150k or <2010" placement="top" arrow>
+                              <Box sx={{ display:'flex', alignItems:'center', mt:0.5, cursor:'pointer', color:'#64748b', fontSize:'0.65rem' }}>
+                                <InfoOutlinedIcon sx={{ fontSize:14, mr:0.4 }} />
+                                <Typography variant="caption" sx={{ color:'inherit' }}>How we calculate risk</Typography>
+                              </Box>
+                            </Tooltip>
+                          </Grid>
+                          <Grid item xs={12} md={5} sx={{ order:{md:3}, p: 3, backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius:3, boxShadow:'0 3px 8px rgba(71,85,105,0.08)', display:'flex', flexDirection:'column', alignItems:'center', gap:3, maxWidth:{md:260}, ml:{md:'auto'} }}>
+                            {car.images && car.images.length > 0 && (
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 700, mb: 1.5, position:'relative', pl:1, letterSpacing:0.4 }}>
+                                  <Box component="span" sx={{ position:'absolute', left:0, top:0, bottom:0, width:4, background:'#64748b', borderRadius:1, mr:1 }} />
+                                  Car Images
+                                </Typography>
+                                <Box display="flex" flexWrap="wrap" gap={2} sx={{ justifyContent:'center' }}>
+                                  {car.images.map((img, idx) => (
+                                    <Box key={idx} sx={{ position: 'relative', cursor: 'pointer', overflow: 'hidden', borderRadius: 2, '&:hover img': { transform: 'scale(1.05)' }, '&:hover .zoom-icon': { opacity: 1 } }} onClick={() => openImageViewer(car.images, idx)}>
+                                      <img 
+                                        src={img} 
+                                        alt={`Car image ${idx + 1}`} 
+                                        style={{ width: 140, height: 90, borderRadius: 8, border: '1px solid #e9ecef', objectFit: 'cover', transition: 'transform 0.3s ease' }} 
+                                      />
+                                      <Box className="zoom-icon" sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.4)', opacity: 0, transition: 'opacity 0.3s ease', pointerEvents: 'none' }}>
+                                        <ZoomInIcon sx={{ color: '#fff', fontSize: 30 }} />
+                                      </Box>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                            {car.documentationImages && car.documentationImages.length > 0 && (
+                              <Box>
+                                <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 700, mb: 1.5, position:'relative', pl:1, letterSpacing:0.4 }}>
+                                  <Box component="span" sx={{ position:'absolute', left:0, top:0, bottom:0, width:4, background:'#64748b', borderRadius:1, mr:1 }} />
+                                  Documentation
+                                </Typography>
+                                <Box display="flex" flexWrap="wrap" gap={2} sx={{ justifyContent:'center' }}>
+                                  {car.documentationImages.map((doc, idx) => (
+                                    <Box key={idx} sx={{ position: 'relative', cursor: 'pointer', overflow: 'hidden', borderRadius: 2, '&:hover img': { transform: 'scale(1.05)' }, '&:hover .zoom-icon': { opacity: 1 } }} onClick={() => openImageViewer(car.documentationImages, idx)}>
+                                      <img 
+                                        src={doc} 
+                                        alt={`Documentation ${idx + 1}`} 
+                                        style={{ width: 120, height: 80, borderRadius: 8, border: '1px solid #e9ecef', objectFit: 'cover', transition: 'transform 0.3s ease' }} 
+                                      />
+                                      <Box className="zoom-icon" sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.4)', opacity: 0, transition: 'opacity 0.3s ease', pointerEvents: 'none' }}>
+                                        <ZoomInIcon sx={{ color: '#fff', fontSize: 28 }} />
+                                      </Box>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                      <CardActions sx={{ justifyContent: 'center', gap:2, px: 3, py: 2, backgroundColor: '#f1f5f9', borderTop: '1px solid #e2e8f0' }}>
+                        <ActionButton variant="contained" color="secondary" onClick={() => setCarRejectDialog({ open: true, carId: car._id })}>
+                          Reject
+                        </ActionButton>
+                        <ActionButton variant="contained" color="primary" onClick={() => handleApproveCar(car._id)}>
+                          Approve
+                        </ActionButton>
+                      </CardActions>
+                    </CardStyled>
+                  ))}
+                </Stack>
+              )}
+            </Box>
+          )}
+        </Box>
 
-      {/* Tab Panel for Booking Approvals */}
-      <Box role="tabpanel" hidden={activeTab !== 2} id="tabpanel-2" aria-labelledby="tab-2">
-        {activeTab === 2 && (
-          <Box>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#334155', mb: 3 }}>Pending Booking Approvals</Typography>
-            {/* Placeholder: Add logic and UI for booking approvals here */}
-            <Typography>Booking approval functionality will be implemented here.</Typography>
-          </Box>
-        )}
-      </Box>
+        {/* Tab Panel for Booking Approvals */}
+        <Box role="tabpanel" hidden={activeTab !== 2} id="tabpanel-2" aria-labelledby="tab-2">
+          {activeTab === 2 && (
+            <Box>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#334155', mb: 3 }}>Pending Booking Approvals</Typography>
+              {/* Placeholder: Add logic and UI for booking approvals here */}
+              <Typography>Booking approval functionality will be implemented here.</Typography>
+            </Box>
+          )}
+        </Box>
 
-      <Dialog open={rejectDialog.open} onClose={() => setRejectDialog({ open: false, userId: null })}>
-        <DialogTitle>Reject User</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Reason for rejection"
-            fullWidth
-            multiline
-            rows={4}
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRejectDialog({ open: false, userId: null })}>Cancel</Button>
-          <Button onClick={handleReject} color="error">Reject</Button>
-        </DialogActions>
-      </Dialog>
+        <Dialog open={rejectDialog.open} onClose={() => setRejectDialog({ open: false, userId: null })}>
+          <DialogTitle>Reject User</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Reason for rejection"
+              fullWidth
+              multiline
+              rows={4}
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setRejectDialog({ open: false, userId: null })}>Cancel</Button>
+            <Button onClick={handleReject} color="error">Reject</Button>
+          </DialogActions>
+        </Dialog>
 
-      <Dialog open={carRejectDialog.open} onClose={() => setCarRejectDialog({ open: false, carId: null })}>
-        <DialogTitle>Reject Car Posting</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Reason for rejection"
-            fullWidth
-            multiline
-            rows={4}
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCarRejectDialog({ open: false, carId: null })}>Cancel</Button>
-          <Button onClick={handleRejectCar} color="error">Reject</Button>
-        </DialogActions>
-      </Dialog>
+        <Dialog open={carRejectDialog.open} onClose={() => setCarRejectDialog({ open: false, carId: null })}>
+          <DialogTitle>Reject Car Posting</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Reason for rejection"
+              fullWidth
+              multiline
+              rows={4}
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCarRejectDialog({ open: false, carId: null })}>Cancel</Button>
+            <Button onClick={handleRejectCar} color="error">Reject</Button>
+          </DialogActions>
+        </Dialog>
 
-      {/* Image Viewer Dialog */}
-      <ImageViewerDialog
-        open={imageViewer.open}
-        images={imageViewer.images}
-        initialIndex={imageViewer.initial}
-        onClose={() => setImageViewer({ open: false, images: [], initial: 0 })}
-      />
-    </Container>
+        {/* Image Viewer Dialog */}
+        <ImageViewerDialog
+          open={imageViewer.open}
+          images={imageViewer.images}
+          initialIndex={imageViewer.initial}
+          onClose={() => setImageViewer({ open: false, images: [], initial: 0 })}
+        />
+      </ContainerStyled>
+    </>
   );
 };
 

@@ -38,7 +38,6 @@ import SignUp from './SignUp';
 import { PostCarDialog } from './PostCarDialog';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
-import MessageIcon from '@mui/icons-material/Message';
 
 const buttonStyles = (iconColor) => ({
   color: iconColor,
@@ -360,17 +359,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                 }} />
               </IconButton>
             </Tooltip>
-            {location.pathname === '/profile' && (
-              <Tooltip title="Messages" arrow placement="bottom">
-                <IconButton
-                  color="inherit"
-                  sx={{ color: '#fff' }}
-                  onClick={() => navigate('/messages')}
-                >
-                  <MessageIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
-                </IconButton>
-              </Tooltip>
-            )}
+            {/* Messages icon removed */}
             <IconButton
               color="inherit"
               sx={{
@@ -592,7 +581,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                 left: 0,
                 width: '100%',
                 height: '100%',
-                background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.15) 0%, transparent 100%)',
+                background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.15), transparent)',
                 opacity: 0,
                 transform: 'scale(0.8)',
                 transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',

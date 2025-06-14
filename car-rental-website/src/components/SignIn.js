@@ -390,3 +390,4 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
 };
 
 export default SignIn;
+

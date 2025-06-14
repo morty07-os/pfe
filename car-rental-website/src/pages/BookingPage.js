@@ -476,7 +476,7 @@ export default function BookingPage() {
                         <CalendarTodayIcon sx={{ color: '#64748b', fontSize: '1.2rem' }} />
                         <Typography variant="body2" sx={{ color: '#475569' }}>
                           <span style={{ fontWeight: 600, marginRight: '4px' }}>Member since:</span>
-                          {car.owner?.joinDate ? dayjs(car.owner.joinDate).format('MMMM YYYY') : 'Unknown'}
+                          {car.owner?.joinDate || car.owner?.createdAt ? dayjs(car.owner.joinDate || car.owner.createdAt).format('MMMM YYYY') : 'N/A'}
                         </Typography>
                       </Box>
                       
@@ -484,7 +484,7 @@ export default function BookingPage() {
                         <InfoIcon sx={{ color: '#64748b', fontSize: '1.2rem' }} />
                         <Typography variant="body2" sx={{ color: '#475569' }}>
                           <span style={{ fontWeight: 600, marginRight: '4px' }}>Response rate:</span>
-                          {car.owner?.responseRate || 'Unknown'}
+                          {car.owner?.responseRate ? `${car.owner.responseRate}%` : 'N/A'}
                         </Typography>
                       </Box>
                     </Box>
