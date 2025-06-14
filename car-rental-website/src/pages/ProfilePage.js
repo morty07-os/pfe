@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { PostCarDialog } from '../components/PostCarDialog';
 import ConversationDialog from '../components/ConversationDialog';
+import { fetchOptions, getAuthHeaders } from '../utils/apiConfig';
 
 // Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
