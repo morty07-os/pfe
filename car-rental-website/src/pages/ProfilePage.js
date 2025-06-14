@@ -82,9 +82,11 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [userCars, setUserCars] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
-  const [isPostCarDialogOpen, setIsPostCarDialogOpen] = useState(false); // New state for dialog
-  const [conversations, setConversations] = useState([]); // New state for conversations
-  const [selectedConversation, setSelectedConversation] = useState(null); // New state for selected conversation
+  const [isPostCarDialogOpen, setIsPostCarDialogOpen] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [ratingComment, setRatingComment] = useState('');
   const navigate = useNavigate();
 
   // Determine if the current user has admin role
@@ -210,6 +212,46 @@ const ProfilePage = () => {
   
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+  };
+
+  const handleRatingSubmit = async (ownerId, conversationId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await fetch(`${apiUrl}/api/ratings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ownerId,
+          rating,
+          comment: ratingComment,
+          conversationId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit rating');
+      }
+
+      // Update the conversation to show it's been rated
+      setConversations(prevConversations => 
+        prevConversations.map(conv => 
+          conv._id === conversationId 
+            ? { ...conv, hasRated: true }
+            : conv
+        )
+      );
+
+      setRating(0);
+      setRatingComment('');
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+    }
   };
 
   if (loading) {
@@ -1001,19 +1043,17 @@ const ProfilePage = () => {
                               borderColor: '#475569',
                               color: '#475569',
                               borderRadius: 2,
-                              px: { xs: 1, sm: 2, md: 3 },
+                              px: 3,
                               py: 1,
                               textTransform: 'none',
                               fontWeight: 600,
-                              fontSize: { xs: '0.7rem', sm: '0.8rem' },
                               '&:hover': {
                                 borderColor: '#334155',
                                 bgcolor: 'rgba(71, 85, 105, 0.04)'
                               }
                             }}
                           >
-                            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Browse Vehicles</Box>
-                            <Box sx={{ display: { xs: 'block', sm: 'none' } }}>Browse</Box>
+                            Browse Vehicles
                           </Button>
                         </Box>
                       ) : (
@@ -1079,14 +1119,50 @@ const ProfilePage = () => {
                                   </Typography>
                                 )}
                               </Box>
-                              <Typography variant="caption" sx={{ 
-                                color: '#94a3b8', 
-                                flexShrink: 0,
-                                fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.75rem' },
-                                display: { xs: 'none', sm: 'block' }
-                              }}>
-                                {conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleDateString() : ''}
-                              </Typography>
+                              {conv.isCompleted && !conv.hasRated && profile._id !== conv.otherUser._id && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+                                  <Rating
+                                    value={rating}
+                                    onChange={(event, newValue) => setRating(newValue)}
+                                    size="small"
+                                  />
+                                  <TextField
+                                    size="small"
+                                    placeholder="Add a comment"
+                                    value={ratingComment}
+                                    onChange={(e) => setRatingComment(e.target.value)}
+                                    sx={{ width: '100px' }}
+                                  />
+                                  <Button
+                                    variant="contained"
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRatingSubmit(conv.otherUser._id, conv._id);
+                                    }}
+                                    sx={{
+                                      bgcolor: '#475569',
+                                      '&:hover': { bgcolor: '#334155' },
+                                      textTransform: 'none',
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    Submit Rating
+                                  </Button>
+                                </Box>
+                              )}
+                              {conv.isCompleted && conv.hasRated && (
+                                <Chip
+                                  label="Rated"
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#4ade80',
+                                    color: '#166534',
+                                    fontWeight: 500,
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              )}
                             </Paper>
                           ))}
                         </Box>
@@ -1095,7 +1171,7 @@ const ProfilePage = () => {
                   </StyledCard>
                 </Box>
 
-                {/* Chat Window (conditionally rendered) */}
+                {/* Chat Window */}
                 <Box sx={{ 
                   flexGrow: 1,
                   height: '100%',
