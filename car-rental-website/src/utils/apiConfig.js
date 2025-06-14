@@ -1,5 +1,5 @@
 // API Configuration
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+const API_URL = process.env.REACT_APP_API_URL || 'https://pfe-delta.vercel.app';
 
 // Common fetch options with credentials
 const fetchOptions = {
