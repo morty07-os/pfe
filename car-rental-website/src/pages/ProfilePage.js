@@ -102,11 +102,7 @@ const ProfilePage = () => {
       }
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/auth/me`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        },
-        credentials: 'include'
+        headers: getAuthHeaders(),
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -132,11 +128,7 @@ const ProfilePage = () => {
 
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/cars/user-cars`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        },
-        credentials: 'include'
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -158,11 +150,7 @@ const ProfilePage = () => {
 
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/messages/conversations`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        },
-        credentials: 'include'
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -188,9 +176,7 @@ const ProfilePage = () => {
       const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
       const response = await fetch(`${apiUrl}/api/auth/logout`, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json'
-        },
+        headers: fetchOptions.headers,
         credentials: 'include'
       });
 
