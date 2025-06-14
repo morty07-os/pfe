@@ -26,17 +26,26 @@ const upload = multer({
 
 // Enable CORS for all routes
 router.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://pfe-delta.vercel.app',
+    'https://pfe-morty07-os-projects.vercel.app',
+    'https://pfe-git-main-morty07-os-projects.vercel.app'
+  ];
   
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
   next();
 });
 

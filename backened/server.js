@@ -33,8 +33,7 @@ const allowedOrigins = [
     'http://localhost:3000',
     'https://pfe-delta.vercel.app',
     'https://pfe-morty07-os-projects.vercel.app',
-    'https://pfe-git-main-morty07-os-projects.vercel.app',
-    'https://pfe-morty07.vercel.app'
+    'https://pfe-git-main-morty07-os-projects.vercel.app'
 ];
 
 // Create HTTP server
@@ -60,13 +59,6 @@ app.use(helmet({
 // Update CORS configuration
 app.use(cors({
     origin: function(origin, callback) {
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'https://pfe-delta.vercel.app',
-            'https://pfe-morty07-os-projects.vercel.app',
-            'https://pfe-git-main-morty07-os-projects.vercel.app'
-        ];
-        
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
@@ -115,7 +107,6 @@ app.use('/uploads', express.static(uploadsDir, {
         } else if (process.env.NODE_ENV === 'production') {
             // Default to the main production domain if origin not in allowed list
             res.set('Access-Control-Allow-Origin', 'https://pfe-delta.vercel.app');
-            res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
         } else {
             // In development, allow any origin
             res.set('Access-Control-Allow-Origin', '*');
