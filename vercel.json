@@ -5,17 +5,9 @@
       "src": "car-rental-website/package.json",
       "use": "@vercel/static-build",
       "config": { "distDir": "build" }
-    },
-    {
-      "src": "backened/server.js",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "backened/server.js"
-    },
     {
       "src": "/(.*)",
       "dest": "car-rental-website/$1"

@@ -1,5 +1,5 @@
 // API Configuration
-const API_URL = process.env.REACT_APP_API_URL || 'https://pfe-delta.vercel.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
 // Common fetch options with credentials
 const fetchOptions = {
