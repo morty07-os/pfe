@@ -6,8 +6,7 @@ const fetchOptions = {
   credentials: 'include',
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Origin': window.location.origin
+    'Accept': 'application/json'
   }
 };
 

@@ -53,57 +53,40 @@ const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
       console.log('Attempting login with:', loginData.email);
       const response = await fetch(endpoints.login, {
         method: 'POST',
-        headers: {
-          ...fetchOptions.headers,
-          'Origin': window.location.origin
-        },
+        headers: fetchOptions.headers,
         credentials: 'include',
         body: JSON.stringify(loginData),
       });
 
-      if (!response.ok) {
-        if (response.status === 405) {
-          throw new Error('Method not allowed. Please check the API endpoint configuration.');
-        }
-        
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch (e) {
-          throw new Error('Invalid server response');
-        }
+      const result = await response.json();
 
+      if (!response.ok) {
         // Special handling for unverified emails
-        if (response.status === 403 && errorData.needsVerification) {
+        if (response.status === 403 && result.needsVerification) {
           console.log("Email not verified, redirecting to verification page");
           onClose();
-          navigate('/verify-email', { state: { email: errorData.email } });
+          navigate('/verify-email', { state: { email: result.email } });
           return;
         }
-        
         // Handle pending approval
-        if (response.status === 403 && errorData.isPending) {
+        if (response.status === 403 && result.isPending) {
           console.log("Account pending approval, redirecting to pending page");
-          localStorage.setItem('userEmailForPending', errorData.email || formData.email.toLowerCase());
+          localStorage.setItem('userEmailForPending', result.email || formData.email.toLowerCase()); // Store email for PendingPage if needed
           onClose();
           navigate('/pending');
           return;
         }
-        
         // Handle rejected account
-        if (response.status === 403 && errorData.isRejected) {
+        if (response.status === 403 && result.isRejected) {
           console.log("Account rejected");
-          setMessage(errorData.error || 'Your account application has been rejected.');
+          setMessage(result.error || 'Your account application has been rejected.');
           return;
         }
-        
-        throw new Error(errorData.error || 'Sign in failed');
+        throw new Error(result.error || 'Sign in failed');
       }
 
-      const result = await response.json();
       console.log("Login successful:", result);
       setMessage('Sign in successful');
-
       // Clear any previous user info from localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
