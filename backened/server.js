@@ -56,23 +56,21 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
-// Update CORS configuration
+// Configure CORS
 app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.indexOf(origin) === -1) {
-            return callback(new Error('CORS not allowed'), false);
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
         }
-        return callback(null, true);
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
-// Ensure OPTIONS requests are handled properly
+// Enable pre-flight requests for all routes
 app.options('*', cors());
 
 // Rate limiting middleware to prevent abuse

@@ -2,10 +2,8 @@ import express from "express";
 import multer from "multer";
 import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword, updateProfile, checkStatus } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
-import { adminAuth } from "../midleware/adminAuth.js"; // Import adminAuth middleware
+import { adminAuth } from "../midleware/adminAuth.js";
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
-
-//import { processPayment } from "../controllers/payment.controller.js";
 
 const router = express.Router();
 
@@ -24,56 +22,41 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-// Enable CORS for all routes
+// Enable CORS for specific origins
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://pfe-delta.vercel.app',
+  'https://pfe-morty07-os-projects.vercel.app',
+  'https://pfe-git-main-morty07-os-projects.vercel.app'
+];
+
 router.use((req, res, next) => {
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'https://pfe-delta.vercel.app',
-    'https://pfe-morty07-os-projects.vercel.app',
-    'https://pfe-git-main-morty07-os-projects.vercel.app'
-  ];
-  
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-
-  // Handle preflight requests
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', true);
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.sendStatus(200);
   }
   next();
 });
 
-// User routes
-router.get("/me", ProtectedRoute(), getMe);
-router.get("/profile", ProtectedRoute(), getMe);
-router.put("/profile", ProtectedRoute(), upload.fields([
-  { name: "licenceFront", maxCount: 1 },
-  { name: "licenceBack", maxCount: 1 }
-]), updateProfile); // New route for profile updates
-router.post("/signup",
-  upload.fields([
-    { name: "licenceFront", maxCount: 1 }, 
-    { name: "licenceBack", maxCount: 1 }
-  ]), 
-  signup
-);
-router.post("/login", login);
-router.post("/logout", logout);
-router.post("/refresh-token", refreshToken);
-router.post("/verify-email", verifyEmail);
-router.post("/resend-verification-code", resendVerificationCode);
-router.get("/check-status", ProtectedRoute(), checkStatus); // Add this line
-
-// Forgot Password routes
-router.post("/forgot-password", forgotPassword); // New route to request reset code
-router.post("/verify-reset-code", verifyResetCode); // New route to verify reset code
-router.post("/reset-password", resetPassword); // New route to reset password
+// Auth routes
+router.post('/login', login);
+router.post('/signup', upload.single('profileImage'), signup);
+router.post('/logout', logout);
+router.get('/me', ProtectedRoute, getMe);
+router.post('/refresh-token', refreshToken);
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerificationCode);
+router.post('/forgot-password', forgotPassword);
+router.post('/verify-reset-code', verifyResetCode);
+router.post('/reset-password', resetPassword);
+router.put('/update-profile', ProtectedRoute, upload.single('profileImage'), updateProfile);
+router.get('/check-status', checkStatus);
 
 // Car routes
 router.post("/addcars", ProtectedRoute, upload.array("images", 5), createCar); // Add a new car with image upload
