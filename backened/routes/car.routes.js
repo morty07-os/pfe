@@ -287,7 +287,10 @@ router.get("/pending", ProtectedRoute(), async (req, res) => {
     }
 
     const pendingCars = await Car.find({ status: 'pending' })
-      .populate('owner', 'firstName lastName email phone')
+      .populate({
+        path: 'owner',
+        select: 'firstName lastName email phone rating reviews avgResponseTime cancellationCount totalRentals',
+      })
       .select('-__v')
       .sort({ createdAt: -1 });
 
@@ -302,6 +305,12 @@ router.get("/pending", ProtectedRoute(), async (req, res) => {
         } : carObj.ownerName,
         ownerEmail: carObj.owner?.email,
         ownerPhone: carObj.owner?.phone,
+        // Add owner ratings and stats
+        ownerRating: carObj.owner?.rating || 0,
+        ownerReviews: carObj.owner?.reviews || 0,
+        ownerAvgResponseTime: carObj.owner?.avgResponseTime || '—',
+        ownerCancellationCount: carObj.owner?.cancellationCount || 0,
+        ownerTotalRentals: carObj.owner?.totalRentals || 0,
         pricePerDay: carObj.pricePerDay || carObj.price,
         category: carObj.category || carObj.carType,
         transmission: carObj.transmission,
