@@ -287,10 +287,36 @@ router.get("/pending", ProtectedRoute(), async (req, res) => {
     }
 
     const pendingCars = await Car.find({ status: 'pending' })
-      .populate('owner', 'firstName lastName email')
+      .populate('owner', 'firstName lastName email phone')
+      .select('-__v')
       .sort({ createdAt: -1 });
 
-    res.status(200).json(pendingCars);
+    // Transform the data to include all necessary fields
+    const transformedCars = pendingCars.map(car => {
+      const carObj = car.toObject();
+      return {
+        ...carObj,
+        ownerName: carObj.owner ? {
+          firstName: carObj.owner.firstName,
+          lastName: carObj.owner.lastName
+        } : carObj.ownerName,
+        ownerEmail: carObj.owner?.email,
+        ownerPhone: carObj.owner?.phone,
+        pricePerDay: carObj.pricePerDay || carObj.price,
+        category: carObj.category || carObj.carType,
+        transmission: carObj.transmission,
+        energy: carObj.energy || carObj.fuelType,
+        seats: carObj.seats || carObj.seatingCapacity,
+        doors: carObj.doors,
+        location: carObj.location || carObj.wilaya,
+        status: carObj.status,
+        images: carObj.images || [],
+        documentationImages: carObj.documentationImages || [],
+        createdAt: carObj.createdAt
+      };
+    });
+
+    res.status(200).json(transformedCars);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch pending cars" });
   }
