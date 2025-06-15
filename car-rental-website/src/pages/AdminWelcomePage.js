@@ -250,7 +250,52 @@ const AdminWelcomePage = () => {
       }
 
       const data = await response.json();
-      setPendingCars(data);
+      
+      // Fetch owner ratings for each car
+      const carsWithRatings = await Promise.all(data.map(async (car) => {
+        let ownerId = null;
+        if (car.owner) {
+          ownerId = typeof car.owner === 'string' ? car.owner : car.owner._id;
+        }
+
+        if (ownerId) {
+          try {
+            const ownerRatingsResponse = await fetch(
+              `${apiUrl}/api/ratings/average/user/${ownerId}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+
+            if (ownerRatingsResponse.ok) {
+              const ratingsData = await ownerRatingsResponse.json();
+              return {
+                ...car,
+                ownerRating: ratingsData.averageRating || 0,
+                ownerReviews: ratingsData.totalRatings || 0
+              };
+            }
+          } catch (ratingsError) {
+            console.error('Error fetching owner ratings:', ratingsError);
+            // Continue without ratings if there's an error
+            return {
+              ...car,
+              ownerRating: 0,
+              ownerReviews: 0
+            };
+          }
+        }
+        return {
+          ...car,
+          ownerRating: 0,
+          ownerReviews: 0
+        };
+      }));
+
+      setPendingCars(carsWithRatings);
     } catch (error) {
       setError(error.message);
     }
