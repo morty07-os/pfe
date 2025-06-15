@@ -503,7 +503,16 @@ const AdminWelcomePage = () => {
                   {pendingCars.map((car) => (
                     <CardStyled key={car._id}>
                       <CardHeader
-                        title={`${car.manufacturer} ${car.model} (${car.year})`}
+                        title={(() => {
+                          const manufacturer = car.manufacturer || '';
+                          const model = car.model || '';
+                          const year = car.year ? `(${car.year})` : '';
+                          if (manufacturer || model || year) {
+                            return `${manufacturer} ${model} ${year}`.trim();
+                          } else {
+                            return 'Car Details';
+                          }
+                        })()}
                         subheader={`Owner: ${typeof car.ownerName==='object' ? `${car.ownerName.firstName} ${car.ownerName.lastName}` : car.ownerName} | Category: ${car.category}`}
                         sx={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}
                       />
