@@ -27,7 +27,6 @@ import EditProfilePage from './pages/EditProfilePage';
 import AdminWelcomePage from './pages/AdminWelcomePage';
 import PendingPage from './pages/PendingPage';
 
-
 // Routes component to handle navigation
 const AppRoutes = () => {
   const location = useLocation();
@@ -62,7 +61,6 @@ const AppRoutes = () => {
             <Route path="/pending" element={<PendingPage />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/admin" element={<AdminWelcomePage />} /> {/* Add Admin route */}
-            
       </Routes>
   );
 };

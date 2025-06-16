@@ -35,7 +35,7 @@ const bookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'cancelled_by_renter', 'cancelled_by_owner', 'completed', 'payment_failed', 'payment_rejected'],
+    enum: ['pending', 'confirmed', 'cancelled_by_renter', 'cancelled_by_owner', 'completed', 'payment_failed'],
     default: 'pending', // Initial status when chat is initiated
   },
   paymentId: { // Link to a payment record if applicable
