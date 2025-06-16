@@ -16,7 +16,10 @@ import axios from 'axios';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
-const SendReceiptDialog = ({ open, onClose, bookingId }) => {
+const SendReceiptDialog = ({ open, onClose, bookingId: compositeBookingId }) => {
+  // The actual booking ID is the first part of the composite key
+  const bookingId = compositeBookingId ? compositeBookingId.split('-')[0] : null;
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
