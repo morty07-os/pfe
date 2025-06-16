@@ -130,16 +130,6 @@ const carSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    features: {
-      type: [String],
-      default: [],
-      validate: {
-        validator: function(features) {
-          return features.every(feature => typeof feature === 'string');
-        },
-        message: 'All features must be strings'
-      }
-    }
   },
   { timestamps: true }
 );

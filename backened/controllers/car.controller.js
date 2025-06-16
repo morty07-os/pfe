@@ -30,12 +30,8 @@ export const createCar = async (req, res) => {
       imageUrl = uploadResult.secure_url;
     }
 
-    // Parse features if they exist in the request body
-    const features = req.body.features ? JSON.parse(req.body.features) : [];
-
     const newCar = new Car({
       ...req.body,
-      features,
       images: imageUrl ? [imageUrl] : [],
     });
     const savedCar = await newCar.save();
@@ -94,12 +90,8 @@ export const updateCar = async (req, res) => {
       imageUrl = uploadResult.secure_url;
     }
 
-    // Parse features if they exist in the request body
-    const features = req.body.features ? JSON.parse(req.body.features) : undefined;
-
     const updateData = {
       ...req.body,
-      features,
     };
     if (imageUrl) updateData.images = [imageUrl];
 
