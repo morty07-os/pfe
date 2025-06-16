@@ -1,24 +1,21 @@
 import express from "express";
-import multer from "multer";
-import cloudinary from "cloudinary";
+
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Receipt from "../models/receipt.model.js";
 import Booking from "../models/booking.model.js";
 
 const router = express.Router();
 
-// Configure multer for memory storage
-const upload = multer({ storage: multer.memoryStorage() });
+
 
 // Route to upload a receipt
-router.post("/upload", ProtectedRoute(), upload.single("receiptImage"), async (req, res) => {
+router.post("/upload", ProtectedRoute(), async (req, res) => {
   try {
-    const { bookingId } = req.body;
+    const { bookingId, receiptImage } = req.body;
     const user = req.user.userId;
-    const file = req.file;
 
-    if (!file) {
-      return res.status(400).json({ error: "No receipt image uploaded." });
+    if (!receiptImage) {
+      return res.status(400).json({ error: "No receipt image URL provided." });
     }
 
     const booking = await Booking.findById(bookingId);
@@ -26,26 +23,11 @@ router.post("/upload", ProtectedRoute(), upload.single("receiptImage"), async (r
         return res.status(404).json({ error: "Booking not found" });
     }
 
-    // Upload image to Cloudinary
-    const result = await new Promise((resolve, reject) => {
-      cloudinary.v2.uploader.upload_stream(
-        {
-          resource_type: "image",
-          upload_preset: "unsigned_preset",
-          folder: "receipts",
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      ).end(file.buffer);
-    });
-
     const newReceipt = new Receipt({
       booking: bookingId,
       user,
       owner: booking.owner,
-      receiptImage: result.secure_url,
+      receiptImage: receiptImage,
     });
 
     await newReceipt.save();

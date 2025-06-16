@@ -20,57 +20,78 @@ const SendReceiptDialog = ({ open, onClose, bookingId }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const fileInputRef = useRef();
+
+  const resetState = () => {
+    setSelectedFile(null);
+    setPreview(null);
+    setLoading(false);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleClose = () => {
+    resetState();
+    onClose();
+  };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
       setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-      setError('');
+      setPreview(URL.createObjectURL(file));
+      setError(null);
+      setSuccess(null);
     }
   };
 
-  const handleSend = async () => {
+  const handleUpload = async () => {
     if (!selectedFile) {
-      setError('Please select an image to upload.');
+      setError('Please select a file first.');
       return;
     }
-
     setLoading(true);
-    setError('');
-
-    const formData = new FormData();
-    formData.append('receiptImage', selectedFile);
-    formData.append('bookingId', bookingId);
+    setError(null);
+    setSuccess(null);
 
     try {
+      const cloudinaryFormData = new FormData();
+      cloudinaryFormData.append('file', selectedFile);
+      cloudinaryFormData.append('upload_preset', 'unsigned_preset'); // Using the same preset as car images
+
+      const cloudinaryRes = await axios.post(
+        'https://api.cloudinary.com/v1_1/dtob4ibrg/image/upload',
+        cloudinaryFormData
+      );
+
+      const receiptImageUrl = cloudinaryRes.data.secure_url;
+
       const token = localStorage.getItem('token');
-      await axios.post(`${apiUrl}/api/receipts/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
+      await axios.post(
+        `${apiUrl}/api/receipts/upload`,
+        {
+          bookingId: bookingId,
+          receiptImage: receiptImageUrl,
         },
-      });
-      onClose(true); // Pass true to indicate success
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setSuccess('Receipt uploaded successfully!');
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
     } catch (err) {
-      setError('Failed to upload receipt. Please try again.');
       console.error('Error uploading receipt:', err);
+      setError('Failed to upload receipt. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleClose = () => {
-    setSelectedFile(null);
-    setPreview(null);
-    setError('');
-    onClose();
   };
 
   return (
@@ -108,17 +129,18 @@ const SendReceiptDialog = ({ open, onClose, bookingId }) => {
             </Box>
           )}
           {error && (
-            <Typography color="error" mt={2}>{
-              error
-            }</Typography>
+            <Typography color="error" mt={2}>{error}</Typography>
+          )}
+          {success && (
+            <Typography color="success" mt={2}>{success}</Typography>
           )}
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="primary">
+        <Button onClick={handleClose} color="secondary">
           Cancel
         </Button>
-        <Button onClick={handleSend} color="primary" disabled={loading}>
+        <Button onClick={handleUpload} color="primary" disabled={loading}>
           {loading ? <CircularProgress size={24} /> : 'Send'}
         </Button>
       </DialogActions>
