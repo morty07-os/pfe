@@ -30,6 +30,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import StarIcon from '@mui/icons-material/Star';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import FeedbackDialog from './FeedbackDialog';
+import SendReceiptDialog from './SendReceiptDialog';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
@@ -56,6 +57,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [ownerName, setOwnerName] = useState('');
   const [receiptSent, setReceiptSent] = useState(false);
+  const [sendReceiptDialogOpen, setSendReceiptDialogOpen] = useState(false);
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -595,6 +597,17 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
       return message.sender === currentUserId;
     }
     return false;
+  };
+
+    const handleOpenSendReceiptDialog = () => {
+    setSendReceiptDialogOpen(true);
+  };
+
+  const handleCloseSendReceiptDialog = (success) => {
+    setSendReceiptDialogOpen(false);
+    if (success) {
+      setReceiptSent(true);
+    }
   };
 
   const handleSendReceipt = async () => {
@@ -1271,7 +1284,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
                       <Button
                         variant="contained"
                         startIcon={<ReceiptIcon />}
-                        onClick={handleSendReceipt}
+                        onClick={handleOpenSendReceiptDialog}
                         sx={{
                           borderRadius: 2,
                           py: 1.2,
@@ -1379,6 +1392,12 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
         isCarOwner={isCarOwner}
         carName={carName}
         ownerName={ownerName}
+      />
+
+      <SendReceiptDialog
+        open={sendReceiptDialogOpen}
+        onClose={handleCloseSendReceiptDialog}
+        bookingId={conversationId} // Assuming conversationId is the bookingId
       />
     </>
   );

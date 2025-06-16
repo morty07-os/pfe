@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Box, Typography, Container, Card, CardContent, CardHeader, Grid,
   Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress, Alert, Tabs, Tab, CardActions, IconButton, Avatar, Chip, Tooltip, Rating
@@ -10,6 +11,16 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { styled } from '@mui/material/styles';
 import Navbar from '../components/Navbar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Link,
+} from '@mui/material';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
@@ -166,6 +177,7 @@ const AdminWelcomePage = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [imageViewer, setImageViewer] = useState({ open: false, images: [], initial: 0 });
+  const [pendingReceipts, setPendingReceipts] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -181,10 +193,12 @@ const AdminWelcomePage = () => {
       fetchPendingUsers();
     } else if (activeTab === 1) {
       fetchPendingCars();
+    } else if (activeTab === 2) {
+      fetchPendingReceipts();
     }
     // Add logic here to fetch data for other tabs when they are active
     // e.g., if (activeTab === 2) { fetchPendingBookings(); }
-  }, [navigate, activeTab]);
+  }, [activeTab]);
 
   // Add refresh interval
   useEffect(() => {
@@ -197,6 +211,10 @@ const AdminWelcomePage = () => {
       interval = setInterval(() => {
         fetchPendingCars();
       }, 30000); // Refresh every 30 seconds for car posting approvals
+    } else if (activeTab === 2) {
+      interval = setInterval(() => {
+        fetchPendingReceipts();
+      }, 30000); // Refresh every 30 seconds for booking approvals
     }
     // Add similar intervals for other tabs if needed
 
@@ -301,6 +319,20 @@ const AdminWelcomePage = () => {
     }
   };
 
+  const fetchPendingReceipts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${apiUrl}/api/receipts/admin/pending`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setPendingReceipts(response.data);
+    } catch (error) {
+      console.error('Error fetching pending receipts:', error);
+    }
+  };
+
   const handleApprove = async (userId) => {
     try {
       const token = localStorage.getItem('token');
@@ -382,6 +414,20 @@ const AdminWelcomePage = () => {
     }
   };
 
+  const handleReceiptApproval = async (id, status) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${apiUrl}/api/receipts/admin/${status}/${id}`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setPendingReceipts(pendingReceipts.filter(receipt => receipt._id !== id));
+    } catch (err) {
+      console.error(`Failed to ${status} receipt.`, err);
+    }
+  };
+
   const handleRejectCar = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -439,8 +485,8 @@ const AdminWelcomePage = () => {
             },
           }}>
             <Tab label="User Approvals" id="tab-0" aria-controls="tabpanel-0" />
-            <Tab label="Car Posting Approvals" id="tab-1" aria-controls="tabpanel-1" />
-            <Tab label="Booking Approvals" id="tab-2" aria-controls="tabpanel-2" />
+            <Tab label={`Pending Cars (${pendingCars.length})`} id="tab-1" aria-controls="tabpanel-1" />
+            <Tab label={`Booking Approvals (${pendingReceipts.length})`} id="tab-2" aria-controls="tabpanel-2" />
           </Tabs>
         </Box>
 
@@ -672,7 +718,68 @@ const AdminWelcomePage = () => {
             <Box>
               <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#334155', mb: 3 }}>Pending Booking Approvals</Typography>
               {/* Placeholder: Add logic and UI for booking approvals here */}
-              <Typography>Booking approval functionality will be implemented here.</Typography>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Renter</TableCell>
+                      <TableCell>Owner</TableCell>
+                      <TableCell>Car</TableCell>
+                      <TableCell>Receipt</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {pendingReceipts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center">
+                          No pending receipts found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      pendingReceipts.map((receipt) => (
+                        <TableRow key={receipt._id}>
+                          <TableCell>
+                            <Box display="flex" alignItems="center">
+                              <Avatar sx={{ mr: 2 }}>{`${receipt.user.firstName[0]}${receipt.user.lastName[0]}`}</Avatar>
+                              <Typography>{`${receipt.user.firstName} ${receipt.user.lastName}`}</Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Box display="flex" alignItems="center">
+                              <Avatar sx={{ mr: 2 }}>{`${receipt.owner.firstName[0]}${receipt.owner.lastName[0]}`}</Avatar>
+                              <Typography>{`${receipt.owner.firstName} ${receipt.owner.lastName}`}</Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>{receipt.booking.car.carName}</TableCell>
+                          <TableCell>
+                            <Link href={receipt.receiptImage} target="_blank" rel="noopener noreferrer">
+                              View Receipt
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            <ActionButton
+                              variant="contained"
+                              color="primary"
+                              onClick={() => handleReceiptApproval(receipt._id, 'approve')}
+                              sx={{ mr: 1 }}
+                            >
+                              Approve
+                            </ActionButton>
+                            <ActionButton
+                              variant="contained"
+                              color="secondary"
+                              onClick={() => handleReceiptApproval(receipt._id, 'reject')}
+                            >
+                              Reject
+                            </ActionButton>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Box>
           )}
         </Box>

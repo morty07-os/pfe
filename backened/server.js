@@ -20,6 +20,7 @@ import messageRoutes from "./routes/message.routes.js";
 import ratingRoutes from "./routes/rating.routes.js"; // Import rating routes
 import feedbackRoutes from "./routes/feedback.routes.js"; // Import feedback routes
 import adminRoutes from "./routes/admin.routes.js"; // Import admin routes
+import receiptRoutes from "./routes/receipt.routes.js"; // Import receipt routes
 
 
 // Load environment variables
@@ -158,6 +159,7 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/ratings", ratingRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/admin", adminRoutes); // Mount admin routes
+app.use("/api/receipts", receiptRoutes);
 
 // Add a simple root route for health check
 app.get('/', (req, res) => {

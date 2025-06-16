@@ -1,0 +1,108 @@
+import express from "express";
+import multer from "multer";
+import cloudinary from "cloudinary";
+import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
+import Receipt from "../models/receipt.model.js";
+import Booking from "../models/booking.model.js";
+
+const router = express.Router();
+
+// Configure multer for memory storage
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Route to upload a receipt
+router.post("/upload", ProtectedRoute(), upload.single("receiptImage"), async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+    const user = req.user.userId;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: "No receipt image uploaded." });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // Upload image to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.v2.uploader.upload_stream(
+        {
+          resource_type: "image",
+          upload_preset: "unsigned_preset",
+          folder: "receipts",
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(file.buffer);
+    });
+
+    const newReceipt = new Receipt({
+      booking: bookingId,
+      user,
+      owner: booking.owner,
+      receiptImage: result.secure_url,
+    });
+
+    await newReceipt.save();
+
+    res.status(201).json({ message: "Receipt uploaded successfully!", receipt: newReceipt });
+  } catch (error) {
+    console.error("Error uploading receipt:", error.message);
+    res.status(500).json({ error: "Failed to upload receipt.", details: error.message });
+  }
+});
+
+// Admin route to get all pending receipts
+router.get("/admin/pending", ProtectedRoute(), async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const receipts = await Receipt.find({ status: 'pending' }).populate('user', 'firstName lastName').populate('owner', 'firstName lastName').populate('booking');
+        res.status(200).json(receipts);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch pending receipts" });
+    }
+});
+
+// Admin route to approve a receipt
+router.put("/admin/approve/:id", ProtectedRoute(), async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const receipt = await Receipt.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true });
+        if (!receipt) {
+            return res.status(404).json({ error: "Receipt not found" });
+        }
+        res.status(200).json(receipt);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to approve receipt" });
+    }
+});
+
+// Admin route to reject a receipt
+router.put("/admin/reject/:id", ProtectedRoute(), async (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const receipt = await Receipt.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
+        if (!receipt) {
+            return res.status(404).json({ error: "Receipt not found" });
+        }
+        res.status(200).json(receipt);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to reject receipt" });
+    }
+});
+
+export default router;
