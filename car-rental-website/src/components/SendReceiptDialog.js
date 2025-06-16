@@ -16,9 +16,9 @@ import axios from 'axios';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
-const SendReceiptDialog = ({ open, onClose, bookingId: compositeBookingId }) => {
-  // The actual booking ID is the first part of the composite key
-  const bookingId = compositeBookingId ? compositeBookingId.split('-')[0] : null;
+const SendReceiptDialog = (props) => {
+  // Destructure props inside the component body for clarity
+  const { open, onClose, bookingId: compositeBookingId } = props;
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -59,10 +59,18 @@ const SendReceiptDialog = ({ open, onClose, bookingId: compositeBookingId }) => 
     setError(null);
     setSuccess(null);
 
+    // Forcefully parse the ID right before use to ensure correctness
+    const correctBookingId = compositeBookingId ? compositeBookingId.split('-')[0] : null;
+    if (!correctBookingId) {
+        setError('A valid booking ID is required.');
+        setLoading(false);
+        return;
+    }
+
     try {
       const cloudinaryFormData = new FormData();
       cloudinaryFormData.append('file', selectedFile);
-      cloudinaryFormData.append('upload_preset', 'unsigned_preset'); // Using the same preset as car images
+      cloudinaryFormData.append('upload_preset', 'unsigned_preset');
 
       const cloudinaryRes = await axios.post(
         'https://api.cloudinary.com/v1_1/dtob4ibrg/image/upload',
@@ -75,7 +83,7 @@ const SendReceiptDialog = ({ open, onClose, bookingId: compositeBookingId }) => 
       await axios.post(
         `${apiUrl}/api/receipts/upload`,
         {
-          bookingId: bookingId,
+          bookingId: correctBookingId, // Use the newly parsed ID
           receiptImage: receiptImageUrl,
         },
         {
