@@ -2,7 +2,7 @@ import express from "express";
 
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Receipt from "../models/receipt.model.js";
-import Booking from "../models/booking.model.js";
+import Booking from "../models/booking.models.js";
 
 const router = express.Router();
 
