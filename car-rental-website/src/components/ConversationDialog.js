@@ -28,6 +28,7 @@ import ImageIcon from '@mui/icons-material/Image';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import StarIcon from '@mui/icons-material/Star';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import FeedbackDialog from './FeedbackDialog';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
@@ -54,6 +55,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
   const [hasFeedback, setHasFeedback] = useState(false);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [ownerName, setOwnerName] = useState('');
+  const [receiptSent, setReceiptSent] = useState(false);
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -593,6 +595,36 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
       return message.sender === currentUserId;
     }
     return false;
+  };
+
+  const handleSendReceipt = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${apiUrl}/api/admin/send-receipt`,
+        {
+          carId,
+          userId: isCarOwner ? userId : currentUserId,
+          ownerId: isCarOwner ? currentUserId : carOwnerId,
+          carName,
+          conversationId
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setReceiptSent(true);
+        alert('Receipt has been sent to admin successfully!');
+      }
+    } catch (error) {
+      console.error('Error sending receipt:', error);
+      alert('Failed to send receipt. Please try again.');
+    }
   };
 
   return (
@@ -1166,6 +1198,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
                   <Box sx={{ 
                     display: 'flex', 
                     justifyContent: 'center', 
+                    gap: 2,
                     mt: 2,
                     mb: 0.5
                   }}>
@@ -1217,6 +1250,45 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
                         }}
                       >
                         {isCarOwner ? 'Rate the Renter' : 'Rate Car & Owner'}
+                      </Button>
+                    )}
+                    
+                    {receiptSent ? (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        bgcolor: 'rgba(0, 0, 0, 0.05)',
+                        px: 2,
+                        py: 1,
+                        borderRadius: 2
+                      }}>
+                        <CheckCircleIcon sx={{ color: 'success.main', mr: 1, fontSize: 20 }} />
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          Receipt sent to admin
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        startIcon={<ReceiptIcon />}
+                        onClick={handleSendReceipt}
+                        sx={{
+                          borderRadius: 2,
+                          py: 1.2,
+                          px: 3,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          bgcolor: '#2ecc71',
+                          '&:hover': {
+                            bgcolor: '#27ae60',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
+                          },
+                          transition: 'all 0.3s ease',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        }}
+                      >
+                        Send Receipt to Admin
                       </Button>
                     )}
                   </Box>
