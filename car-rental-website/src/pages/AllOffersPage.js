@@ -2,7 +2,6 @@ import React, { useEffect, useState, useContext, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
 import QuickSearch from '../components/QuickSearch';
-import dayjs from 'dayjs';
 import {
   Box,
   Grid,
@@ -41,6 +40,7 @@ import AirlineSeatReclineNormalIcon from '@mui/icons-material/AirlineSeatRecline
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import PersonIcon from '@mui/icons-material/Person';
 import { useLocation } from 'react-router-dom';
+import dayjs from 'dayjs';
 import SidebarFilters from './SidebarFilters';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
@@ -102,21 +102,190 @@ const popularLocations = {
 
 // Car features for displaying in offer cards
 const carFeatures = [
-  { id: 'airConditioning', label: 'Air Conditioning' },
-  { id: 'bluetooth', label: 'Bluetooth' },
-  { id: 'cruiseControl', label: 'Cruise Control' },
-  { id: 'parkingSensors', label: 'Parking Sensors' },
-  { id: 'reverseCam', label: 'Reverse Camera' },
-  { id: 'usb', label: 'USB Port' },
-  { id: 'auxInput', label: 'AUX Input' },
-  { id: 'leatherSeats', label: 'Leather Seats' },
-  { id: 'heatedSeats', label: 'Heated Seats' },
-  { id: 'sunroof', label: 'Sunroof' },
-  { id: 'navigation', label: 'Navigation' },
-  { id: 'keylessEntry', label: 'Keyless Entry' },
-  { id: 'alloyWheels', label: 'Alloy Wheels' },
-  { id: 'childSeat', label: 'Child Seat' },
-  { id: 'airbags', label: 'Airbags' }
+  {
+    id: "airConditioning",
+    label: "Air Conditioning",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M12 4V20M4 12H20M7 7L17 17M7 17L17 7"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "bluetooth",
+    label: "Bluetooth",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M6 8L18 16L12 22V2L18 8L6 16"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "cruiseControl",
+    label: "Cruise Control",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 4V8M12 12V16M4 12H8M16 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  {
+    id: "parkingSensors",
+    label: "Parking Sensors",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 8V16M8 4H16M20 8V16M8 20H16M9 12H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "reverseCam",
+    label: "Reverse Camera",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="8" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+        <path
+          d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path d="M7 8L9 4H15L17 8" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  {
+    id: "usb",
+    label: "USB Port",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 10V2M12 22V16M8 6H16M8 18H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <rect x="8" y="10" width="8" height="6" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  {
+    id: "auxInput",
+    label: "AUX Input",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 12H7M17 12H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" />
+        <path d="M10 16L14 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "leatherSeats",
+    label: "Leather Seats",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 12V19H19V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M5 8V5H19V8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path
+          d="M5 8C5 10.2091 8.13401 12 12 12C15.866 12 19 10.2091 19 8"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "heatedSeats",
+    label: "Heated Seats",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 12V19H19V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M12 5V9M9 6L15 8M9 8L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "sunroof",
+    label: "Sunroof",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="8" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+        <path
+          d="M8 8V6C8 4.89543 9.79086 4 12 4C14.2091 4 16 4.89543 16 6V8"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "navigation",
+    label: "Navigation",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
+        <path d="M12 4V12L16 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "keylessEntry",
+    label: "Keyless Entry",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="15" r="4" stroke="currentColor" strokeWidth="2" />
+        <path
+          d="M12 15H19V10L16 7H12"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "alloyWheels",
+    label: "Alloy Wheels",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
+        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+        <path
+          d="M12 4V9M12 15V20M4 12H9M15 12H20"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "childSeat",
+    label: "Child Seat",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="7" r="3" stroke="currentColor" strokeWidth="2" />
+        <path d="M8 14H16L17 20H7L8 14Z" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  {
+    id: "airbags",
+    label: "Airbags",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
+        <path d="M12 8V16M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ];
 
 function formatDateDMY(dateStr) {
@@ -184,7 +353,6 @@ export default function AllOffersPage() {
   // Extract parameters from query parameters
   const queryParams = React.useMemo(() => new URLSearchParams(locationObj.search), [locationObj.search]);
   const categoryFilter = queryParams.get('category');
-const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
   const startDate = queryParams.get('startDate');
   const endDate = queryParams.get('endDate');
   const wilayaParam = queryParams.get('wilaya');
@@ -202,17 +370,13 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
       newFilters.availableTo = endDate;
     }
     
-    // Set carType if exists in URL
-    if (categoryFilter) {
-      newFilters.carType = categoryFilter;
-    }
     // Set wilaya if it exists in URL
     if (wilayaParam) {
       newFilters.wilaya = wilayaParam;
     }
     
     // Only update if we have new filters to add
-    if (startDate || endDate || wilayaParam || categoryFilter) {
+    if (startDate || endDate || wilayaParam) {
       setSidebarFilters(newFilters);
     }
   }, [locationObj.search]); // Only run when URL changes
@@ -225,7 +389,7 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
           energy: sidebarFilters.energy || '',
           transmission: sidebarFilters.transmission || '',
           wilaya: sidebarFilters.wilaya || '',
-          carType: sidebarFilters.carType || categoryFilter || '',
+          carType: sidebarFilters.carType || '',
           seats: sidebarFilters.seats || '',
           doors: sidebarFilters.doors || '',
           priceMin: sidebarFilters.priceRange ? sidebarFilters.priceRange[0] : '',
@@ -311,11 +475,64 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
   }, [sidebarFilters, search]);
 
   const filteredOffers = React.useMemo(() => {
-    // All filtering is now handled by the backend.
-    // We just return the offers received from the API.
-    // A simple check for owner can remain for data integrity.
-    return offers.filter(offer => offer.owner);
-  }, [offers]);
+    let tempOffers = [...offers];
+
+    // Filter out cars without an owner
+    tempOffers = tempOffers.filter(offer => offer.owner);
+
+    // Apply category filter from URL query param first
+    if (categoryFilter) {
+      tempOffers = tempOffers.filter(offer =>
+        offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase()
+      );
+    }
+
+    // Apply search term filter (now handled by backend, but keep as fallback)
+    if (search) {
+      tempOffers = tempOffers.filter(offer =>
+        offer.brand?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.carName?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.description?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.wilaya?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.carType?.toLowerCase().includes(search.toLowerCase()) ||
+        offer.engine?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Apply sidebar filters
+    tempOffers = tempOffers.filter(offer => {
+      // Basic filters
+      const basicFiltersMatch = 
+        (!sidebarFilters.brand || offer.brand === sidebarFilters.brand) &&
+        (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
+        (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
+        (!sidebarFilters.wilaya || (offer.wilaya && offer.wilaya.toLowerCase() === sidebarFilters.wilaya.toLowerCase())) &&
+        (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) &&
+        (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
+        (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
+        (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1]));
+      
+      // Availability filter
+      let availabilityMatch = true;
+      if (sidebarFilters.availableFrom || sidebarFilters.availableTo) {
+        // Get car availability dates
+        const carFrom = offer.availabilityStart || offer.availableFrom;
+        const carTo = offer.availabilityEnd || offer.availableTo;
+        
+        // Check if car is available during the selected period
+        availabilityMatch = isDateRangeOverlap(
+          carFrom, 
+          carTo, 
+          sidebarFilters.availableFrom, 
+          sidebarFilters.availableTo
+        );
+      }
+      
+      return basicFiltersMatch && availabilityMatch;
+    });
+
+    return tempOffers;
+  }, [offers, search, sidebarFilters, categoryFilter]);
 
   function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
     // If car doesn't have availability dates, it can't match
@@ -437,7 +654,7 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
       }}>
         <Box sx={{ 
           position: 'relative', 
-          top: -40, 
+          top: -20, 
           zIndex: 1100,
           width: '100%',
           display: 'flex',
@@ -460,7 +677,7 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
               maxWidth: '1200px',
               width: '100%',
               mx: 'auto',
-              transform: 'translateY(-45px)',
+              transform: 'translateY(-25px)',
               position: 'relative',
               '&::before': {
               content: '""',
@@ -639,22 +856,21 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                       position: 'absolute',
                       top: 0,
                       left: 0,
-                      right: 0,
-                      bottom: 0,
-                      borderRadius: '16px',
-                      boxShadow: [
-                        '0 10px 15px -3px rgba(15, 23, 42, 0.08)',
-                        '0 4px 6px -2px rgba(15, 23, 42, 0.05)',
-                        '0 25px 50px -12px rgba(15, 23, 42, 0.25)'
-                      ].join(', '),
-                      zIndex: -1
+                      width: '100%',
+                      height: '4px',
+                      background: 'linear-gradient(90deg, #475569, #64748b)',
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease',
+                    },
+                    '&:focus-within::before': {
+                      opacity: 1
                     },
                     '&::after': {
                       content: '""',
                       position: 'absolute',
-                      bottom: 6,
-                      left: '5%',
-                      right: '5%',
+                      bottom: 0,
+                      left: '10%',
+                      right: '10%',
                       bottom: 0,
                       borderRadius: '16px',
                       boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.18)',
@@ -792,11 +1008,10 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                       <Chip
                         key={key}
                         icon={getFilterIcon(key)}
-                        label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, sidebarFilters[key])}`}
+                        label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, value)}`}
                         onDelete={() => handleRemoveFilter(key)}
                         size="small"
                         sx={{
-                          textTransform: 'uppercase',
                           bgcolor: '#fff',
                           border: '1px solid #cbd5e1',
                           color: '#455a64',
@@ -850,7 +1065,8 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                       boxShadow: '0 15px 30px rgba(15, 23, 42, 0.1)',
                       position: 'relative',
                       overflow: 'hidden',
-                      transition: 'all 0.4s ease',
+                      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      zIndex: 1,
                       '&:hover': {
                         boxShadow: '0 20px 40px rgba(15, 23, 42, 0.15)',
                         transform: 'translateY(-5px)'
@@ -960,9 +1176,9 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                           content: '""',
                           position: 'absolute',
                           bottom: -8,
-                          left: 0,
-                          width: '30px',
-                          height: '2px',
+                          left: '30%',
+                          width: '40%',
+                          height: 2,
                           background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.5), transparent)',
                           borderRadius: 2
                         }
@@ -1241,17 +1457,17 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                                 '&::before': {
                                   content: '""',
                                   position: 'absolute',
-                                  top: -3,
-                                  left: -3,
-                                  right: -3,
-                                  bottom: -3,
-                                  borderRadius: '50%',
-                                  background: 'linear-gradient(135deg, rgba(203, 213, 225, 0.5), rgba(148, 163, 184, 0.2))',
-                                  zIndex: -1,
-                                  opacity: 0.5
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                  background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                                  transform: 'translateX(-100%)',
+                                  transition: 'transform 0.6s',
+                                  zIndex: 1
                                 },
                                 '&:hover::before': {
-                                  transform: 'translateZ(0)'
+                                  transform: 'translateX(100%)'
                                 }
                               }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 2 }}>
@@ -1630,7 +1846,7 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                             }}>
                               <Chip
                                 icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
-                                label={`From: ${dayjs(offer.availabilityStart || offer.availableFrom).format('DD-MM-YYYY HH:mm')}`}
+                                label={`From: ${formatDateDMY(offer.availabilityStart || offer.availableFrom)}`}
                                 size="small"
                                 sx={{
                                   bgcolor: 'rgba(226, 232, 240, 0.5)',
@@ -1647,7 +1863,7 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                               />
                               <Chip
                                 icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
-                                label={`To: ${dayjs(offer.availabilityEnd || offer.availableTo).format('DD-MM-YYYY HH:mm')}`}
+                                label={`To: ${formatDateDMY(offer.availabilityEnd || offer.availableTo)}`}
                                 size="small"
                                 sx={{
                                   bgcolor: 'rgba(226, 232, 240, 0.5)',
@@ -1675,7 +1891,7 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                                   gap: 0.5
                                 }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M6 10h12M6 6h12M6 14h12M6 18h12" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+                                    <path d="M6 18h12" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
                                   </svg>
                                   Features
                                 </Typography>
@@ -1686,6 +1902,35 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                                   maxWidth: '100%'
                                 }}>
                                   {/* Feature chips would go here */}
+                                  {carFeatures.map((feature) => {
+                                    if (offer.features && offer.features[feature.id]) {
+                                      return (
+                                        <Chip
+                                          key={feature.id}
+                                          icon={React.cloneElement(feature.icon, { sx: { color: '#475569', fontSize: '0.8rem' } })}
+                                          label={feature.label}
+                                          size="small"
+                                          sx={{
+                                            bgcolor: 'white',
+                                            color: '#334155',
+                                            fontWeight: 600,
+                                            fontSize: '0.7rem',
+                                            borderRadius: 0.75,
+                                            border: '1px solid rgba(203, 213, 225, 0.3)',
+                                            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
+                                            height: 24,
+                                            '& .MuiChip-label': { px: 0.6 },
+                                            '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
+                                            '&:hover': {
+                                              boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                                              bgcolor: '#f8fafc'
+                                            }
+                                          }}
+                                        />
+                                      );
+                                    }
+                                    return null;
+                                  })}
                                 </Box>
                               </Box>
                             )}
@@ -1748,7 +1993,7 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                   background: 'linear-gradient(135deg, #334155, #1e293b)',
                   opacity: 0.2,
                   filter: 'blur(20px)',
-                  transform: 'translateZ(0)', // Force GPU acceleration
+                  transform: 'translateZ(0)',
                   zIndex: 0
                 }} />
                 
@@ -1802,19 +2047,7 @@ const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
                         color: '#475569', 
                         fontWeight: 600,
                         fontSize: '0.9rem',
-                        letterSpacing: '0.2px',
-                        position: 'relative',
-                        textShadow: '0 1px 1px rgba(15, 23, 42, 0.05)',
-                        '&::after': {
-                          content: '""',
-                          position: 'absolute',
-                          bottom: -2,
-                          left: 0,
-                          width: '30px',
-                          height: '2px',
-                          background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.5), transparent)',
-                          borderRadius: 2
-                        }
+                        letterSpacing: '0.2px'
                       }}>
                         Showing <Box component="span" sx={{ fontWeight: 700, color: '#334155' }}>
                           {page * rowsPerPage + 1}-{Math.min(filteredOffers.length, (page + 1) * rowsPerPage)}
