@@ -16,6 +16,7 @@ import {
   DialogTitle,
   Paper,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CloseIcon from "@mui/icons-material/Close";
@@ -686,6 +687,8 @@ function PostCarDialog({ open, onClose }) {
     severity: "success",
   });
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
+  const [features, setFeatures] = useState([]);
+  const [featureInput, setFeatureInput] = useState("");
 
   useEffect(() => {
     if (!token && open) {
@@ -951,6 +954,8 @@ function PostCarDialog({ open, onClose }) {
         dataToSend.append("documentationImages", imageFile);
       });
 
+      dataToSend.append("features", JSON.stringify(features));
+
       const apiUrl = process.env.REACT_APP_API_URL || "https://pfe-uhbw.onrender.com";
       const response = await fetch(`${apiUrl}/api/cars/addcars`, {
         method: "POST",
@@ -983,6 +988,24 @@ function PostCarDialog({ open, onClose }) {
 
   const handleSnackbarClose = () => {
     setSnackbar({ open: false, message: "", severity: "success" });
+  };
+
+  const handleAddFeature = () => {
+    if (featureInput.trim() && !features.includes(featureInput.trim())) {
+      setFeatures([...features, featureInput.trim()]);
+      setFeatureInput("");
+    }
+  };
+
+  const handleRemoveFeature = (featureToRemove) => {
+    setFeatures(features.filter(feature => feature !== featureToRemove));
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddFeature();
+    }
   };
 
   return (
@@ -2062,6 +2085,40 @@ function PostCarDialog({ open, onClose }) {
                         {feature.label}
                       </Typography>
                     </Box>
+                  ))}
+                </Box>
+              </Box>
+              {/* Add Features Section */}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Car Features
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="Add Feature"
+                    value={featureInput}
+                    onChange={(e) => setFeatureInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    size="small"
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={handleAddFeature}
+                    disabled={!featureInput.trim()}
+                  >
+                    Add
+                  </Button>
+                </Box>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {features.map((feature, index) => (
+                    <Chip
+                      key={index}
+                      label={feature}
+                      onDelete={() => handleRemoveFeature(feature)}
+                      color="primary"
+                      variant="outlined"
+                    />
                   ))}
                 </Box>
               </Box>

@@ -469,6 +469,39 @@ export default function AllOffersPage() {
   const activeFilterCount = getActiveFilterCount();
   const hasActiveFilters = activeFilterCount > 0;
 
+  const renderCarCard = (car) => {
+    return (
+      <Card key={car._id} sx={{ maxWidth: 345, height: "100%" }}>
+        {/* ... existing card content ... */}
+        <CardContent>
+          {/* ... existing content ... */}
+          
+          {/* Add Features Section */}
+          {car.features && car.features.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Features:
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {car.features.map((feature, index) => (
+                  <Chip
+                    key={index}
+                    label={feature}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+          
+          {/* ... rest of existing content ... */}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <React.Fragment>
       <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
