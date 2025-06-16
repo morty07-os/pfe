@@ -12,7 +12,7 @@ const router = express.Router();
 router.post("/upload", ProtectedRoute(), async (req, res) => {
   try {
     const { bookingId, receiptImage } = req.body;
-    const user = req.user.userId;
+    const user = req.user.id;
 
     if (!receiptImage) {
       return res.status(400).json({ error: "No receipt image URL provided." });
@@ -34,7 +34,7 @@ router.post("/upload", ProtectedRoute(), async (req, res) => {
 
     res.status(201).json({ message: "Receipt uploaded successfully!", receipt: newReceipt });
   } catch (error) {
-    console.error("Error uploading receipt:", error.message);
+    console.error("Error uploading receipt:", error);
     res.status(500).json({ error: "Failed to upload receipt.", details: error.message });
   }
 });
