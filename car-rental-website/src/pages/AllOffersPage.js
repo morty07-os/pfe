@@ -102,190 +102,21 @@ const popularLocations = {
 
 // Car features for displaying in offer cards
 const carFeatures = [
-  {
-    id: "airConditioning",
-    label: "Air Conditioning",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M12 4V20M4 12H20M7 7L17 17M7 17L17 7"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "bluetooth",
-    label: "Bluetooth",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M6 8L18 16L12 22V2L18 8L6 16"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "cruiseControl",
-    label: "Cruise Control",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 4V8M12 12V16M4 12H8M16 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-      </svg>
-    ),
-  },
-  {
-    id: "parkingSensors",
-    label: "Parking Sensors",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 8V16M8 4H16M20 8V16M8 20H16M9 12H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    id: "reverseCam",
-    label: "Reverse Camera",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="8" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-        <path
-          d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <path d="M7 8L9 4H15L17 8" stroke="currentColor" strokeWidth="2" />
-      </svg>
-    ),
-  },
-  {
-    id: "usb",
-    label: "USB Port",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 10V2M12 22V16M8 6H16M8 18H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <rect x="8" y="10" width="8" height="6" stroke="currentColor" strokeWidth="2" />
-      </svg>
-    ),
-  },
-  {
-    id: "auxInput",
-    label: "AUX Input",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 12H7M17 12H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" />
-        <path d="M10 16L14 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    id: "leatherSeats",
-    label: "Leather Seats",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M5 12V19H19V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <path d="M5 8V5H19V8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <path
-          d="M5 8C5 10.2091 8.13401 12 12 12C15.866 12 19 10.2091 19 8"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "heatedSeats",
-    label: "Heated Seats",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M5 12V19H19V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <path d="M12 5V9M9 6L15 8M9 8L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    id: "sunroof",
-    label: "Sunroof",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="8" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-        <path
-          d="M8 8V6C8 4.89543 9.79086 4 12 4C14.2091 4 16 4.89543 16 6V8"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "navigation",
-    label: "Navigation",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
-        <path d="M12 4V12L16 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    id: "keylessEntry",
-    label: "Keyless Entry",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="8" cy="15" r="4" stroke="currentColor" strokeWidth="2" />
-        <path
-          d="M12 15H19V10L16 7H12"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "alloyWheels",
-    label: "Alloy Wheels",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
-        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-        <path
-          d="M12 4V9M12 15V20M4 12H9M15 12H20"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "childSeat",
-    label: "Child Seat",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="7" r="3" stroke="currentColor" strokeWidth="2" />
-        <path d="M8 14H16L17 20H7L8 14Z" stroke="currentColor" strokeWidth="2" />
-      </svg>
-    ),
-  },
-  {
-    id: "airbags",
-    label: "Airbags",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
-        <path d="M12 8V16M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
+  { id: 'airConditioning', label: 'Air Conditioning' },
+  { id: 'bluetooth', label: 'Bluetooth' },
+  { id: 'cruiseControl', label: 'Cruise Control' },
+  { id: 'parkingSensors', label: 'Parking Sensors' },
+  { id: 'reverseCam', label: 'Reverse Camera' },
+  { id: 'usb', label: 'USB Port' },
+  { id: 'auxInput', label: 'AUX Input' },
+  { id: 'leatherSeats', label: 'Leather Seats' },
+  { id: 'heatedSeats', label: 'Heated Seats' },
+  { id: 'sunroof', label: 'Sunroof' },
+  { id: 'navigation', label: 'Navigation' },
+  { id: 'keylessEntry', label: 'Keyless Entry' },
+  { id: 'alloyWheels', label: 'Alloy Wheels' },
+  { id: 'childSeat', label: 'Child Seat' },
+  { id: 'airbags', label: 'Airbags' }
 ];
 
 function formatDateDMY(dateStr) {
@@ -1891,7 +1722,7 @@ export default function AllOffersPage() {
                                   gap: 0.5
                                 }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M6 18h12" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+                                    <path d="M6 10h12M6 6h12M6 14h12M6 18h12" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
                                   </svg>
                                   Features
                                 </Typography>
@@ -1902,35 +1733,6 @@ export default function AllOffersPage() {
                                   maxWidth: '100%'
                                 }}>
                                   {/* Feature chips would go here */}
-                                  {carFeatures.map((feature) => {
-                                    if (offer.features && offer.features[feature.id]) {
-                                      return (
-                                        <Chip
-                                          key={feature.id}
-                                          icon={React.cloneElement(feature.icon, { sx: { color: '#475569', fontSize: '0.8rem' } })}
-                                          label={feature.label}
-                                          size="small"
-                                          sx={{
-                                            bgcolor: 'white',
-                                            color: '#334155',
-                                            fontWeight: 600,
-                                            fontSize: '0.7rem',
-                                            borderRadius: 0.75,
-                                            border: '1px solid rgba(203, 213, 225, 0.3)',
-                                            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
-                                            height: 24,
-                                            '& .MuiChip-label': { px: 0.6 },
-                                            '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
-                                            '&:hover': {
-                                              boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
-                                              bgcolor: '#f8fafc'
-                                            }
-                                          }}
-                                        />
-                                      );
-                                    }
-                                    return null;
-                                  })}
                                 </Box>
                               </Box>
                             )}

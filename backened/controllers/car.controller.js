@@ -30,21 +30,9 @@ export const createCar = async (req, res) => {
       imageUrl = uploadResult.secure_url;
     }
 
-    // Parse features from JSON string if present
-    let features = {};
-    if (req.body.features) {
-      try {
-        features = JSON.parse(req.body.features);
-      } catch (error) {
-        console.error("Error parsing features JSON:", error.message);
-        return res.status(400).json({ message: "Invalid features data format." });
-      }
-    }
-
     const newCar = new Car({
       ...req.body,
       images: imageUrl ? [imageUrl] : [],
-      features: features, // Assign parsed features
     });
     const savedCar = await newCar.save();
     res.status(201).json(savedCar);
@@ -105,17 +93,6 @@ export const updateCar = async (req, res) => {
     const updateData = {
       ...req.body,
     };
-
-    // Parse features from JSON string if present
-    if (req.body.features) {
-      try {
-        updateData.features = JSON.parse(req.body.features);
-      } catch (error) {
-        console.error("Error parsing features JSON:", error.message);
-        return res.status(400).json({ message: "Invalid features data format." });
-      }
-    }
-
     if (imageUrl) updateData.images = [imageUrl];
 
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, updateData, {

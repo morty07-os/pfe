@@ -130,10 +130,6 @@ const carSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    features: {
-      type: Object, // Store features as a key-value pair object (e.g., { airConditioning: true, bluetooth: false })
-      default: {}, // Default to an empty object if no features are provided
-    },
   },
   { timestamps: true }
 );
