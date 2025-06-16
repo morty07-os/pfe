@@ -14,14 +14,19 @@ router.post("/upload", ProtectedRoute(), async (req, res) => {
     const { bookingId, receiptImage } = req.body;
     const user = req.user.id;
 
+    console.log(`[Receipt Upload] Received request. Attempting to find booking with ID: ${bookingId}`);
+
     if (!receiptImage) {
       return res.status(400).json({ error: "No receipt image URL provided." });
     }
 
     const booking = await Booking.findById(bookingId);
     if (!booking) {
+      console.error(`[Receipt Upload] FAILED: Booking not found for ID: ${bookingId}`);
       return res.status(404).json({ error: "Booking not found" });
     }
+
+    console.log(`[Receipt Upload] SUCCESS: Found booking for ID: ${bookingId}`);
 
     const newReceipt = new Receipt({
       booking: bookingId,
@@ -34,6 +39,10 @@ router.post("/upload", ProtectedRoute(), async (req, res) => {
 
     res.status(201).json({ message: "Receipt uploaded successfully!", receipt: newReceipt });
   } catch (error) {
+    // Log the original CastError for debugging if it happens again
+    if (error.name === 'CastError') {
+      console.error('[Receipt Upload] A CastError occurred. The provided bookingId is likely invalid:', bookingId);
+    }
     console.error("Error uploading receipt:", error);
     res.status(500).json({ error: "Failed to upload receipt.", details: error.message });
   }
