@@ -250,7 +250,52 @@ const AdminWelcomePage = () => {
       }
 
       const data = await response.json();
-      setPendingCars(data);
+      
+      // Fetch owner ratings for each car
+      const carsWithRatings = await Promise.all(data.map(async (car) => {
+        let ownerId = null;
+        if (car.owner) {
+          ownerId = typeof car.owner === 'string' ? car.owner : car.owner._id;
+        }
+
+        if (ownerId) {
+          try {
+            const ownerRatingsResponse = await fetch(
+              `${apiUrl}/api/ratings/average/user/${ownerId}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+
+            if (ownerRatingsResponse.ok) {
+              const ratingsData = await ownerRatingsResponse.json();
+              return {
+                ...car,
+                ownerRating: ratingsData.averageRating || 0,
+                ownerReviews: ratingsData.totalRatings || 0
+              };
+            }
+          } catch (ratingsError) {
+            console.error('Error fetching owner ratings:', ratingsError);
+            // Continue without ratings if there's an error
+            return {
+              ...car,
+              ownerRating: 0,
+              ownerReviews: 0
+            };
+          }
+        }
+        return {
+          ...car,
+          ownerRating: 0,
+          ownerReviews: 0
+        };
+      }));
+
+      setPendingCars(carsWithRatings);
     } catch (error) {
       setError(error.message);
     }
@@ -458,7 +503,16 @@ const AdminWelcomePage = () => {
                   {pendingCars.map((car) => (
                     <CardStyled key={car._id}>
                       <CardHeader
-                        title={`${car.manufacturer} ${car.model} (${car.year})`}
+                        title={(() => {
+                          const manufacturer = car.manufacturer || '';
+                          const model = car.model || '';
+                          const year = car.year ? `(${car.year})` : '';
+                          if (manufacturer || model || year) {
+                            return `${manufacturer} ${model} ${year}`.trim();
+                          } else {
+                            return 'Car Details';
+                          }
+                        })()}
                         subheader={`Owner: ${typeof car.ownerName==='object' ? `${car.ownerName.firstName} ${car.ownerName.lastName}` : car.ownerName} | Category: ${car.category}`}
                         sx={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}
                       />
