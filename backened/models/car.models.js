@@ -130,6 +130,11 @@ const carSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    features: {
+      type: Map,
+      of: Boolean, // Values in the map will be booleans
+      default: {},
+    },
   },
   { timestamps: true }
 );

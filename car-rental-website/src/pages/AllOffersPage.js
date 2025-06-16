@@ -1732,7 +1732,30 @@ export default function AllOffersPage() {
                                   gap: 0.75,
                                   maxWidth: '100%'
                                 }}>
-                                  {/* Feature chips would go here */}
+                                  {carFeatures.map((feature) => (
+                                    offer.features?.[feature.id] && (
+                                      <Chip
+                                        key={feature.id}
+                                        label={feature.label}
+                                        size="small"
+                                        sx={{
+                                          bgcolor: 'white',
+                                          color: '#334155',
+                                          fontWeight: 600,
+                                          fontSize: '0.7rem',
+                                          borderRadius: 0.75,
+                                          border: '1px solid rgba(203, 213, 225, 0.3)',
+                                          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
+                                          height: 24,
+                                          '& .MuiChip-label': { px: 0.6 },
+                                          '&:hover': {
+                                            boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
+                                            bgcolor: '#f8fafc'
+                                          }
+                                        }}
+                                      />
+                                    )
+                                  ))}
                                 </Box>
                               </Box>
                             )}

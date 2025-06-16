@@ -951,6 +951,9 @@ function PostCarDialog({ open, onClose }) {
         dataToSend.append("documentationImages", imageFile);
       });
 
+      // Append features as a JSON string
+      dataToSend.append("features", JSON.stringify(formData.features));
+
       const apiUrl = process.env.REACT_APP_API_URL || "https://pfe-uhbw.onrender.com";
       const response = await fetch(`${apiUrl}/api/cars/addcars`, {
         method: "POST",
