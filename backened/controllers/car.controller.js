@@ -41,9 +41,11 @@ export const createCar = async (req, res) => {
 
     // Parse features from JSON string if present, otherwise default to an empty object
     let features = {};
+    console.log("Raw req.body.features for createCar:", req.body.features);
     if (req.body.features) {
       try {
         features = JSON.parse(req.body.features);
+        console.log("Parsed features for createCar:", features);
       } catch (e) {
         console.error("Failed to parse features JSON:", e);
         features = {};
@@ -105,9 +107,11 @@ export const updateCar = async (req, res) => {
     }
 
     // Parse features from JSON string if present
+    console.log("Raw req.body.features for updateCar:", req.body.features);
     if (req.body.features) {
       try {
         updateData.features = JSON.parse(req.body.features);
+        console.log("Parsed features for updateCar:", updateData.features);
       } catch (e) {
         console.error("Failed to parse features JSON for update:", e);
         // Keep existing features or handle error as appropriate

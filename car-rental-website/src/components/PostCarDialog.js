@@ -465,7 +465,7 @@ const energies = ["Essence", "Diesel", "Hybrid", "Electric"];
 const transmissions = ["Manual", "Automatic"];
 const carTypes = ["SUV", "VAN", "STATIONWAGON", "CITADINE", "SEDAN"];
 
-const carFeatures = [
+export const carFeatures = [
   {
     id: "airConditioning",
     label: "Air Conditioning",
