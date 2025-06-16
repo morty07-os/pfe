@@ -334,89 +334,42 @@ const AdminWelcomePage = () => {
   };
 
   const handleApprove = async (userId) => {
+    setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/admin/approve-user/${userId}`, {
-        method: 'POST',
+      await axios.put(`${apiUrl}/api/users/admin/approve/${userId}`, {}, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
+          Authorization: `Bearer ${token}`
+        }
       });
-
-      if (response.ok) {
-        setPendingUsers(current => current.filter(user => user._id !== userId));
-        setError('User approved successfully');
-        setErrorType('success');
-        
-        fetchPendingUsers();
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to approve user');
-        setErrorType('error');
-      }
-    } catch (error) {
-      setError('Failed to approve user');
-      setErrorType('error');
+      setPendingUsers(pendingUsers.filter(user => user._id !== userId));
+    } catch (err) {
+      console.error('Failed to approve user.', err);
+      setError('Failed to approve user. Please try again.');
     }
   };
 
   const handleApproveCar = async (carId) => {
+    setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/cars/approve/${carId}`, {
-        method: 'POST',
+      await axios.put(`${apiUrl}/api/cars/admin/cars/${carId}/status`, { status: 'accepted' }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to approve car');
-      }
-
-      setPendingCars(current => current.filter(car => car._id !== carId));
-      setError('Car approved successfully');
-      setErrorType('success');
-    } catch (error) {
-      setError(error.message);
-      setErrorType('error');
-    }
-  };
-
-  const handleReject = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/admin/reject-user/${rejectDialog.userId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ reason: rejectionReason })
-      });
-      if (response.ok) {
-        // Remove the rejected user from the local state
-        setPendingUsers(current => current.filter(user => user._id !== rejectDialog.userId));
-        setRejectDialog({ open: false, userId: null });
-        setRejectionReason('');
-        // Show success message
-        setError('User rejected successfully');
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to reject user');
-      }
-    } catch (error) {
-      setError('Failed to reject user');
+      setPendingCars(pendingCars.filter(car => car._id !== carId));
+    } catch (err) {
+      console.error('Failed to approve car.', err);
+      setError('Failed to approve car. Please try again.');
     }
   };
 
   const handleReceiptApproval = async (id, status) => {
+    setError(null);
     try {
       const token = localStorage.getItem('token');
+      // Use the correct endpoint for approving or rejecting a receipt
       await axios.put(`${apiUrl}/api/receipts/admin/${status}/${id}`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -425,33 +378,50 @@ const AdminWelcomePage = () => {
       setPendingReceipts(pendingReceipts.filter(receipt => receipt._id !== id));
     } catch (err) {
       console.error(`Failed to ${status} receipt.`, err);
+      setError(`Failed to ${status} receipt. Please try again.`);
+    }
+  };
+
+  const handleReject = async () => {
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${apiUrl}/api/users/admin/reject/${rejectDialog.userId}`, 
+        { rejectionReason }, 
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      setPendingUsers(pendingUsers.filter(user => user._id !== rejectDialog.userId));
+      setRejectDialog({ open: false, userId: null });
+      setRejectionReason('');
+    } catch (err) {
+      console.error('Failed to reject user.', err);
+      setError('Failed to reject user. Please try again.');
     }
   };
 
   const handleRejectCar = async () => {
+    setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/cars/reject/${carRejectDialog.carId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reason: rejectionReason })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to reject car');
-      }
-
-      setPendingCars(current => current.filter(car => car._id !== carRejectDialog.carId));
+      // Correct the URL to use the status endpoint and include status in the body
+      await axios.put(`${apiUrl}/api/cars/admin/cars/${carRejectDialog.carId}/status`, 
+        { status: 'rejected', rejectionReason }, 
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      setPendingCars(pendingCars.filter(car => car._id !== carRejectDialog.carId));
       setCarRejectDialog({ open: false, carId: null });
       setRejectionReason('');
-      setError('Car rejected successfully');
-      setErrorType('success');
-    } catch (error) {
-      setError(error.message);
-      setErrorType('error');
+    } catch (err) {
+      console.error('Failed to reject car.', err);
+      setError('Failed to reject car. Please try again.');
     }
   };
 
@@ -500,7 +470,10 @@ const AdminWelcomePage = () => {
         <Box role="tabpanel" hidden={activeTab !== 0} id="tabpanel-0" aria-labelledby="tab-0">
           {activeTab === 0 && (
             <Box>
-              <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#334155', mb: 3 }}>Pending User Approvals</Typography>
+              <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700, color: '#1e293b', textAlign: 'center' }}>
+                Admin Dashboard
+              </Typography>
+              {error && <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>{error}</Alert>}
               {loading ? (
                 <Box display="flex" justifyContent="center" my={5}>
                   <CircularProgress sx={{ color: '#475569' }} />

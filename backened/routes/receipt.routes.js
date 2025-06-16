@@ -3,6 +3,7 @@ import express from "express";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Receipt from "../models/receipt.model.js";
 import Booking from "../models/booking.models.js";
+import { isAdmin } from "../midleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -14,19 +15,14 @@ router.post("/upload", ProtectedRoute(), async (req, res) => {
     const { bookingId, receiptImage } = req.body;
     const user = req.user.id;
 
-    console.log(`[Receipt Upload] Received request. Attempting to find booking with ID: ${bookingId}`);
-
     if (!receiptImage) {
       return res.status(400).json({ error: "No receipt image URL provided." });
     }
 
     const booking = await Booking.findById(bookingId);
     if (!booking) {
-      console.error(`[Receipt Upload] FAILED: Booking not found for ID: ${bookingId}`);
       return res.status(404).json({ error: "Booking not found" });
     }
-
-    console.log(`[Receipt Upload] SUCCESS: Found booking for ID: ${bookingId}`);
 
     const newReceipt = new Receipt({
       booking: bookingId,
@@ -39,10 +35,6 @@ router.post("/upload", ProtectedRoute(), async (req, res) => {
 
     res.status(201).json({ message: "Receipt uploaded successfully!", receipt: newReceipt });
   } catch (error) {
-    // Log the original CastError for debugging if it happens again
-    if (error.name === 'CastError') {
-      console.error('[Receipt Upload] A CastError occurred. The provided bookingId is likely invalid:', bookingId);
-    }
     console.error("Error uploading receipt:", error);
     res.status(500).json({ error: "Failed to upload receipt.", details: error.message });
   }
@@ -63,16 +55,17 @@ router.get("/admin/pending", ProtectedRoute(), async (req, res) => {
 });
 
 // Admin route to approve a receipt
-router.put("/admin/approve/:id", ProtectedRoute(), async (req, res) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ error: "Forbidden" });
-    }
+router.put("/admin/approve/:id", ProtectedRoute(), isAdmin, async (req, res) => {
 
     try {
         const receipt = await Receipt.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true });
         if (!receipt) {
             return res.status(404).json({ error: "Receipt not found" });
         }
+
+        // Also update the booking status to 'confirmed'
+        await Booking.findByIdAndUpdate(receipt.booking, { status: 'confirmed' });
+
         res.status(200).json(receipt);
     } catch (error) {
         res.status(500).json({ error: "Failed to approve receipt" });
@@ -80,16 +73,17 @@ router.put("/admin/approve/:id", ProtectedRoute(), async (req, res) => {
 });
 
 // Admin route to reject a receipt
-router.put("/admin/reject/:id", ProtectedRoute(), async (req, res) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ error: "Forbidden" });
-    }
+router.put("/admin/reject/:id", ProtectedRoute(), isAdmin, async (req, res) => {
 
     try {
         const receipt = await Receipt.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
         if (!receipt) {
             return res.status(404).json({ error: "Receipt not found" });
         }
+
+        // Also update the booking status to 'payment_rejected'
+        await Booking.findByIdAndUpdate(receipt.booking, { status: 'payment_rejected' });
+
         res.status(200).json(receipt);
     } catch (error) {
         res.status(500).json({ error: "Failed to reject receipt" });
