@@ -14,27 +14,36 @@ router.post("/upload", ProtectedRoute(), async (req, res) => {
     const { bookingId, receiptImage } = req.body;
     const user = req.user.id;
 
+    console.log(`[Receipt Upload] Received request for bookingId: ${bookingId}`);
+
     if (!receiptImage) {
       return res.status(400).json({ error: "No receipt image URL provided." });
     }
 
     const booking = await Booking.findById(bookingId);
     if (!booking) {
-        return res.status(404).json({ error: "Booking not found" });
+      console.error(`[Receipt Upload] Booking not found for ID: ${bookingId}`);
+      return res.status(404).json({ error: "Booking not found" });
     }
 
-    const newReceipt = new Receipt({
+    console.log(`[Receipt Upload] Found booking: ${JSON.stringify(booking, null, 2)}`);
+
+    const receiptData = {
       booking: bookingId,
       user,
       owner: booking.owner,
       receiptImage: receiptImage,
-    });
+    };
 
+    console.log(`[Receipt Upload] Attempting to save new receipt with data: ${JSON.stringify(receiptData, null, 2)}`);
+
+    const newReceipt = new Receipt(receiptData);
     await newReceipt.save();
 
+    console.log(`[Receipt Upload] Receipt saved successfully for bookingId: ${bookingId}`);
     res.status(201).json({ message: "Receipt uploaded successfully!", receipt: newReceipt });
   } catch (error) {
-    console.error("Error uploading receipt:", error);
+    console.error("[Receipt Upload] An error occurred:", error);
     res.status(500).json({ error: "Failed to upload receipt.", details: error.message });
   }
 });
