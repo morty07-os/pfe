@@ -62,7 +62,7 @@ export const getCars = async (req, res) => {
       query.availabilityEnd = { $gte: new Date(startDate) };
     }
 
-    const cars = await Car.find(query);
+    const cars = await Car.find(query).select('+features');
     res.json(cars);
   } catch (error) {
     console.error("Error fetching cars:", error.message);
