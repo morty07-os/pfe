@@ -1,8 +1,33 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
 import { adminAuth } from '../midleware/adminAuth.js';
-import { getPendingUsers, approveUser, rejectUser } from '../controllers/admin.controller.js';
+import { getPendingUsers, approveUser, rejectUser, sendReceipt, getPendingReceipts, approveReceipt, rejectReceipt } from '../controllers/admin.controller.js';
 
 const router = express.Router();
+
+// Configure multer for receipt image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Save files to the "uploads" directory
+  },
+  filename: (req, file, cb) => {
+    cb(null, `receipt-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept only image files
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed!"), false);
+    }
+  },
+});
 
 // Enable CORS for admin routes
 router.use((req, res, next) => {
@@ -33,5 +58,9 @@ router.use((req, res, next) => {
 router.get('/pending-users', adminAuth(), getPendingUsers);
 router.post('/approve-user/:userId', adminAuth(), approveUser);
 router.post('/reject-user/:userId', adminAuth(), rejectUser);
+router.post('/send-receipt', adminAuth(), upload.single('receipt'), sendReceipt);
+router.get('/pending-receipts', adminAuth(), getPendingReceipts);
+router.post('/approve-receipt/:receiptId', adminAuth(), approveReceipt);
+router.post('/reject-receipt/:receiptId', adminAuth(), rejectReceipt);
 
 export default router;

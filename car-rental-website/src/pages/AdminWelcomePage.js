@@ -158,6 +158,7 @@ const AdminWelcomePage = () => {
   const navigate = useNavigate();
   const [pendingUsers, setPendingUsers] = useState([]);
   const [pendingCars, setPendingCars] = useState([]);
+  const [pendingReceipts, setPendingReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null); // Changed from object to string or null
   const [errorType, setErrorType] = useState('error'); // Added separate state for error type
@@ -181,9 +182,9 @@ const AdminWelcomePage = () => {
       fetchPendingUsers();
     } else if (activeTab === 1) {
       fetchPendingCars();
+    } else if (activeTab === 2) { // Fetch receipts when Booking Approvals tab is active
+      fetchPendingReceipts();
     }
-    // Add logic here to fetch data for other tabs when they are active
-    // e.g., if (activeTab === 2) { fetchPendingBookings(); }
   }, [navigate, activeTab]);
 
   // Add refresh interval
@@ -197,8 +198,11 @@ const AdminWelcomePage = () => {
       interval = setInterval(() => {
         fetchPendingCars();
       }, 30000); // Refresh every 30 seconds for car posting approvals
+    } else if (activeTab === 2) {
+      interval = setInterval(() => {
+        fetchPendingReceipts();
+      }, 30000); // Refresh every 30 seconds for booking approvals
     }
-    // Add similar intervals for other tabs if needed
 
     return () => clearInterval(interval);
   }, [activeTab]);
@@ -301,6 +305,31 @@ const AdminWelcomePage = () => {
     }
   };
 
+  const fetchPendingReceipts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/admin/pending-receipts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending receipts');
+      }
+
+      const data = await response.json();
+      setPendingReceipts(data.receipts || []);
+    } catch (error) {
+      console.error('Error fetching pending receipts:', error);
+      setError(error.message || 'Failed to fetch pending receipts');
+      setErrorType('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleApprove = async (userId) => {
     try {
       const token = localStorage.getItem('token');
@@ -350,6 +379,31 @@ const AdminWelcomePage = () => {
       setErrorType('success');
     } catch (error) {
       setError(error.message);
+      setErrorType('error');
+    }
+  };
+
+  const handleApproveReceipt = async (receiptId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/admin/approve-receipt/${receiptId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to approve receipt');
+      }
+
+      setPendingReceipts(current => current.filter(receipt => receipt._id !== receiptId));
+      setError('Receipt approved successfully');
+      setErrorType('success');
+    } catch (error) {
+      console.error('Error approving receipt:', error);
+      setError(error.message || 'Failed to approve receipt');
       setErrorType('error');
     }
   };
@@ -405,6 +459,32 @@ const AdminWelcomePage = () => {
       setErrorType('success');
     } catch (error) {
       setError(error.message);
+      setErrorType('error');
+    }
+  };
+
+  const handleRejectReceipt = async (receiptId, reason) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/admin/reject-receipt/${receiptId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reject receipt');
+      }
+
+      setPendingReceipts(current => current.filter(receipt => receipt._id !== receiptId));
+      setError('Receipt rejected successfully');
+      setErrorType('success');
+    } catch (error) {
+      console.error('Error rejecting receipt:', error);
+      setError(error.message || 'Failed to reject receipt');
       setErrorType('error');
     }
   };
@@ -671,8 +751,76 @@ const AdminWelcomePage = () => {
           {activeTab === 2 && (
             <Box>
               <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#334155', mb: 3 }}>Pending Booking Approvals</Typography>
-              {/* Placeholder: Add logic and UI for booking approvals here */}
-              <Typography>Booking approval functionality will be implemented here.</Typography>
+              {loading ? (
+                <Box display="flex" justifyContent="center" my={5}>
+                  <CircularProgress sx={{ color: '#475569' }} />
+                </Box>
+              ) : pendingReceipts.length === 0 ? (
+                <Alert severity="info" variant="filled" sx={{ backgroundColor: '#64748b', color: '#fff', '& .MuiAlert-icon': { color: '#fff' }, borderRadius: 2, boxShadow: '0 2px 10px rgba(71, 85, 105, 0.2)', py: 3, px: 4, fontSize: '1rem' }}>
+                  No pending booking receipts to review.
+                </Alert>
+              ) : (
+                <Stack spacing={3}>
+                  {pendingReceipts.map((receipt) => (
+                    <CardStyled key={receipt._id}>
+                      <CardHeader
+                        title={`Receipt for ${receipt.carId?.carName || 'Unknown Car'}`}
+                        subheader={`Sent by: ${receipt.userId?.firstName} ${receipt.userId?.lastName} | Owner: ${receipt.ownerId?.firstName} ${receipt.ownerId?.lastName}`}
+                        sx={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}
+                      />
+                      <CardContent>
+                        <Grid container spacing={2} alignItems="center">
+                          <Grid item xs={12} md={6}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Receipt Image:</Typography>
+                            <Box
+                              sx={{
+                                width: '100%',
+                                height: 200,
+                                bgcolor: '#e2e8f0',
+                                borderRadius: 2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                position: 'relative',
+                                '&:hover .zoom-icon': { opacity: 1 }
+                              }}
+                              onClick={() => openImageViewer([receipt.receiptImageUrl], 0)}
+                            >
+                              <img
+                                src={receipt.receiptImageUrl}
+                                alt="Receipt"
+                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                              />
+                              <Box className="zoom-icon" sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.4)', opacity: 0, transition: 'opacity 0.3s ease', pointerEvents: 'none' }}>
+                                <ZoomInIcon sx={{ color: '#fff', fontSize: 30 }} />
+                              </Box>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12} md={6}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Receipt Details:</Typography>
+                            <InfoRow label="Car Name" value={receipt.carId?.carName || 'N/A'} />
+                            <InfoRow label="Car Brand" value={receipt.carId?.brand || 'N/A'} />
+                            <InfoRow label="Conversation ID" value={receipt.conversationId} />
+                            <InfoRow label="Sent At" value={new Date(receipt.sentAt).toLocaleDateString()} />
+                            <InfoRow label="Renter Email" value={receipt.userId?.email || 'N/A'} />
+                            <InfoRow label="Owner Email" value={receipt.ownerId?.email || 'N/A'} />
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                      <CardActions sx={{ justifyContent: 'center', gap: 2, px: 3, py: 2, backgroundColor: '#f1f5f9', borderTop: '1px solid #e2e8f0' }}>
+                        <ActionButton variant="contained" color="secondary" onClick={() => handleRejectReceipt(receipt._id, 'Admin rejected the receipt.')}>
+                          Reject
+                        </ActionButton>
+                        <ActionButton variant="contained" color="primary" onClick={() => handleApproveReceipt(receipt._id)}>
+                          Approve
+                        </ActionButton>
+                      </CardActions>
+                    </CardStyled>
+                  ))}
+                </Stack>
+              )}
             </Box>
           )}
         </Box>

@@ -30,6 +30,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import StarIcon from '@mui/icons-material/Star';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import FeedbackDialog from './FeedbackDialog';
+import SendReceiptDialog from './SendReceiptDialog';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
@@ -56,6 +57,7 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [ownerName, setOwnerName] = useState('');
   const [receiptSent, setReceiptSent] = useState(false);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -597,33 +599,14 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
     return false;
   };
 
-  const handleSendReceipt = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${apiUrl}/api/admin/send-receipt`,
-        {
-          carId,
-          userId: isCarOwner ? userId : currentUserId,
-          ownerId: isCarOwner ? currentUserId : carOwnerId,
-          carName,
-          conversationId
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+  const handleSendReceipt = () => {
+    setReceiptDialogOpen(true);
+  };
 
-      if (response.data.success) {
-        setReceiptSent(true);
-        alert('Receipt has been sent to admin successfully!');
-      }
-    } catch (error) {
-      console.error('Error sending receipt:', error);
-      alert('Failed to send receipt. Please try again.');
+  const handleCloseReceiptDialog = (success = false) => {
+    setReceiptDialogOpen(false);
+    if (success) {
+      setReceiptSent(true);
     }
   };
 
@@ -1379,6 +1362,16 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
         isCarOwner={isCarOwner}
         carName={carName}
         ownerName={ownerName}
+      />
+      
+      <SendReceiptDialog
+        open={receiptDialogOpen}
+        onClose={handleCloseReceiptDialog}
+        carId={carId}
+        userId={isCarOwner ? userId : currentUserId}
+        ownerId={isCarOwner ? currentUserId : carOwnerId}
+        carName={carName}
+        conversationId={conversationId}
       />
     </>
   );

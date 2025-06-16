@@ -1,5 +1,8 @@
 import User from '../models/user.models.js';
+import Receipt from '../models/receipt.model.js';
 import sendEmail from '../utils/email.utils.js';
+import { uploadImageToCloudinary } from '../utils/cloudinary.js';
+import fs from 'fs';
 
 export const getPendingUsers = async (req, res) => {
     try {
@@ -82,4 +85,92 @@ export const rejectUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Error rejecting user" });
     }
+};
+
+export const sendReceipt = async (req, res) => {
+    try {
+        const { carId, userId, ownerId, carName, conversationId } = req.body;
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'Receipt image is required.' });
+        }
+
+        const imagePath = req.file.path;
+        const uploadResult = await uploadImageToCloudinary(imagePath);
+
+        if (!uploadResult || !uploadResult.secure_url) {
+            return res.status(500).json({ error: 'Failed to upload receipt image to Cloudinary.' });
+        }
+
+        const newReceipt = new Receipt({
+            carId,
+            userId,
+            ownerId,
+            conversationId,
+            carName,
+            receiptImageUrl: uploadResult.secure_url,
+            status: 'pending', // Default status
+        });
+
+        await newReceipt.save();
+
+        res.status(200).json({ success: true, message: 'Receipt sent to admin successfully!', receipt: newReceipt });
+
+    } catch (error) {
+        console.error('Error sending receipt:', error);
+        res.status(500).json({ error: 'Failed to send receipt.', details: error.message });
+    }
+};
+
+export const getPendingReceipts = async (req, res) => {
+  try {
+    const pendingReceipts = await Receipt.find({ status: 'pending' })
+      .populate('carId', 'carName brand model year')
+      .populate('userId', 'firstName lastName email')
+      .populate('ownerId', 'firstName lastName email')
+      .sort('-sentAt');
+
+    res.status(200).json({ receipts: pendingReceipts });
+  } catch (error) {
+    console.error('Error fetching pending receipts:', error);
+    res.status(500).json({ error: 'Failed to fetch pending receipts.', details: error.message });
+  }
+};
+
+export const approveReceipt = async (req, res) => {
+  try {
+    const { receiptId } = req.params;
+    const receipt = await Receipt.findByIdAndUpdate(receiptId, { status: 'approved' }, { new: true });
+
+    if (!receipt) {
+      return res.status(404).json({ message: 'Receipt not found' });
+    }
+
+    // Optionally send an email notification to the user who sent the receipt
+
+    res.status(200).json({ message: 'Receipt approved', receipt });
+  } catch (error) {
+    console.error('Error approving receipt:', error);
+    res.status(500).json({ message: 'Failed to approve receipt' });
+  }
+};
+
+export const rejectReceipt = async (req, res) => {
+  try {
+    const { receiptId } = req.params;
+    const { reason } = req.body;
+
+    const receipt = await Receipt.findByIdAndUpdate(receiptId, { status: 'rejected', rejectionReason: reason }, { new: true });
+
+    if (!receipt) {
+      return res.status(404).json({ message: 'Receipt not found' });
+    }
+
+    // Optionally send an email notification to the user who sent the receipt with the rejection reason
+
+    res.status(200).json({ message: 'Receipt rejected', receipt });
+  } catch (error) {
+    console.error('Error rejecting receipt:', error);
+    res.status(500).json({ message: 'Failed to reject receipt' });
+  }
 };
