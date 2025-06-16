@@ -116,49 +116,71 @@ const ConversationPage = () => {
   }, [chatMessages]);
 
   useEffect(() => {
-    if (location.state) {
-      const { startDate, endDate, totalCost } = location.state;
-      if (startDate && endDate) {
-        const start = dayjs(startDate);
-        const end = dayjs(endDate);
-        const days = end.diff(start, 'day') + 1; // Include both start and end days
-        
-        setBookingDetails({
-          startDate: start,
-          endDate: end,
-          days,
-          totalCost
-        });
-      }
+    // This effect handles setting initial booking details and creating the booking request.
+    if (car && location.state && location.state.startDate && location.state.mileage) {
+      const { startDate, endDate, mileage } = location.state;
+
+      // Set initial details for immediate display.
+      const start = dayjs(startDate);
+      const end = dayjs(endDate);
+      const days = end.diff(start, 'day') + 1;
+      setBookingDetails({
+        startDate: start,
+        endDate: end,
+        days,
+        mileage,
+        status: 'pending' // Assume pending status initially
+      });
+
+      const createBooking = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await axios.post(
+            `${apiUrl}/api/bookings/request`,
+            { carId: car._id, startDate, endDate, mileage },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          
+          // Update bookingDetails with the confirmed data from the backend.
+          setBookingDetails(response.data.booking);
+          console.log('Booking created/retrieved:', response.data.booking);
+        } catch (error) {
+          console.error('Error creating booking request:', error.response ? error.response.data : error.message);
+        }
+      };
+
+      createBooking();
     }
-  }, [location.state]);
+  }, [car, location.state]);
 
   const handleGoBack = () => {
     navigate(-1);
   };
-const handleSendChat = async () => {
-try {
- const token = localStorage.getItem('token');
+
+  const handleSendChat = async () => {
+    try {
+      const token = localStorage.getItem('token');
       const response = await axios.post(`${apiUrl}/api/messages/save`, {
         carId: carId,
         receiver: owner._id,
         text: chatInput,
         conversationId: conversationId
       }, {
- headers: {
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-     }
+        }
       });
-   setChatMessages(prev => [...prev, response.data]);
+      setChatMessages(prev => [...prev, response.data]);
       setChatInput('');
       await fetchMessages();
-  } catch (error) {
+    } catch (error) {
       console.error("Error sending message:", error);
       // Add user feedback here, e.g., a snackbar message
     }
   };
- if (loading) {
+
+  if (loading) {
     return (
       <>
         <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />

@@ -28,6 +28,11 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  mileage: {
+    type: Number,
+    required: true,
+    default: 100, // Default to standard mileage
+  },
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'cancelled_by_renter', 'cancelled_by_owner', 'completed', 'payment_failed'],

@@ -21,11 +21,11 @@ const checkOverlappingBookings = async (carId, startDate, endDate, excludeBookin
 // 1. Create a new booking request (initiates chat and saves initial booking info)
 export const createBookingRequest = async (req, res, next) => {
     try {
-        const { carId, startDate, endDate, totalCost } = req.body;
-        const renterId = req.user.userId; // Assuming ProtectedRoute adds userId to req.user
+        const { carId, startDate, endDate, mileage } = req.body; // Removed totalCost from body
+        const renterId = req.user.userId;
 
-        if (!carId || !startDate || !endDate || !totalCost) {
-            return res.status(400).json({ message: 'Car ID, start date, end date, and total cost are required.' });
+        if (!carId || !startDate || !endDate || !mileage) {
+            return res.status(400).json({ message: 'Car ID, start date, end date, and mileage are required.' });
         }
 
         const car = await Car.findById(carId).populate('owner', 'id');
@@ -36,8 +36,7 @@ export const createBookingRequest = async (req, res, next) => {
         if (car.owner.id.toString() === renterId) {
             return res.status(400).json({ message: 'You cannot book your own car.' });
         }
-        
-        // Validate dates
+
         const sDate = new Date(startDate);
         const eDate = new Date(endDate);
         if (sDate >= eDate) {
@@ -47,11 +46,22 @@ export const createBookingRequest = async (req, res, next) => {
             return res.status(400).json({ message: 'Selected dates are outside the car’s availability range.' });
         }
 
-        // Check for overlapping bookings
         const overlapping = await checkOverlappingBookings(carId, sDate, eDate);
         if (overlapping.length > 0) {
             return res.status(409).json({ message: 'Car is not available for the selected dates (already booked).' });
         }
+
+        // Securely calculate totalCost on the backend
+        const diffTime = eDate.getTime() - sDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
+        
+        let mileageMultiplier = 1;
+        if (mileage === 200) mileageMultiplier = 1.5;
+        else if (mileage === 300) mileageMultiplier = 2.0;
+        else if (mileage === 400) mileageMultiplier = 2.5;
+        else if (mileage === 500) mileageMultiplier = 3.0;
+
+        const calculatedTotalCost = diffDays * car.price * mileageMultiplier;
 
         const newBooking = new Booking({
             car: carId,
@@ -59,8 +69,9 @@ export const createBookingRequest = async (req, res, next) => {
             owner: car.owner.id,
             startDate: sDate,
             endDate: eDate,
-            totalCost,
-            status: 'pending', // Initial status
+            mileage,
+            totalCost: calculatedTotalCost, // Use backend-calculated cost
+            status: 'pending',
         });
 
         await newBooking.save();
