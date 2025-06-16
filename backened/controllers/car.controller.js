@@ -33,7 +33,6 @@ export const createCar = async (req, res) => {
     const newCar = new Car({
       ...req.body,
       images: imageUrl ? [imageUrl] : [],
-      features: req.body.features || {},
     });
     const savedCar = await newCar.save();
     res.status(201).json(savedCar);
@@ -62,7 +61,7 @@ export const getCars = async (req, res) => {
       query.availabilityEnd = { $gte: new Date(startDate) };
     }
 
-    const cars = await Car.find(query).select('+features');
+    const cars = await Car.find(query);
     res.json(cars);
   } catch (error) {
     console.error("Error fetching cars:", error.message);
