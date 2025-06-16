@@ -1128,8 +1128,7 @@ export default function CarDetailsPage() {
                             >
                               <PhoneIcon sx={{ color: '#475569', fontSize: '1.1rem', mr: 1 }} />
                               <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
-                                {typeof car.owner === 'string' ? 'Contact via chat' : 
-                                 (car.owner && car.owner.phone ? car.owner.phone : 'Not provided')}
+                                {car && car.owner && typeof car.owner === 'object' && car.owner.phone ? car.owner.phone : 'Not provided'}
                               </Typography>
                             </Paper>
                             

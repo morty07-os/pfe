@@ -257,7 +257,7 @@ router.get("/details/:id", ProtectedRoute({ required: false }), async (req, res)
     const { id } = req.params;
     const car = await Car.findById(id)
       .select("-__v")
-      .populate("owner", "firstName lastName email createdAt");
+      .populate("owner", "firstName lastName email phone createdAt");
 
     if (!car) {
       return res.status(404).json({ error: "Car not found" });
