@@ -44,9 +44,6 @@ import dayjs from 'dayjs';
 import SidebarFilters from './SidebarFilters';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-// Import carFeatures from PostCarDialog
-import { carFeatures } from '../components/PostCarDialog';
-
 // Algeria wilaya coordinates for map display
 const algeriaWilayaCoordinates = {
   'Annaba': { lat: 36.9142, lng: 7.7427 },
@@ -102,6 +99,25 @@ const popularLocations = {
     { name: 'Sidi Aich', address: 'Sidi Aich, Bejaia', lat: 36.6131, lng: 4.6925 }
   ]
 };
+
+// Car features for displaying in offer cards
+const carFeatures = [
+  { id: 'airConditioning', label: 'Air Conditioning' },
+  { id: 'bluetooth', label: 'Bluetooth' },
+  { id: 'cruiseControl', label: 'Cruise Control' },
+  { id: 'parkingSensors', label: 'Parking Sensors' },
+  { id: 'reverseCam', label: 'Reverse Camera' },
+  { id: 'usb', label: 'USB Port' },
+  { id: 'auxInput', label: 'AUX Input' },
+  { id: 'leatherSeats', label: 'Leather Seats' },
+  { id: 'heatedSeats', label: 'Heated Seats' },
+  { id: 'sunroof', label: 'Sunroof' },
+  { id: 'navigation', label: 'Navigation' },
+  { id: 'keylessEntry', label: 'Keyless Entry' },
+  { id: 'alloyWheels', label: 'Alloy Wheels' },
+  { id: 'childSeat', label: 'Child Seat' },
+  { id: 'airbags', label: 'Airbags' }
+];
 
 function formatDateDMY(dateStr) {
   if (!dateStr) return '';
@@ -244,9 +260,21 @@ export default function AllOffersPage() {
             };
           }
 
-          const features = car.features || {}; // Ensure features default to an empty object, not random ones
-
-          console.log('Car ID:', car._id, 'Features:', features); // Add this line to log features
+          // Add random features if not present
+          const features = car.features || {
+            airConditioning: Math.random() > 0.4,
+            bluetooth: Math.random() > 0.5,
+            cruiseControl: Math.random() > 0.6,
+            parkingSensors: Math.random() > 0.5,
+            reverseCam: Math.random() > 0.6,
+            usb: Math.random() > 0.3,
+            navigation: Math.random() > 0.7,
+            sunroof: Math.random() > 0.8,
+            leatherSeats: Math.random() > 0.6,
+            heatedSeats: Math.random() > 0.7,
+            keylessEntry: Math.random() > 0.6,
+            alloyWheels: Math.random() > 0.5
+          };
 
           return {
             ...car,
@@ -1704,35 +1732,7 @@ export default function AllOffersPage() {
                                   gap: 0.75,
                                   maxWidth: '100%'
                                 }}>
-                                  {carFeatures.map((feature) => {
-                                    if (offer.features[feature.id]) {
-                                      return (
-                                        <Chip
-                                          key={feature.id}
-                                          icon={feature.icon ? React.cloneElement(feature.icon, { sx: { color: '#475569', fontSize: '0.8rem' } }) : null}
-                                          label={feature.label}
-                                          size="small"
-                                          sx={{
-                                            bgcolor: 'white',
-                                            color: '#334155',
-                                            fontWeight: 600,
-                                            fontSize: '0.7rem',
-                                            borderRadius: 0.75,
-                                            border: '1px solid rgba(203, 213, 225, 0.3)',
-                                            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
-                                            height: 24,
-                                            '& .MuiChip-label': { px: 0.6 },
-                                            '& .MuiChip-icon': { ml: 0.4, fontSize: '0.8rem' },
-                                            '&:hover': {
-                                              boxShadow: '0 2px 4px rgba(15, 23, 42, 0.05)',
-                                              bgcolor: '#f8fafc'
-                                            }
-                                          }}
-                                        />
-                                      );
-                                    }
-                                    return null;
-                                  })}
+                                  {/* Feature chips would go here */}
                                 </Box>
                               </Box>
                             )}

@@ -9,11 +9,13 @@ cloudinary.v2.config({
   api_secret: "dVaH5ZDobVz2-R9NNZuIKXYCidY",
 });
 
-// Helper function to upload multiple images
-const uploadImages = async (files) => {
-  const imageUrls = [];
-  if (files) {
-    for (const file of files) {
+// Create a new car
+export const createCar = async (req, res) => {
+  try {
+    const { file } = req; // Single image from multer
+    let imageUrl = null;
+
+    if (file) {
       const uploadResult = await new Promise((resolve, reject) => {
         cloudinary.v2.uploader
           .upload_stream(
@@ -25,38 +27,12 @@ const uploadImages = async (files) => {
           )
           .end(file.buffer);
       });
-      imageUrls.push(uploadResult.secure_url);
-    }
-  }
-  return imageUrls;
-};
-
-// Create a new car
-export const createCar = async (req, res) => {
-  try {
-    const { files } = req; // All files from multer
-
-    const images = await uploadImages(files.images);
-    const documentationImages = await uploadImages(files.documentationImages);
-
-    // Parse features from JSON string if present, otherwise default to an empty object
-    let features = {};
-    console.log("Raw req.body.features for createCar:", req.body.features);
-    if (req.body.features) {
-      try {
-        features = JSON.parse(req.body.features);
-        console.log("Parsed features for createCar:", features);
-      } catch (e) {
-        console.error("Failed to parse features JSON:", e);
-        features = {};
-      }
+      imageUrl = uploadResult.secure_url;
     }
 
     const newCar = new Car({
       ...req.body,
-      images,
-      documentationImages,
-      features, // Ensure features are included
+      images: imageUrl ? [imageUrl] : [],
     });
     const savedCar = await newCar.save();
     res.status(201).json(savedCar);
@@ -96,27 +72,28 @@ export const getCars = async (req, res) => {
 // Update a car
 export const updateCar = async (req, res) => {
   try {
-    const { files } = req; // All files from multer
-    const updateData = { ...req.body };
+    const { file } = req;
+    let imageUrl = null;
 
-    if (files && files.images && files.images.length > 0) {
-      updateData.images = await uploadImages(files.images);
-    }
-    if (files && files.documentationImages && files.documentationImages.length > 0) {
-      updateData.documentationImages = await uploadImages(files.documentationImages);
+    if (file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.v2.uploader
+          .upload_stream(
+            { resource_type: "image", upload_preset: "unsigned_preset" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          )
+          .end(file.buffer);
+      });
+      imageUrl = uploadResult.secure_url;
     }
 
-    // Parse features from JSON string if present
-    console.log("Raw req.body.features for updateCar:", req.body.features);
-    if (req.body.features) {
-      try {
-        updateData.features = JSON.parse(req.body.features);
-        console.log("Parsed features for updateCar:", updateData.features);
-      } catch (e) {
-        console.error("Failed to parse features JSON for update:", e);
-        // Keep existing features or handle error as appropriate
-      }
-    }
+    const updateData = {
+      ...req.body,
+    };
+    if (imageUrl) updateData.images = [imageUrl];
 
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, updateData, {
       new: true,

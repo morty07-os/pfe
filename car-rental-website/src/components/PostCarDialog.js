@@ -465,7 +465,7 @@ const energies = ["Essence", "Diesel", "Hybrid", "Electric"];
 const transmissions = ["Manual", "Automatic"];
 const carTypes = ["SUV", "VAN", "STATIONWAGON", "CITADINE", "SEDAN"];
 
-export const carFeatures = [
+const carFeatures = [
   {
     id: "airConditioning",
     label: "Air Conditioning",
@@ -950,9 +950,6 @@ function PostCarDialog({ open, onClose }) {
       formData.documentationImages.forEach((imageFile) => {
         dataToSend.append("documentationImages", imageFile);
       });
-
-      // Append features object as a JSON string
-      dataToSend.append("features", JSON.stringify(formData.features));
 
       const apiUrl = process.env.REACT_APP_API_URL || "https://pfe-uhbw.onrender.com";
       const response = await fetch(`${apiUrl}/api/cars/addcars`, {
