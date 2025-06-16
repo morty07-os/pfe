@@ -113,9 +113,12 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
     const User = (await import("../models/user.models.js")).default;
     const user = await User.findById(req.user.userId);
 
-    if (!user) {
+            if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    // Normalize carType to uppercase to match schema enum
+    const normalizedCarType = carType ? carType.toUpperCase() : undefined;
 
     const car = new Car({
       carName,
@@ -131,7 +134,7 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
       availabilityStart,
       availabilityEnd,
       price,
-      carType,
+      carType: normalizedCarType,
       images: imageUrls, // Store Cloudinary URLs
       documentationImages: documentationImageUrls, // Add this line to store documentation images
       owner: req.user.userId,
@@ -184,27 +187,38 @@ router.get("/getcars", async (req, res) => {
       ];
     }
 
-    if (brand) query.brand = brand;
+    if (brand) query.brand = new RegExp(`^${brand}$`, "i");
     if (energy) query.energy = energy;
     if (transmission) query.transmission = transmission;
-    if (wilaya) query.wilaya = wilaya;
-    if (carType) query.carType = carType;
+    if (wilaya) query.wilaya = new RegExp(`^${wilaya}$`, "i");
+            if (carType) {
+      query.carType = carType.toUpperCase();
+    }
     if (location) query.location = location;
     if (seats) query.seats = parseInt(seats);
     if (doors) query.doors = parseInt(doors);
-    if (priceMin || priceMax) {
-      query.price = {};
-      if (priceMin) query.price.$gte = parseFloat(priceMin);
-      if (priceMax) query.price.$lte = parseFloat(priceMax);
-    }
-    if (availableFrom || availableTo) {
+        // Initialize $and array if it doesn't exist
+    if (!query.$and) {
       query.$and = [];
-      if (availableFrom) {
-        query.$and.push({ availabilityEnd: { $gte: new Date(availableFrom) } });
-      }
-      if (availableTo) {
-        query.$and.push({ availabilityStart: { $lte: new Date(availableTo) } });
-      }
+    }
+
+    if (priceMin || priceMax) {
+      const priceQuery = {};
+      if (priceMin) priceQuery.$gte = parseFloat(priceMin);
+      if (priceMax) priceQuery.$lte = parseFloat(priceMax);
+      query.price = priceQuery;
+    }
+
+    if (availableFrom) {
+      query.$and.push({ availabilityEnd: { $gte: new Date(availableFrom) } });
+    }
+    if (availableTo) {
+      query.$and.push({ availabilityStart: { $lte: new Date(availableTo) } });
+    }
+
+    // Remove the $and property if it's empty to avoid MongoDB errors
+    if (query.$and.length === 0) {
+      delete query.$and;
     }
 
     // Fetch cars with owner information

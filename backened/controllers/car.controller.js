@@ -93,6 +93,11 @@ export const updateCar = async (req, res) => {
     const updateData = {
       ...req.body,
     };
+
+    // Normalize carType to uppercase if it is being updated
+    if (updateData.carType) {
+      updateData.carType = updateData.carType.toUpperCase();
+    }
     if (imageUrl) updateData.images = [imageUrl];
 
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, updateData, {

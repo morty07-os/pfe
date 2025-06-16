@@ -10,7 +10,7 @@ import {
   Autocomplete
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -171,21 +171,21 @@ const QuickSearch = ({ noBackground = false, isLoggedIn, onFilterChange }) => {
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Box sx={{ flex: 1.5 }}>
-              <DatePicker
-                label="Start Date"
+              <DateTimePicker
+                label="Start Date & Time"
                 value={startDate}
                 onChange={(newValue) => setStartDate(newValue)}
-                minDate={dayjs()}
+                minDateTime={dayjs()}
                 sx={{ width: '100%' }}
               />
             </Box>
 
             <Box sx={{ flex: 1.5 }}>
-              <DatePicker
-                label="End Date"
+              <DateTimePicker
+                label="End Date & Time"
                 value={endDate}
                 onChange={(newValue) => setEndDate(newValue)}
-                minDate={startDate} // Keeps visual cue, but button logic is main guard
+                minDateTime={startDate} // Keeps visual cue, but button logic is main guard
                 sx={{ width: '100%' }}
               />
             </Box>
@@ -212,8 +212,8 @@ const QuickSearch = ({ noBackground = false, isLoggedIn, onFilterChange }) => {
             }}
             onClick={() => {
               if (!startDate || !endDate) return;
-              const start = startDate.format('YYYY-MM-DD');
-              const end = endDate.format('YYYY-MM-DD');
+              const start = startDate.format('YYYY-MM-DDTHH:mm');
+              const end = endDate.format('YYYY-MM-DDTHH:mm');
               
               // Apply filters directly if onFilterChange is provided
               if (onFilterChange) {
@@ -239,31 +239,7 @@ const QuickSearch = ({ noBackground = false, isLoggedIn, onFilterChange }) => {
         </Paper>
       </Fade>
 
-      {/* Decorative elements */}
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: -100,
-          left: -100,
-          width: 300,
-          height: 300,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,166,153,0.2) 0%, rgba(0,166,153,0) 70%)',
-          zIndex: 1
-        }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          top: -50,
-          right: -50,
-          width: 200,
-          height: 200,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
-          zIndex: 1
-        }}
-      />
+      
     </Box>
   );
 };

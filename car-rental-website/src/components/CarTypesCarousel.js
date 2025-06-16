@@ -286,7 +286,7 @@ function CarTypesCarousel() {
             <Box key={car.type} sx={{ p: 2, height: '100%' }}>
               <Card
                 elevation={2}
-                onClick={() => navigate(`/offers?category=${car.type}`)}
+                onClick={() => navigate(`/offers?category=${car.type.toUpperCase()}`)}
                 sx={{
                   height: '100%',
                   display: 'flex',
@@ -355,7 +355,8 @@ function CarTypesCarousel() {
                         fontSize: '1.25rem',
                         height: '30px',
                         display: 'flex',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        textTransform: 'uppercase'
                       }}
                     >
                       {car.type}

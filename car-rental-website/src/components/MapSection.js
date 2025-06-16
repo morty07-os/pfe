@@ -23,6 +23,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import PlaceIcon from '@mui/icons-material/Place';
 import SearchIcon from '@mui/icons-material/Search';
+import { wilayasConfig } from '../data/wilayasConfig';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
@@ -39,14 +40,14 @@ const MapSection = () => {
   
   // Limited list of available wilayas
   const wilayas = [
-    'Annaba', 'Alger', 'Oran', 'Setif', 'Constantine', 'Bejaia'
+    'Annaba', 'Alger', 'Oran', 'Sétif', 'Constantine', 'Béjaïa'
   ].sort();
   
   // Steps for the stepper
   const steps = [
     {
       label: 'Select Your City',
-      description: 'Choose from our available cities: Annaba, Alger, Oran, Setif, Constantine, and Bejaia.',
+      description: 'Choose from our available cities: Annaba, Alger, Oran, Sétif, Constantine, and Béjaïa.',
       icon: <LooksOneIcon sx={{ fontSize: 40, color: '#475569' }} />
     },
     {
@@ -74,7 +75,12 @@ const MapSection = () => {
     if (!selectedCity) return;
     
     // Navigate to map page with the selected wilaya as a parameter
-    navigate(`/map?wilaya=${selectedCity}`);
+    const match = wilayasConfig.find(w => w.name.toLowerCase() === selectedCity.toLowerCase());
+    if (match) {
+      navigate(`/map?wilayaId=${match.id}`);
+    } else {
+      navigate(`/map?wilaya=${encodeURIComponent(selectedCity)}`);
+    }
   };
 
   // This would be replaced with actual map integration
@@ -189,7 +195,7 @@ const MapSection = () => {
                 <Box sx={{ 
                   px: { xs: 1, sm: 1.5 },
                   pb: { xs: 1, sm: 1.5 },
-                  pt: 10,
+                  pt: { xs: 6, sm: 7 }, // reduced padding-top to pull label higher
                   display: 'flex', 
                   flexDirection: 'column', 
                   height: '100%', 
@@ -287,7 +293,7 @@ const MapSection = () => {
                     </Select>
                   </FormControl>
                   
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5, width: '100%', position: 'relative' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, width: '100%', position: 'relative' }} /* increased margin-top to pull button down */>
                     <Button
                       variant="contained"
                       disabled={!selectedCity}

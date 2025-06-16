@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Box, 
   Container, 
@@ -32,7 +33,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { wilayasConfig, pickupLocationsConfig } from '../data/wilayasConfig';
 
 // Leaflet imports
-import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -51,6 +52,16 @@ const carRentalIcon = new L.Icon({
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Custom icon to highlight a selected/centered location
+const highlightIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [30, 50],
+  iconAnchor: [15, 50],
+  popupAnchor: [1, -40],
   shadowSize: [41, 41]
 });
 
@@ -76,7 +87,9 @@ function ChangeMapView({ center, zoom }) {
   return null;
 }
 
-// Helper component to handle map controls
+// Render highlighted marker later
+
+  
 function MapControls() {
   const map = useMap();
   
@@ -170,15 +183,69 @@ function MapControls() {
 }
 
 const MapPage = () => {
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [selectedWilaya, setSelectedWilaya] = useState(null);
   const [mapCenter, setMapCenter] = useState([36.7538, 3.0588]); // Default center (Algiers)
   const [mapZoom, setMapZoom] = useState(6); // Start with a wider view of Algeria
   const [userLocation, setUserLocation] = useState(null); // Store user's location
+  const [highlightedLocation, setHighlightedLocation] = useState(null);
   const mapRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredWilayas, setFilteredWilayas] = useState([]);
+
+  // Parse URL params to set wilaya on first load or whenever URL changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const idParam = params.get('wilayaId');
+    const locIdParam = params.get('locId');
+    const latParam = params.get('lat');
+    const lngParam = params.get('lng');
+    const nameParam = params.get('wilaya');
+
+    if (idParam) {
+      const byId = wilayasConfig.find(w => String(w.id) === idParam);
+      if (byId) {
+        setSelectedWilaya(byId);
+        return;
+      }
+    }
+    if (latParam && lngParam) {
+      const lat = parseFloat(latParam);
+      const lng = parseFloat(lngParam);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        setMapCenter([lat, lng]);
+        setMapZoom(14);
+        console.log('Setting highlightedLocation with lat/lng', lat, lng);
+        setHighlightedLocation({ position: [lat, lng], name: nameParam || 'Selected Location' });
+        // If wilaya param exists set selectedWilaya so overlay card hides
+        if (nameParam) {
+          const lower = decodeURIComponent(nameParam).toLowerCase();
+          const wilayaMatch = wilayasConfig.find(w => w.name.toLowerCase().replace(/[^a-z]/g,'') === lower.replace(/[^a-z]/g,''));
+          if (wilayaMatch) setSelectedWilaya(wilayaMatch);
+        }
+      }
+    } else if (locIdParam) {
+      // search pickupLocationsConfig
+      const loc = Object.values(pickupLocationsConfig).flat().find(l => String(l.id) === locIdParam);
+      if (loc) {
+        setMapCenter(loc.position);
+        setMapZoom(14);
+        console.log('Setting highlightedLocation with locId', loc);
+        setHighlightedLocation({ position: loc.position, name: loc.name });
+        // also set wilaya if not set
+        const wilayaEntry = wilayasConfig.find(w => w.name === Object.keys(pickupLocationsConfig).find(k => pickupLocationsConfig[k].some(p => p.id === loc.id)));
+        if (wilayaEntry) setSelectedWilaya(wilayaEntry);
+      }
+    } else if (nameParam) {
+      const lower = decodeURIComponent(nameParam).toLowerCase();
+      const byName = wilayasConfig.find(w => w.name.toLowerCase().replace(/[^a-z]/g,'') === lower.replace(/[^a-z]/g,''));
+      if (byName) {
+        setSelectedWilaya(byName);
+      }
+    }
+  }, [location.search]);
   
   // Get available wilayas from config
   const availableWilayas = wilayasConfig.filter(wilaya => wilaya.available);
@@ -186,9 +253,22 @@ const MapPage = () => {
   // Get pickup locations from config
   const pickupLocations = pickupLocationsConfig;
   
+  // Get wilayaId from URL params
+  const params = new URLSearchParams(location.search);
+  const wilayaId = params.get('wilayaId');
+  const wilayaQuery = params.get('wilaya');
+
   // Filter wilayas based on search query and availability
   useEffect(() => {
-    if (searchQuery) {
+    if (wilayaId) {
+      const foundById = wilayasConfig.find(w => String(w.id) === wilayaId);
+      if (foundById) setSelectedWilaya(foundById);
+    } else if (wilayaQuery) {
+      const filtered = wilayasConfig.filter(wilaya => 
+        wilaya.name.toLowerCase().includes(wilayaQuery.toLowerCase())
+      );
+      setFilteredWilayas(filtered);
+    } else if (searchQuery) {
       const filtered = wilayasConfig.filter(wilaya => 
         wilaya.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -266,11 +346,15 @@ const MapPage = () => {
             <Paper 
               elevation={3} 
               sx={{ 
-                p: 3, 
-                borderRadius: 3,
-                backgroundColor: 'white',
-                boxShadow: '0 10px 25px rgba(71, 85, 105, 0.08)',
-                border: '1px solid #e2e8f0'
+                p: { xs: 2, sm: 3 },
+                borderRadius: 4,
+                backgroundColor: '#ffffff',
+                boxShadow: '0 12px 28px rgba(15, 23, 42, 0.07)',
+                border: '1px solid #e2e8f0',
+                transition: 'box-shadow 0.3s ease',
+                '&:hover': {
+                  boxShadow: '0 16px 32px rgba(15, 23, 42, 0.12)'
+                }
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -478,11 +562,22 @@ const MapPage = () => {
                     }
                   }}
                 >
+                  <ChangeMapView center={mapCenter} zoom={mapZoom} />
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                     url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                   />
                   
+                  {highlightedLocation && (
+                    <>
+                      <Marker position={highlightedLocation.position} icon={highlightIcon} riseOnHover>
+                        <Popup>{highlightedLocation.name}</Popup>
+                      </Marker>
+                      <CircleMarker center={highlightedLocation.position} pathOptions={{color:'#dc2626', fillColor:'#dc2626'}} radius={10}>
+                        <Popup>{highlightedLocation.name}</Popup>
+                      </CircleMarker>
+                    </>
+                  )}
                   {/* Display markers for the selected wilaya */}
                   {selectedWilaya && pickupLocations[selectedWilaya.name] && 
                     pickupLocations[selectedWilaya.name].map((location) => (
@@ -569,28 +664,46 @@ const MapPage = () => {
                   >
                     <Box 
                       sx={{ 
-                        p: 4, 
-                        bgcolor: 'white', 
-                        borderRadius: 4,
-                        maxWidth: 400,
+                        p: { xs: 3, sm: 4 },
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                        borderRadius: 6,
+                        maxWidth: 420,
                         textAlign: 'center',
-                        boxShadow: '0 15px 35px rgba(71, 85, 105, 0.15)',
+                        boxShadow: '0 20px 45px rgba(15, 23, 42, 0.12)',
                         border: '1px solid #e2e8f0',
-                        backdropFilter: 'blur(10px)'
+                        backdropFilter: 'blur(12px)',
+                        position: 'relative',
+                        transition: 'transform 0.4s ease, box-shadow 0.4s ease',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          inset: 0,
+                          borderRadius: 6,
+                          padding: '2px',
+                          background: 'linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%)',
+                          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                          WebkitMaskComposite: 'xor',
+                          maskComposite: 'exclude',
+                          zIndex: -1
+                        },
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 25px 55px rgba(15, 23, 42, 0.18)'
+                        }
                       }}
                     >
                       <Box 
                         sx={{ 
-                          width: 80, 
-                          height: 80, 
-                          borderRadius: '50%', 
-                          bgcolor: '#f1f5f9', 
-                          display: 'flex', 
-                          alignItems: 'center', 
+                          width: 84,
+                          height: 84,
+                          borderRadius: '50%',
+                          background: 'radial-gradient(circle at 30% 30%, #e2e8f0 0%, #cbd5e1 70%)',
+                          display: 'flex',
+                          alignItems: 'center',
                           justifyContent: 'center',
                           mx: 'auto',
                           mb: 3,
-                          border: '4px solid #e2e8f0'
+                          boxShadow: 'inset 0 0 0 2px #e2e8f0'
                         }}
                       >
                         <LocationOnIcon sx={{ fontSize: 40, color: '#475569' }} />

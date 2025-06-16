@@ -17,11 +17,20 @@ import {
   CircularProgress,
   Avatar,
   Rating,
-  Divider
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { blueGrey } from '@mui/material/colors';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import dayjs from 'dayjs';
 import Navbar from '../components/Navbar';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
@@ -67,6 +76,7 @@ export default function BookingPage() {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [totalCost, setTotalCost] = useState(0);
+  const [mileage, setMileage] = useState(100);
   const [dateError, setDateError] = useState('');
 
   const today = dayjs(new Date().setHours(0, 0, 0, 0));
@@ -146,9 +156,21 @@ export default function BookingPage() {
       // For now, we assume no other bookings conflict
 
       setDateError('');
-      const diffDays = endDate.diff(startDate, 'day') + 1; // Include start and end day
+      const diffHours = endDate.diff(startDate, 'hour');
+      const diffDays = Math.ceil(diffHours / 24); // Round up to the nearest full day
       if (diffDays > 0) {
-        setTotalCost(diffDays * car.price);
+        const basePrice = diffDays * car.price;
+        let mileageMultiplier = 1;
+        if (mileage === 200) {
+          mileageMultiplier = 1.5;
+        } else if (mileage === 300) {
+          mileageMultiplier = 2.0;
+        } else if (mileage === 400) {
+          mileageMultiplier = 2.5;
+        } else if (mileage === 500) {
+          mileageMultiplier = 3.0;
+        }
+        setTotalCost(basePrice * mileageMultiplier);
       } else {
         setTotalCost(0);
       }
@@ -156,7 +178,7 @@ export default function BookingPage() {
       setTotalCost(0);
       setDateError('');
     }
-  }, [car, startDate, endDate]);
+  }, [car, startDate, endDate, mileage]);
 
   const handleGoBack = () => {
     navigate(-1); // Go back to the previous page (CarDetailsPage)
@@ -168,12 +190,15 @@ export default function BookingPage() {
       return;
     }
     // Navigate to chat page, passing booking details
+    const formattedStartDate = startDate.format('YYYY-MM-DDTHH:mm');
+    const formattedEndDate = endDate.format('YYYY-MM-DDTHH:mm');
     navigate(`/conversation/${carId}/${car.owner._id}`, {
       state: {
         car,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        totalCost
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        totalCost,
+        mileage
       }
     });
   };
@@ -856,8 +881,8 @@ export default function BookingPage() {
                     }
                   }
                 }}>
-                  <DatePicker
-                    label="Start Date"
+                  <DateTimePicker
+                    label="Start Date & Time"
                     value={startDate}
                     onChange={(newValue) => {
                       setStartDate(newValue);
@@ -866,7 +891,7 @@ export default function BookingPage() {
                         setEndDate(null); 
                       }
                     }}
-                    minDate={today} // Prevent selecting dates before today
+                    minDateTime={today} // Prevent selecting dates before today
                     slotProps={{ 
                       textField: { 
                         fullWidth: true,
@@ -874,11 +899,11 @@ export default function BookingPage() {
                       } 
                     }}
                   />
-                  <DatePicker
-                    label="End Date"
+                  <DateTimePicker
+                    label="End Date & Time"
                     value={endDate}
                     onChange={setEndDate}
-                    minDate={startDate || today} // Prevent selecting dates before start date or today
+                    minDateTime={startDate || today} // Prevent selecting dates before start date or today
                     disabled={!startDate} // Disable if no start date is selected
                     slotProps={{ 
                       textField: { 
@@ -887,6 +912,34 @@ export default function BookingPage() {
                       } 
                     }}
                   />
+                </Box>
+
+                <Box sx={{ mt: 4, p: 2, bgcolor: blueGrey[50], borderRadius: 2, border: `1px solid ${blueGrey[200]}` }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <SpeedIcon sx={{ color: blueGrey[600], mr: 1.5 }} />
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+                      Mileage Plan
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, pl: '36px' }}>
+                    The standard plan includes 100 km/day. Higher mileage plans will affect the total price.
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="mileage-select-label">Select Plan</InputLabel>
+                    <Select
+                      labelId="mileage-select-label"
+                      id="mileage-select"
+                      value={mileage}
+                      label="Select Plan"
+                      onChange={(e) => setMileage(e.target.value)}
+                    >
+                      <MenuItem value={100}>100 km/day (Standard)</MenuItem>
+                      <MenuItem value={200}>200 km/day</MenuItem>
+                      <MenuItem value={300}>300 km/day</MenuItem>
+                      <MenuItem value={400}>400 km/day</MenuItem>
+                      <MenuItem value={500}>500 km/day</MenuItem>
+                    </Select>
+                  </FormControl>
                 </Box>
 
                 {dateError && (

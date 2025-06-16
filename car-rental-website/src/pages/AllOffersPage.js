@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
 import QuickSearch from '../components/QuickSearch';
+import dayjs from 'dayjs';
 import {
   Box,
   Grid,
@@ -40,7 +41,6 @@ import AirlineSeatReclineNormalIcon from '@mui/icons-material/AirlineSeatRecline
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import PersonIcon from '@mui/icons-material/Person';
 import { useLocation } from 'react-router-dom';
-import dayjs from 'dayjs';
 import SidebarFilters from './SidebarFilters';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
@@ -184,6 +184,7 @@ export default function AllOffersPage() {
   // Extract parameters from query parameters
   const queryParams = React.useMemo(() => new URLSearchParams(locationObj.search), [locationObj.search]);
   const categoryFilter = queryParams.get('category');
+const normalizedCategory = categoryFilter ? categoryFilter.toLowerCase() : null;
   const startDate = queryParams.get('startDate');
   const endDate = queryParams.get('endDate');
   const wilayaParam = queryParams.get('wilaya');
@@ -201,13 +202,17 @@ export default function AllOffersPage() {
       newFilters.availableTo = endDate;
     }
     
+    // Set carType if exists in URL
+    if (categoryFilter) {
+      newFilters.carType = categoryFilter;
+    }
     // Set wilaya if it exists in URL
     if (wilayaParam) {
       newFilters.wilaya = wilayaParam;
     }
     
     // Only update if we have new filters to add
-    if (startDate || endDate || wilayaParam) {
+    if (startDate || endDate || wilayaParam || categoryFilter) {
       setSidebarFilters(newFilters);
     }
   }, [locationObj.search]); // Only run when URL changes
@@ -220,7 +225,7 @@ export default function AllOffersPage() {
           energy: sidebarFilters.energy || '',
           transmission: sidebarFilters.transmission || '',
           wilaya: sidebarFilters.wilaya || '',
-          carType: sidebarFilters.carType || '',
+          carType: sidebarFilters.carType || categoryFilter || '',
           seats: sidebarFilters.seats || '',
           doors: sidebarFilters.doors || '',
           priceMin: sidebarFilters.priceRange ? sidebarFilters.priceRange[0] : '',
@@ -306,64 +311,11 @@ export default function AllOffersPage() {
   }, [sidebarFilters, search]);
 
   const filteredOffers = React.useMemo(() => {
-    let tempOffers = [...offers];
-
-    // Filter out cars without an owner
-    tempOffers = tempOffers.filter(offer => offer.owner);
-
-    // Apply category filter from URL query param first
-    if (categoryFilter) {
-      tempOffers = tempOffers.filter(offer =>
-        offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase()
-      );
-    }
-
-    // Apply search term filter (now handled by backend, but keep as fallback)
-    if (search) {
-      tempOffers = tempOffers.filter(offer =>
-        offer.brand?.toLowerCase().includes(search.toLowerCase()) ||
-        offer.carName?.toLowerCase().includes(search.toLowerCase()) ||
-        offer.description?.toLowerCase().includes(search.toLowerCase()) ||
-        offer.wilaya?.toLowerCase().includes(search.toLowerCase()) ||
-        offer.carType?.toLowerCase().includes(search.toLowerCase()) ||
-        offer.engine?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    // Apply sidebar filters
-    tempOffers = tempOffers.filter(offer => {
-      // Basic filters
-      const basicFiltersMatch = 
-        (!sidebarFilters.brand || offer.brand === sidebarFilters.brand) &&
-        (!sidebarFilters.energy || offer.energy === sidebarFilters.energy) &&
-        (!sidebarFilters.transmission || offer.transmission === sidebarFilters.transmission) &&
-        (!sidebarFilters.wilaya || (offer.wilaya && offer.wilaya.toLowerCase() === sidebarFilters.wilaya.toLowerCase())) &&
-        (!sidebarFilters.carType || offer.carType === sidebarFilters.carType) &&
-        (!sidebarFilters.seatsRange || (Number(offer.seats) >= sidebarFilters.seatsRange[0] && Number(offer.seats) <= sidebarFilters.seatsRange[1])) &&
-        (!sidebarFilters.doorsRange || (Number(offer.doors) >= sidebarFilters.doorsRange[0] && Number(offer.doors) <= sidebarFilters.doorsRange[1])) &&
-        (!sidebarFilters.priceRange || (offer.price >= sidebarFilters.priceRange[0] && offer.price <= sidebarFilters.priceRange[1]));
-      
-      // Availability filter
-      let availabilityMatch = true;
-      if (sidebarFilters.availableFrom || sidebarFilters.availableTo) {
-        // Get car availability dates
-        const carFrom = offer.availabilityStart || offer.availableFrom;
-        const carTo = offer.availabilityEnd || offer.availableTo;
-        
-        // Check if car is available during the selected period
-        availabilityMatch = isDateRangeOverlap(
-          carFrom, 
-          carTo, 
-          sidebarFilters.availableFrom, 
-          sidebarFilters.availableTo
-        );
-      }
-      
-      return basicFiltersMatch && availabilityMatch;
-    });
-
-    return tempOffers;
-  }, [offers, search, sidebarFilters, categoryFilter]);
+    // All filtering is now handled by the backend.
+    // We just return the offers received from the API.
+    // A simple check for owner can remain for data integrity.
+    return offers.filter(offer => offer.owner);
+  }, [offers]);
 
   function isDateRangeOverlap(offerFrom, offerTo, selectedFrom, selectedTo) {
     // If car doesn't have availability dates, it can't match
@@ -485,7 +437,7 @@ export default function AllOffersPage() {
       }}>
         <Box sx={{ 
           position: 'relative', 
-          top: -20, 
+          top: -40, 
           zIndex: 1100,
           width: '100%',
           display: 'flex',
@@ -508,7 +460,7 @@ export default function AllOffersPage() {
               maxWidth: '1200px',
               width: '100%',
               mx: 'auto',
-              transform: 'translateY(-25px)',
+              transform: 'translateY(-45px)',
               position: 'relative',
               '&::before': {
               content: '""',
@@ -687,21 +639,22 @@ export default function AllOffersPage() {
                       position: 'absolute',
                       top: 0,
                       left: 0,
-                      width: '100%',
-                      height: '4px',
-                      background: 'linear-gradient(90deg, #475569, #64748b)',
-                      opacity: 0,
-                      transition: 'opacity 0.3s ease',
-                    },
-                    '&:focus-within::before': {
-                      opacity: 1
+                      right: 0,
+                      bottom: 0,
+                      borderRadius: '16px',
+                      boxShadow: [
+                        '0 10px 15px -3px rgba(15, 23, 42, 0.08)',
+                        '0 4px 6px -2px rgba(15, 23, 42, 0.05)',
+                        '0 25px 50px -12px rgba(15, 23, 42, 0.25)'
+                      ].join(', '),
+                      zIndex: -1
                     },
                     '&::after': {
                       content: '""',
                       position: 'absolute',
-                      bottom: 0,
-                      left: '10%',
-                      right: '10%',
+                      bottom: 6,
+                      left: '5%',
+                      right: '5%',
                       bottom: 0,
                       borderRadius: '16px',
                       boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.18)',
@@ -839,10 +792,11 @@ export default function AllOffersPage() {
                       <Chip
                         key={key}
                         icon={getFilterIcon(key)}
-                        label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, value)}`}
+                        label={`${getFilterLabel(key)}: ${getFilterDisplayValue(key, sidebarFilters[key])}`}
                         onDelete={() => handleRemoveFilter(key)}
                         size="small"
                         sx={{
+                          textTransform: 'uppercase',
                           bgcolor: '#fff',
                           border: '1px solid #cbd5e1',
                           color: '#455a64',
@@ -896,8 +850,7 @@ export default function AllOffersPage() {
                       boxShadow: '0 15px 30px rgba(15, 23, 42, 0.1)',
                       position: 'relative',
                       overflow: 'hidden',
-                      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                      zIndex: 1,
+                      transition: 'all 0.4s ease',
                       '&:hover': {
                         boxShadow: '0 20px 40px rgba(15, 23, 42, 0.15)',
                         transform: 'translateY(-5px)'
@@ -1007,9 +960,9 @@ export default function AllOffersPage() {
                           content: '""',
                           position: 'absolute',
                           bottom: -8,
-                          left: '30%',
-                          width: '40%',
-                          height: 2,
+                          left: 0,
+                          width: '30px',
+                          height: '2px',
                           background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.5), transparent)',
                           borderRadius: 2
                         }
@@ -1288,17 +1241,17 @@ export default function AllOffersPage() {
                                 '&::before': {
                                   content: '""',
                                   position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  width: '100%',
-                                  height: '100%',
-                                  background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
-                                  transform: 'translateX(-100%)',
-                                  transition: 'transform 0.6s',
-                                  zIndex: 1
+                                  top: -3,
+                                  left: -3,
+                                  right: -3,
+                                  bottom: -3,
+                                  borderRadius: '50%',
+                                  background: 'linear-gradient(135deg, rgba(203, 213, 225, 0.5), rgba(148, 163, 184, 0.2))',
+                                  zIndex: -1,
+                                  opacity: 0.5
                                 },
                                 '&:hover::before': {
-                                  transform: 'translateX(100%)'
+                                  transform: 'translateZ(0)'
                                 }
                               }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 2 }}>
@@ -1677,7 +1630,7 @@ export default function AllOffersPage() {
                             }}>
                               <Chip
                                 icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
-                                label={`From: ${formatDateDMY(offer.availabilityStart || offer.availableFrom)}`}
+                                label={`From: ${dayjs(offer.availabilityStart || offer.availableFrom).format('DD-MM-YYYY HH:mm')}`}
                                 size="small"
                                 sx={{
                                   bgcolor: 'rgba(226, 232, 240, 0.5)',
@@ -1694,7 +1647,7 @@ export default function AllOffersPage() {
                               />
                               <Chip
                                 icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
-                                label={`To: ${formatDateDMY(offer.availabilityEnd || offer.availableTo)}`}
+                                label={`To: ${dayjs(offer.availabilityEnd || offer.availableTo).format('DD-MM-YYYY HH:mm')}`}
                                 size="small"
                                 sx={{
                                   bgcolor: 'rgba(226, 232, 240, 0.5)',
@@ -1795,7 +1748,7 @@ export default function AllOffersPage() {
                   background: 'linear-gradient(135deg, #334155, #1e293b)',
                   opacity: 0.2,
                   filter: 'blur(20px)',
-                  transform: 'translateZ(0)',
+                  transform: 'translateZ(0)', // Force GPU acceleration
                   zIndex: 0
                 }} />
                 
@@ -1849,7 +1802,19 @@ export default function AllOffersPage() {
                         color: '#475569', 
                         fontWeight: 600,
                         fontSize: '0.9rem',
-                        letterSpacing: '0.2px'
+                        letterSpacing: '0.2px',
+                        position: 'relative',
+                        textShadow: '0 1px 1px rgba(15, 23, 42, 0.05)',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          bottom: -2,
+                          left: 0,
+                          width: '30px',
+                          height: '2px',
+                          background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.5), transparent)',
+                          borderRadius: 2
+                        }
                       }}>
                         Showing <Box component="span" sx={{ fontWeight: 700, color: '#334155' }}>
                           {page * rowsPerPage + 1}-{Math.min(filteredOffers.length, (page + 1) * rowsPerPage)}
