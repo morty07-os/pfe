@@ -401,7 +401,7 @@ const ConversationPage = () => {
                       </Typography>
                     </Box>
                   </Box>
-                      {owner?.email && (
+                      {owner?.phone && (
                         <Box sx={{ 
                           display: 'flex', 
                           alignItems: 'center', 
@@ -413,10 +413,10 @@ const ConversationPage = () => {
                           mb: 2
                         }}>
                           <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500 }}>
-                            Email:
+                            Phone:
                           </Typography>
                           <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
-                            {owner.email}
+                            {owner.phone}
                           </Typography>
                         </Box>
                       )}
@@ -516,31 +516,6 @@ const ConversationPage = () => {
                                   </Typography>
                                   <Typography sx={{ fontSize: '0.85rem', color: '#64748b', mt: 0.5 }}>
                                     <strong>{bookingDetails.days} {bookingDetails.days === 1 ? 'day' : 'days'}</strong>
-                                  </Typography>
-                                </Box>
-                              </Box>
-                              
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Box sx={{ 
-                                  width: 40, 
-                                  height: 40, 
-                                  borderRadius: '50%', 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'center',
-                                  bgcolor: 'rgba(71, 85, 105, 0.1)'
-                                }}>
-                                  <AttachMoneyIcon sx={{ color: '#475569', fontSize: '1.3rem' }} />
-                                </Box>
-                                <Box>
-                                  <Typography sx={{ fontSize: '0.85rem', color: '#64748b', mb: 0.5 }}>
-                                    Total Cost
-                                  </Typography>
-                                  <Typography sx={{ fontWeight: 700, color: '#1e293b', fontSize: '1.1rem' }}>
-                                    DZD {bookingDetails.totalCost?.toLocaleString()}
-                                  </Typography>
-                                  <Typography sx={{ fontSize: '0.85rem', color: '#64748b', mt: 0.5 }}>
-                                    DZD {car?.price?.toLocaleString()} × {bookingDetails.days} {bookingDetails.days === 1 ? 'day' : 'days'}
                                   </Typography>
                                 </Box>
                               </Box>
