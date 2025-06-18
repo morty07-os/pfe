@@ -450,79 +450,11 @@ const ConversationDialog = ({ userId, carId, conversationId }) => {
       });
       
       if (bothConfirmed) {
-        try {
-          // Update car booking status instead of deleting
-          const updateResponse = await axios.put(
-            `${apiUrl}/api/cars/booking-status/${carId}`,
-            { bookingStatus: 'booked' },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-          
-          const finalMessage = `Booking for ${carName} has been confirmed by both parties. The car is now marked as booked.`;
-          await handleSendMessage(finalMessage);
-          
-          try {
-            const conversationsResponse = await axios.get(
-              `${apiUrl}/api/messages/car-conversations/${carId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-              }
-            );
-            
-            if (conversationsResponse.data && conversationsResponse.data.length > 0) {
-              const otherConversations = conversationsResponse.data.filter(
-                conv => conv.conversationId !== conversationId
-              );
-              
-              for (const conv of otherConversations) {
-                try {
-                  await axios.post(
-                    `${apiUrl}/api/messages/save`,
-                    {
-                      carId: carId,
-                      receiver: conv.otherUserId,
-                      text: `This car (${carName}) has been confirmed for renting with another user and is no longer available.`,
-                      conversationId: conv.conversationId,
-                      isSystemMessage: true
-                    },
-                    {
-                      headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                      },
-                    }
-                  );
-                } catch (notifyError) {
-                  console.error(`Error notifying conversation ${conv.conversationId}:`, notifyError);
-                }
-              }
-            }
-          } catch (notifyError) {
-            console.log('Could not notify other conversations:', notifyError);
-          }
-          
-          setBookingConfirmed(true);
-          
-          alert('Booking confirmed by both parties! The car has been marked as booked.');
-          
-          window.dispatchEvent(new CustomEvent('carBooked', { detail: { carId } }));
-
-        } catch (error) {
-          console.error('Error during car booking confirmation:', error);
-          alert(`Error confirming booking: ${error.message}`);
-        }
-      } else {
-        alert(isCarOwner 
-          ? 'Your confirmation has been recorded. Waiting for renter to confirm.' 
-          : 'Your confirmation has been recorded. Waiting for owner to confirm.');
+        // Instead of marking the car as booked here, just show a message to send the receipt to the admin.
+        // The car will be marked as booked only after admin approval of the receipt.
+        alert('Both parties have confirmed the booking! Please send the receipt to the admin for final approval. The car will be marked as booked after admin approval.');
+        setBookingConfirmed(true);
+        return;
       }
     } catch (error) {
       console.error('Error in handleConfirmBooking:', error);

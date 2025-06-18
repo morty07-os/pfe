@@ -398,6 +398,22 @@ const AdminWelcomePage = () => {
         throw new Error('Failed to approve receipt');
       }
 
+      // Find the carId from the approved receipt
+      const approvedReceipt = pendingReceipts.find(r => r._id === receiptId);
+      const carId = approvedReceipt?.carId?._id || approvedReceipt?.carId;
+
+      // Mark the car as booked
+      if (carId) {
+        await fetch(`${apiUrl}/api/cars/booking-status/${carId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ bookingStatus: 'booked' })
+        });
+      }
+
       setPendingReceipts(current => current.filter(receipt => receipt._id !== receiptId));
       setError('Receipt approved successfully');
       setErrorType('success');
