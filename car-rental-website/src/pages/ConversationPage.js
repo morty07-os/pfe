@@ -38,6 +38,7 @@ const ConversationPage = () => {
   const chatEndRef = useRef(null);
   const [conversationId, setConversationId] = useState('');
   const [bookingDetails, setBookingDetails] = useState(null);
+  const [chatClosed, setChatClosed] = useState(false);
 
   const fetchMessages = React.useCallback(async (page = 1, limit = 10) => {
     if (!carId || !conversationId) {
@@ -173,6 +174,7 @@ const ConversationPage = () => {
       });
       setChatMessages(prev => [...prev, response.data]);
       setChatInput('');
+      setChatClosed(true);
       await fetchMessages();
     } catch (error) {
       console.error("Error sending message:", error);
@@ -656,14 +658,30 @@ const ConversationPage = () => {
                           }}
                         >
                           <Typography variant="body2" sx={{ fontWeight: 400 }}>{msg.text}</Typography>
- <Typography variant="caption" sx={{ opacity: 0.7, fontSize: '0.7rem', display: 'block', mt: 0.5, textAlign: isUser ? 'right' : 'left' }}>
+                          <Typography variant="caption" sx={{ opacity: 0.7, fontSize: '0.7rem', display: 'block', mt: 0.5, textAlign: isUser ? 'right' : 'left' }}>
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </Typography>
- </Box>
+                        </Box>
                       );
                     })
                   )}
                   <div ref={chatEndRef} />
+                  {chatClosed && (
+                    <Box sx={{
+                      mt: 2,
+                      mb: 1,
+                      p: 2,
+                      bgcolor: 'rgba(255, 243, 205, 0.8)',
+                      border: '1px solid #ffe082',
+                      borderRadius: 2,
+                      textAlign: 'center',
+                      color: '#ad6800',
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                    }}>
+                      To continue the conversation, please go to the chat section inside your profile.
+                    </Box>
+                  )}
                 </Box>
                 <Box
                   sx={{
@@ -703,20 +721,20 @@ const ConversationPage = () => {
                       maxLength: 300,
                       style: { padding: '10px 14px' } 
                     }}
-                    disabled={false}
+                    disabled={chatClosed}
                   />
                   <IconButton
                     color="primary"
                     onClick={handleSendChat}
-                    disabled={!chatInput.trim()}
+                    disabled={chatClosed || !chatInput.trim()}
                     sx={{
-                      bgcolor: !chatInput.trim() ? '#e2e8f0' : '#475569',
-                      color: !chatInput.trim() ? '#94a3b8' : 'white',
+                      bgcolor: !chatInput.trim() || chatClosed ? '#e2e8f0' : '#475569',
+                      color: !chatInput.trim() || chatClosed ? '#94a3b8' : 'white',
                       width: 42,
                       height: 42,
                       '&:hover': {
-                        bgcolor: !chatInput.trim() ? '#e2e8f0' : '#64748b',
-                        transform: chatInput.trim() ? 'scale(1.05)' : 'none',
+                        bgcolor: !chatInput.trim() || chatClosed ? '#e2e8f0' : '#64748b',
+                        transform: chatInput.trim() && !chatClosed ? 'scale(1.05)' : 'none',
                       },
                       transition: 'all 0.2s',
                       borderRadius: 2,
@@ -724,7 +742,7 @@ const ConversationPage = () => {
                     }}
                   >
                     <SendIcon />
-  </IconButton>
+                  </IconButton>
                 </Box>
               </Paper>
             </Grid>
