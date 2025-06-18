@@ -260,8 +260,21 @@ export default function AllOffersPage() {
             };
           }
 
-          // Use only backend features, do not generate random features
-          const features = car.features || {};
+          // Add random features if not present
+          const features = car.features || {
+            airConditioning: Math.random() > 0.4,
+            bluetooth: Math.random() > 0.5,
+            cruiseControl: Math.random() > 0.6,
+            parkingSensors: Math.random() > 0.5,
+            reverseCam: Math.random() > 0.6,
+            usb: Math.random() > 0.3,
+            navigation: Math.random() > 0.7,
+            sunroof: Math.random() > 0.8,
+            leatherSeats: Math.random() > 0.6,
+            heatedSeats: Math.random() > 0.7,
+            keylessEntry: Math.random() > 0.6,
+            alloyWheels: Math.random() > 0.5
+          };
 
           return {
             ...car,
