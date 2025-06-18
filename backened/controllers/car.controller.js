@@ -33,11 +33,6 @@ export const createCar = async (req, res) => {
     const newCar = new Car({
       ...req.body,
       images: imageUrl ? [imageUrl] : [],
-      features: req.body.features
-        ? (typeof req.body.features === 'string'
-            ? JSON.parse(req.body.features)
-            : req.body.features)
-        : undefined,
     });
     const savedCar = await newCar.save();
     res.status(201).json(savedCar);
@@ -97,11 +92,6 @@ export const updateCar = async (req, res) => {
 
     const updateData = {
       ...req.body,
-      features: req.body.features
-        ? (typeof req.body.features === 'string'
-            ? JSON.parse(req.body.features)
-            : req.body.features)
-        : undefined,
     };
     if (imageUrl) updateData.images = [imageUrl];
 

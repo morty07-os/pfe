@@ -1732,26 +1732,7 @@ export default function AllOffersPage() {
                                   gap: 0.75,
                                   maxWidth: '100%'
                                 }}>
-                                  {carFeatures.filter(f => offer.features && (offer.features[f.id] === true || offer.features[f.id] === 'true')).map(f => (
-                                    <Chip
-                                      key={f.id}
-                                      label={f.label}
-                                      size="small"
-                                      sx={{
-                                        bgcolor: '#e2e8f0',
-                                        color: '#334155',
-                                        fontWeight: 600,
-                                        fontSize: '0.7rem',
-                                        borderRadius: 0.75,
-                                        border: '1px solid #cbd5e1',
-                                        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
-                                        height: 24,
-                                        '& .MuiChip-label': { px: 0.6 },
-                                        mr: 0.5,
-                                        mb: 0.5
-                                      }}
-                                    />
-                                  ))}
+                                  {/* Feature chips would go here */}
                                 </Box>
                               </Box>
                             )}
