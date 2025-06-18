@@ -146,6 +146,12 @@ export const approveReceipt = async (req, res) => {
       return res.status(404).json({ message: 'Receipt not found' });
     }
 
+    // Update the car's bookingStatus to 'booked' when receipt is approved
+    if (receipt.carId) {
+      const Car = (await import('../models/car.models.js')).default;
+      await Car.findByIdAndUpdate(receipt.carId, { bookingStatus: 'booked' });
+    }
+
     // Optionally send an email notification to the user who sent the receipt
 
     res.status(200).json({ message: 'Receipt approved', receipt });

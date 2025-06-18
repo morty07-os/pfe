@@ -311,6 +311,9 @@ export default function AllOffersPage() {
     // Filter out cars without an owner
     tempOffers = tempOffers.filter(offer => offer.owner);
 
+    // Filter out cars that are booked
+    tempOffers = tempOffers.filter(offer => offer.bookingStatus !== 'booked');
+
     // Apply category filter from URL query param first
     if (categoryFilter) {
       tempOffers = tempOffers.filter(offer =>

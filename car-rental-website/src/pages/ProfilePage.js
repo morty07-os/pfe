@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { PostCarDialog } from '../components/PostCarDialog';
 import ConversationDialog from '../components/ConversationDialog';
+import axios from 'axios';
 
 // Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -87,6 +88,8 @@ const ProfilePage = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [rating, setRating] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
+  const [renterHistory, setRenterHistory] = useState([]);
+  const [ownerHistory, setOwnerHistory] = useState([]);
   const navigate = useNavigate();
 
   // Determine if the current user has admin role
@@ -179,10 +182,46 @@ const ProfilePage = () => {
     }
   };
 
+  const fetchRentalHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await axios.get(`${apiUrl}/api/bookings/user/my-bookings`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        withCredentials: true
+      });
+      if (response.data && response.data.bookings) {
+        setRenterHistory(response.data.bookings.filter(b => b.status === 'completed' || b.status === 'confirmed'));
+      }
+    } catch (error) {
+      console.error('Error fetching rental history:', error);
+    }
+  };
+
+  const fetchOwnerHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
+      const response = await axios.get(`${apiUrl}/api/bookings/owner/my-listings-bookings`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        withCredentials: true
+      });
+      if (response.data && response.data.bookings) {
+        setOwnerHistory(response.data.bookings.filter(b => b.status === 'completed' || b.status === 'confirmed'));
+      }
+    } catch (error) {
+      console.error('Error fetching owner history:', error);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
     fetchUserCars();
     fetchConversations(); // Fetch conversations on component mount
+    fetchRentalHistory();
+    fetchOwnerHistory();
   }, []);
 
   const handleLogout = async () => {
@@ -1228,6 +1267,61 @@ const ProfilePage = () => {
         open={isPostCarDialogOpen} 
         onClose={() => setIsPostCarDialogOpen(false)} 
       />
+      <Box sx={{ mt: 4 }}>
+        <StyledCard>
+          <CardHeader sx={{ background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <HistoryIcon /> Rental History (As Renter)
+            </Typography>
+          </CardHeader>
+          <CardContent>
+            {renterHistory.length === 0 ? (
+              <Typography variant="body2" sx={{ color: '#64748b' }}>No completed or confirmed rentals yet.</Typography>
+            ) : (
+              renterHistory.map((booking) => (
+                <Paper key={booking._id} sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <img src={booking.car?.images?.[0] || '/placeholder.jpg'} alt={booking.car?.carName} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{booking.car?.carName}</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>{booking.car?.brand}</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>From: {new Date(booking.startDate).toLocaleDateString()} To: {new Date(booking.endDate).toLocaleDateString()}</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>Status: {booking.status}</Typography>
+                  </Box>
+                  <Button variant="outlined" size="small" onClick={() => navigate(`/car-details/${booking.car?._id}`)}>View Car</Button>
+                </Paper>
+              ))
+            )}
+          </CardContent>
+        </StyledCard>
+      </Box>
+      <Box sx={{ mt: 4 }}>
+        <StyledCard>
+          <CardHeader sx={{ background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <HistoryIcon /> Rental History (As Owner)
+            </Typography>
+          </CardHeader>
+          <CardContent>
+            {ownerHistory.length === 0 ? (
+              <Typography variant="body2" sx={{ color: '#64748b' }}>No completed or confirmed rentals for your cars yet.</Typography>
+            ) : (
+              ownerHistory.map((booking) => (
+                <Paper key={booking._id} sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <img src={booking.car?.images?.[0] || '/placeholder.jpg'} alt={booking.car?.carName} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{booking.car?.carName}</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>{booking.car?.brand}</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>From: {new Date(booking.startDate).toLocaleDateString()} To: {new Date(booking.endDate).toLocaleDateString()}</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>Renter: {booking.renter?.firstName} {booking.renter?.lastName}</Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>Status: {booking.status}</Typography>
+                  </Box>
+                  <Button variant="outlined" size="small" onClick={() => navigate(`/car-details/${booking.car?._id}`)}>View Car</Button>
+                </Paper>
+              ))
+            )}
+          </CardContent>
+        </StyledCard>
+      </Box>
     </>
   );
 };
