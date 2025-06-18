@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { adminAuth } from '../midleware/adminAuth.js';
+import { ProtectedRoute } from '../midleware/ProtectedRoute.js';
 import { getPendingUsers, approveUser, rejectUser, sendReceipt, getPendingReceipts, approveReceipt, rejectReceipt } from '../controllers/admin.controller.js';
 
 const router = express.Router();
@@ -58,7 +59,7 @@ router.use((req, res, next) => {
 router.get('/pending-users', adminAuth(), getPendingUsers);
 router.post('/approve-user/:userId', adminAuth(), approveUser);
 router.post('/reject-user/:userId', adminAuth(), rejectUser);
-router.post('/send-receipt', adminAuth(), upload.single('receipt'), sendReceipt);
+router.post('/send-receipt', ProtectedRoute(), upload.single('receipt'), sendReceipt);
 router.get('/pending-receipts', adminAuth(), getPendingReceipts);
 router.post('/approve-receipt/:receiptId', adminAuth(), approveReceipt);
 router.post('/reject-receipt/:receiptId', adminAuth(), rejectReceipt);
