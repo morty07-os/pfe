@@ -130,6 +130,21 @@ const carSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    features: {
+      type: Map,
+      of: Boolean,
+      default: undefined,
+      validate: {
+        validator: function (features) {
+          if (!features) return true;
+          const allowed = [
+            "airConditioning", "bluetooth", "cruiseControl", "parkingSensors", "reverseCam", "usb", "auxInput", "leatherSeats", "heatedSeats", "sunroof", "navigation", "keylessEntry", "alloyWheels", "childSeat", "airbags"
+          ];
+          return Object.keys(Object.fromEntries(features)).every(key => allowed.includes(key));
+        },
+        message: 'Invalid feature key(s) in features object.'
+      }
+    },
   },
   { timestamps: true }
 );
