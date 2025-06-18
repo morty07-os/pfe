@@ -33,6 +33,7 @@ export const createCar = async (req, res) => {
     const newCar = new Car({
       ...req.body,
       images: imageUrl ? [imageUrl] : [],
+      features: req.body.features || {},
     });
     const savedCar = await newCar.save();
     res.status(201).json(savedCar);
@@ -94,6 +95,7 @@ export const updateCar = async (req, res) => {
       ...req.body,
     };
     if (imageUrl) updateData.images = [imageUrl];
+    if (req.body.features) updateData.features = req.body.features;
 
     const updatedCar = await Car.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
