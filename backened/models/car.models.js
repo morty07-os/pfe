@@ -101,6 +101,10 @@ const carSchema = new mongoose.Schema(
           'You can upload up to 5 documentation images, and all image URLs must be from Cloudinary (starting with "https://res.cloudinary.com").',
       },
     },
+    features: {
+      type: Object, // Store as a plain object (key: feature name, value: boolean)
+      default: {},
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

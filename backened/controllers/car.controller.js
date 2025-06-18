@@ -32,6 +32,8 @@ export const createCar = async (req, res) => {
 
     const newCar = new Car({
       ...req.body,
+      // Ensure features are included if present
+      features: req.body.features || {},
       images: imageUrl ? [imageUrl] : [],
     });
     const savedCar = await newCar.save();
@@ -92,6 +94,8 @@ export const updateCar = async (req, res) => {
 
     const updateData = {
       ...req.body,
+      // Ensure features are included if present
+      features: req.body.features || {},
     };
     if (imageUrl) updateData.images = [imageUrl];
 
