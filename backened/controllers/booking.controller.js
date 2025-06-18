@@ -1,7 +1,6 @@
 import Booking from '../models/booking.models.js';
 import Car from '../models/car.models.js';
 import User from '../models/user.models.js'; // To get owner details
-import Message from '../models/message.models.js'; // Import Message model
 import mongoose from 'mongoose';
 
 // Helper function to check for overlapping bookings
@@ -44,7 +43,7 @@ export const createBookingRequest = async (req, res, next) => {
             return res.status(400).json({ message: 'End date must be after start date.' });
         }
         if (sDate < new Date(car.availabilityStart) || eDate > new Date(car.availabilityEnd)) {
-            return res.status(400).json({ message: "Selected dates are outside the car's availability range." });
+            return res.status(400).json({ message: 'Selected dates are outside the car’s availability range.' });
         }
 
         const overlapping = await checkOverlappingBookings(carId, sDate, eDate);
@@ -163,40 +162,6 @@ export const updateBookingStatus = async (req, res, next) => {
                 return res.status(409).json({ message: 'Cannot confirm booking. Car is no longer available for these dates.' });
             }
             booking.paymentId = paymentId || booking.paymentId; // Update paymentId if provided
-
-            // --- Send system message from admin to renter and owner ---
-            try {
-                const adminUser = await User.findOne({ role: 'admin' });
-                if (adminUser) {
-                    const carId = booking.car;
-                    const renterId = booking.renter._id ? booking.renter._id : booking.renter;
-                    const ownerId = booking.owner._id ? booking.owner._id : booking.owner;
-                    const conversationIdRenter = `${carId}-${[adminUser._id, renterId].sort().join('-')}`;
-                    const conversationIdOwner = `${carId}-${[adminUser._id, ownerId].sort().join('-')}`;
-                    const confirmationText = `Your booking has been confirmed! Thank you for using our service. If you have any questions, please contact support.`;
-                    // Message to renter
-                    await new Message({
-                        carId,
-                        sender: adminUser._id,
-                        receiver: renterId,
-                        conversationId: conversationIdRenter,
-                        text: confirmationText,
-                        isSystemMessage: true
-                    }).save().catch(() => {});
-                    // Message to owner
-                    await new Message({
-                        carId,
-                        sender: adminUser._id,
-                        receiver: ownerId,
-                        conversationId: conversationIdOwner,
-                        text: confirmationText,
-                        isSystemMessage: true
-                    }).save().catch(() => {});
-                }
-            } catch (msgErr) {
-                // Log but do not block booking confirmation
-                console.error('Failed to send system message after booking confirmation:', msgErr);
-            }
         } else if (status === 'cancelled_by_renter' && !isRenter) {
             return res.status(403).json({ message: 'Only the renter can cancel with this status.' });
         } else if (status === 'cancelled_by_owner' && !isOwner) {
