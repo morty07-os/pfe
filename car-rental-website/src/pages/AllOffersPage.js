@@ -304,21 +304,20 @@ export default function AllOffersPage() {
         });
 
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize today to the start of the day
-        console.log('Today\'s date for filtering (normalized):', today);
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().slice(0, 10);
+
         const filteredCars = enhancedData.filter(car => {
           if (!car.availability || car.availability.length === 0) {
-            console.log(`Car ${car._id} has no availability data, included by default`);
+            // If no availability data, include by default
             return true;
           }
-          const hasValidDate = car.availability.some(period => {
-            const toDate = new Date(period.toDate);
-            toDate.setHours(0, 0, 0, 0); // Normalize toDate to the start of the day
-            console.log(`Car ${car._id} has toDate:`, period.toDate, 'parsed as (normalized)', toDate);
-            return toDate >= today;
+          // Exclude only if ALL periods are before today
+          const allPeriodsPast = car.availability.every(period => {
+            const toDateStr = new Date(period.toDate).toISOString().slice(0, 10);
+            return toDateStr < todayStr;
           });
-          console.log(`Car ${car._id} filtered:`, hasValidDate ? 'Included' : 'Excluded');
-          return hasValidDate;
+          return !allPeriodsPast;
         });
 
         setOffers(filteredCars);
