@@ -1023,10 +1023,10 @@ export default function CarDetailsPage() {
                               mt: 0.5 
                             }}>
                               <Typography sx={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <span style={{ fontWeight: 500 }}>From:</span> {car.availabilityStart ? dayjs(car.availabilityStart).format('DD-MM-YYYY') : 'Not Available'}
+                                <span style={{ fontWeight: 500 }}>From:</span> {car.availabilityStart ? dayjs(car.availabilityStart).format('MMMM D, YYYY') : 'Not Available'}
                               </Typography>
                               <Typography sx={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <span style={{ fontWeight: 500 }}>To:</span> {car.availabilityEnd ? dayjs(car.availabilityEnd).format('DD-MM-YYYY') : 'Not Available'}
+                                <span style={{ fontWeight: 500 }}>To:</span> {car.availabilityEnd ? dayjs(car.availabilityEnd).format('MMMM D, YYYY') : 'Not Available'}
                               </Typography>
                             </Box>
                           </Box>

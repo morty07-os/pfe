@@ -45,6 +45,8 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
       availabilityEnd,
       price,
       carType,
+      pickupLocationId,
+      features
     } = body;
 
     const images = files.images;
@@ -103,8 +105,8 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
               }
             )
             .end(file.buffer);
-            })
-          );
+        })
+      );
       documentationImageUrls = await Promise.all(uploadDocumentationImagePromises);
     }
 
@@ -113,12 +115,31 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
     const User = (await import("../models/user.models.js")).default;
     const user = await User.findById(req.user.userId);
 
-            if (!user) {
+    if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
     // Normalize carType to uppercase to match schema enum
     const normalizedCarType = carType ? carType.toUpperCase() : undefined;
+
+    // Derive location coordinates from pickupLocationId
+    let location = null;
+    if (pickupLocationId) {
+      // Assuming we have a way to map pickupLocationId to coordinates
+      // This could be a lookup in a configuration or database table
+      // For now, we'll simulate this with a placeholder
+      const pickupLocationsConfig = (await import("../../car-rental-website/src/data/wilayasConfig.js")).pickupLocationsConfig;
+      for (const wilayaName in pickupLocationsConfig) {
+        const location = pickupLocationsConfig[wilayaName].find(loc => loc.id === parseInt(pickupLocationId));
+        if (location) {
+          location = { lat: location.lat, lng: location.lng };
+          break;
+        }
+      }
+      if (!location) {
+        return res.status(400).json({ error: "Invalid pickup location ID" });
+      }
+    }
 
     const car = new Car({
       carName,
@@ -134,9 +155,11 @@ router.post("/addcars", ProtectedRoute(), upload.fields([{ name: 'images', maxCo
       availabilityStart,
       availabilityEnd,
       price,
+      images: imageUrls,
+      documentationImages: documentationImageUrls,
       carType: normalizedCarType,
-      images: imageUrls, // Store Cloudinary URLs
-      documentationImages: documentationImageUrls, // Add this line to store documentation images
+      location,
+      features: features || [],
       owner: req.user.userId,
       ownerName: {
         firstName: user.firstName,
@@ -172,7 +195,9 @@ router.get("/getcars", async (req, res) => {
     } = req.query;
 
     // Add status filter to only show approved cars
-    const query = { isDeleted: false, status: 'approved' };
+    // Only include cars that are approved, not deleted and whose availability period has not expired
+    const now = new Date();
+    const query = { isDeleted: false, status: 'approved', availabilityEnd: { $gte: now } };
 
     // Handle text search across multiple fields
     if (search) {
@@ -222,6 +247,11 @@ router.get("/getcars", async (req, res) => {
     }
 
     // Fetch cars with owner information
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to the start of the day
+
+    query['availability.toDate'] = { $gte: today };
+
     const cars = await Car.find(query)
       .select("-__v")
       .populate("owner", "firstName lastName -_id");

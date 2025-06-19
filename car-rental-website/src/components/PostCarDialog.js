@@ -22,13 +22,14 @@ import CloseIcon from "@mui/icons-material/Close";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import SearchIcon from "@mui/icons-material/Search";
+import { wilayasConfig, pickupLocationsConfig } from "../data/wilayasConfig";
 
 // Import Leaflet CSS
 import "leaflet/dist/leaflet.css";
 
 // Import Leaflet and fix icon issue
 import L from "leaflet";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
 
 // Import geosearch
 import { OpenStreetMapProvider } from "leaflet-geosearch";
@@ -46,374 +47,18 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// List of available wilayas
-const wilayas = [
-  "Adrar",
-  "Chlef",
-  "Laghouat",
-  "Oum El Bouaghi",
-  "Batna",
-  "Béjaïa",
-  "Biskra",
-  "Béchar",
-  "Blida",
-  "Bouira",
-  "Tamanrasset",
-  "Tébessa",
-  "Tlemcen",
-  "Tiaret",
-  "Tizi Ouzou",
-  "Algiers",
-  "Djelfa",
-  "Jijel",
-  "Sétif",
-  "Saïda",
-  "Skikda",
-  "Sidi Bel Abbès",
-  "Annaba",
-  "Guelma",
-  "Constantine",
-  "Médéa",
-  "Mostaganem",
-  "M'Sila",
-  "Mascara",
-  "Ouargla",
-  "Oran",
-  "El Bayadh",
-  "Illizi",
-  "Bordj Bou Arréridj",
-  "Boumerdès",
-  "El Tarf",
-  "Tindouf",
-  "Tissemsilt",
-  "El Oued",
-  "Khenchela",
-  "Souk Ahras",
-  "Tipaza",
-  "Mila",
-  "Aïn Defla",
-  "Naâma",
-  "Aïn Témouchent",
-  "Ghardaïa",
-  "Relizane",
-  "Timimoun",
-  "Bordj Badji Mokhtar",
-  "Ouled Djellal",
-  "Béni Abbès",
-  "In Salah",
-  "In Guezzam",
-  "Touggourt",
-  "Djanet",
-  "El M'Ghair",
-  "El Meniaa",
-];
+// List of available wilayas (only those active in the Map page)
+const wilayas = wilayasConfig.filter((w) => w.available).map((w) => w.name);
 
 // List of valid wilayas for validation
 const validWilayas = wilayas;
 
-// Create a custom search component
-function SearchControl({ onLocationFound, mapRef }) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const provider = useRef(new OpenStreetMapProvider());
-  const searchTimeout = useRef(null);
-
-  // Function to fetch suggestions as user types, limited to Algeria
-  const fetchSuggestions = async (query) => {
-    if (!query.trim() || query.trim().length < 2) return;
-
-    setIsSearching(true);
-    try {
-      const searchQuery = `${query}, Algeria`;
-      const results = await provider.current.search({ query: searchQuery });
-
-      const algerianResults = results.filter((result) => {
-        const label = result.label.toLowerCase();
-        return (
-          label.includes("algeria") ||
-          label.includes("algérie") ||
-          label.includes("الجزائر")
-        );
-      });
-
-      setSearchResults(algerianResults.slice(0, 5));
-      setShowResults(true);
-    } catch (error) {
-      console.error("Search suggestion error:", error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    if (searchTimeout.current) {
-      clearTimeout(searchTimeout.current);
-    }
-
-    if (!query.trim()) {
-      setSearchResults([]);
-      setShowResults(false);
-      return;
-    }
-
-    searchTimeout.current = setTimeout(() => {
-      fetchSuggestions(query);
-    }, 300);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (searchTimeout.current) {
-        clearTimeout(searchTimeout.current);
-      }
-    };
-  }, []);
-
-  const handleResultClick = (result) => {
-    const { y: lat, x: lng } = result;
-    const location = { lat, lng };
-    onLocationFound(location);
-    if (mapRef.current) {
-      mapRef.current.flyTo([lat, lng], 15);
-    }
-    setShowResults(false);
-    setSearchQuery(result.label.split(",")[0]);
-  };
-
-  return (
-    <Paper
-      sx={{
-        position: "absolute",
-        top: 16,
-        left: 16,
-        right: 16,
-        zIndex: 1000,
-        borderRadius: 3,
-        boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-        overflow: "hidden",
-        bgcolor: "rgba(255,255,255,0.98)",
-        maxWidth: "calc(100% - 32px)",
-        border: "1px solid rgba(203, 213, 225, 0.8)",
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", p: 1.5 }}>
-        <TextField
-          fullWidth
-          placeholder="Search for a location in Algeria..."
-          value={searchQuery}
-          onChange={handleInputChange}
-          onKeyPress={(e) =>
-            e.key === "Enter" &&
-            searchResults.length > 0 &&
-            handleResultClick(searchResults[0])
-          }
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: "#64748b" }} />
-              </InputAdornment>
-            ),
-            sx: {
-              borderRadius: 2,
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#cbd5e1",
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#94a3b8",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#475569",
-              },
-            },
-          }}
-          variant="outlined"
-          size="small"
-        />
-        {searchQuery && (
-          <IconButton
-            onClick={() => {
-              setSearchQuery("");
-              setSearchResults([]);
-              setShowResults(false);
-            }}
-            sx={{ color: "#94a3b8", ml: 1 }}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        )}
-      </Box>
-
-      {showResults && searchResults.length > 0 && (
-        <Box
-          sx={{
-            maxHeight: 300,
-            overflowY: "auto",
-            borderTop: "1px solid #e2e8f0",
-            "&::-webkit-scrollbar": {
-              width: "8px",
-            },
-            "&::-webkit-scrollbar-track": {
-              background: "#f1f5f9",
-            },
-            "&::-webkit-scrollbar-thumb": {
-              background: "#cbd5e1",
-              borderRadius: "4px",
-            },
-            "&::-webkit-scrollbar-thumb:hover": {
-              background: "#94a3b8",
-            },
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{
-              display: "block",
-              p: 1,
-              bgcolor: "#f8fafc",
-              color: "#64748b",
-              fontWeight: 500,
-              borderBottom: "1px solid #f1f5f9",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Box
-              component="img"
-              src="https://flagcdn.com/w20/dz.png"
-              alt="Algeria flag"
-              sx={{ width: 16, height: "auto", mr: 0.8 }}
-            />
-            Algerian Locations
-          </Typography>
-          {searchResults.map((result, index) => (
-            <Box
-              key={index}
-              onClick={() => handleResultClick(result)}
-              sx={{
-                p: 1.5,
-                cursor: "pointer",
-                "&:hover": { bgcolor: "#f8fafc" },
-                borderBottom:
-                  index < searchResults.length - 1
-                    ? "1px solid #f1f5f9"
-                    : "none",
-                display: "flex",
-                alignItems: "center",
-                transition: "all 0.15s ease",
-              }}
-            >
-              <Box
-                sx={{
-                  bgcolor: "#f1f5f9",
-                  borderRadius: "50%",
-                  width: 32,
-                  height: 32,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mr: 1.5,
-                }}
-              >
-                <LocationOnIcon sx={{ color: "#475569", fontSize: 18 }} />
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 600, color: "#334155" }}
-                >
-                  {result.label.split(",")[0]}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "#64748b", display: "block", mt: 0.5 }}
-                >
-                  {result.label.split(",").slice(1).join(",").trim()}
-                </Typography>
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      )}
-
-      {showResults &&
-        searchResults.length === 0 &&
-        !isSearching &&
-        searchQuery.trim().length >= 2 && (
-          <Box
-            sx={{
-              p: 2,
-              borderTop: "1px solid #e2e8f0",
-              textAlign: "center",
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: "#64748b",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexDirection: "column",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                <SearchIcon fontSize="small" sx={{ color: "#94a3b8", mr: 0.5 }} />
-                <Box
-                  component="img"
-                  src="https://flagcdn.com/w20/dz.png"
-                  alt="Algeria flag"
-                  sx={{ width: 16, height: "auto", ml: 0.5 }}
-                />
-              </Box>
-              No locations found in Algeria. Try a different search term or be more specific.
-            </Typography>
-          </Box>
-        )}
-
-      {isSearching && (
-        <Box
-          sx={{
-            p: 2,
-            borderTop: "1px solid #e2e8f0",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <CircularProgress size={20} sx={{ color: "#475569", mr: 1.5 }} />
-          <Typography variant="body2" sx={{ color: "#64748b" }}>
-            Searching locations...
-          </Typography>
-        </Box>
-      )}
-    </Paper>
+// Flatten pickup locations from config for dropdown (only those inside available wilayas)
+const pickupLocations = Object.entries(pickupLocationsConfig)
+  .filter(([wilayaName]) => validWilayas.includes(wilayaName))
+  .flatMap(([wilayaName, locs]) =>
+    locs.map((loc) => ({ ...loc, wilaya: wilayaName }))
   );
-}
-
-function LocationMarker({ position, setPosition }) {
-  const map = useMapEvents({
-    click(e) {
-      setPosition(e.latlng);
-    },
-  });
-
-  useEffect(() => {
-    if (position) {
-      map.flyTo(position, map.getZoom());
-    }
-  }, [position, map]);
-
-  return position === null ? null : (
-    <Marker position={position}>
-      <Popup>Your car will be located here</Popup>
-    </Marker>
-  );
-}
 
 const brands = [
   "Toyota",
@@ -671,7 +316,8 @@ function PostCarDialog({ open, onClose }) {
     location: null,
     locationValid: false, // Track if location is in a valid wilaya
     detectedWilaya: null, // Store the detected wilaya from location
-    features: {}
+    features: {},
+    pickupLocationId: ""
   });
   
   // Add form errors state to track validation errors
@@ -842,7 +488,8 @@ function PostCarDialog({ open, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.location) {
+    /* Location validation removed */
+    if (false) {
       setSnackbar({
         open: true,
         message: "Please set a pickup location before submitting",
@@ -853,7 +500,8 @@ function PostCarDialog({ open, onClose }) {
     }
     
     // Check if the location is in a valid wilaya if not already validated
-    if (formData.location && !formData.locationValid) {
+    /* Location validation removed */
+    if (false) {
       const locationCheck = await isLocationInValidWilaya(formData.location.lat, formData.location.lng);
       
       if (!locationCheck.valid) {
@@ -940,8 +588,16 @@ function PostCarDialog({ open, onClose }) {
       dataToSend.append("availabilityEnd", formData.availabilityEnd);
       dataToSend.append("price", formData.price);
       dataToSend.append("carType", formData.carType);
-      dataToSend.append("location[lat]", formData.location.lat);
-      dataToSend.append("location[lng]", formData.location.lng);
+      // Append pickup location coordinates if selected
+      const selectedPickup = pickupLocations.find(
+        (l) => String(l.id) === String(formData.pickupLocationId)
+      );
+      if (selectedPickup) {
+        dataToSend.append("location[lat]", selectedPickup.lat);
+        dataToSend.append("location[lng]", selectedPickup.lng);
+      }
+
+
 
       formData.images.forEach((imageFile) => {
         dataToSend.append("images", imageFile);
@@ -984,6 +640,10 @@ function PostCarDialog({ open, onClose }) {
   const handleSnackbarClose = () => {
     setSnackbar({ open: false, message: "", severity: "success" });
   };
+
+  const filteredPickupLocations = formData.wilaya ? 
+    pickupLocations.filter(loc => loc.wilaya === formData.wilaya) : 
+    pickupLocations;
 
   return (
     <>
@@ -1328,7 +988,11 @@ function PostCarDialog({ open, onClose }) {
                         <svg width="20" height="20" fill="none" style={{ marginRight: 4 }}>
                           <rect width="20" height="20" rx="10" fill="#e2e8f0" />
                           <circle cx="10" cy="10" r="6" stroke="#64748b" strokeWidth="1.5" fill="#fff" />
-                          <path d="M10 4v12M4 10h12" stroke="#64748b" strokeWidth="1.2" />
+                          <path
+                            d="M10 4v12M4 10h12"
+                            stroke="#64748b"
+                            strokeWidth="1.2"
+                          />
                           <path d="M10 10l4.2-4.2" stroke="#64748b" strokeWidth="1.1" />
                           <circle cx="10" cy="10" r="2.2" fill="#e2e8f0" stroke="#64748b" strokeWidth="1.1" />
                         </svg>
@@ -1447,79 +1111,38 @@ function PostCarDialog({ open, onClose }) {
               </TextField>
               {/* Pickup Location */}
               <TextField
+                required
+                select
                 fullWidth
-                onClick={handleOpenMapDialog}
-                value={formData.location ? 
-                  (formData.locationValid ? 'Pickup Location Set ✓' : 'Location not in service area! Click to change') : 
-                  'Click to set pickup location'
-                }
-                error={formData.location && !formData.locationValid || formErrors.location}
-                helperText={formData.location && !formData.locationValid ? 
-                  'Please select a location in a valid Algerian wilaya' : ''
-                }
-                sx={{ 
-                  cursor: 'pointer',
-                  '& .MuiInputBase-input': { 
-                    color: formData.location ? 
-                      (formData.locationValid ? '#334155' : '#d32f2f') : 
-                      '#64748b',
-                    fontWeight: formData.location ? 500 : 400
-                  },
-                  '& .MuiFormHelperText-root': {
-                    color: '#d32f2f',
-                    fontWeight: 500,
-                    fontSize: '0.75rem',
-                    marginLeft: 1,
-                    marginTop: 0.5
-                  }
-                }}
+                label="Pickup Location"
+                name="pickupLocationId"
+                value={formData.pickupLocationId}
+                onChange={handleChange}
                 InputProps={{
-                  readOnly: true,
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LocationOnIcon sx={{ 
-                        color: formData.location ? 
-                          (formData.locationValid ? '#475569' : '#d32f2f') : 
-                          '#64748b' 
-                      }} />
+                      <LocationOnIcon sx={{ color: "#64748b" }} />
                     </InputAdornment>
                   ),
-                  endAdornment: formData.location ? (
-                    <InputAdornment position="end">
-                      <Typography variant="caption" sx={{ 
-                        color: formData.locationValid ? '#475569' : '#d32f2f', 
-                        fontWeight: 500, 
-                        mr: 1 
-                      }}>
-                        Click to change
-                      </Typography>
-                    </InputAdornment>
-                  ) : null,
                   sx: {
                     borderRadius: 2.5,
-                    bgcolor: formData.location ? 
-                      (formData.locationValid ? '#e2e8f0' : '#fee2e2') : 
-                      '#f1f5f9',
-                    border: formData.location ? 
-                      (formData.locationValid ? '1px solid #cbd5e1' : '1px solid #ef4444') : 
-                      '1px solid #e2e8f0',
-                    boxShadow: formData.location ? 
-                      (formData.locationValid ? '0 2px 6px rgba(30,41,59,0.08)' : '0 2px 6px rgba(239,68,68,0.2)') : 
-                      '0 1px 4px rgba(30,41,59,0.03)',
-                    cursor: 'pointer',
-                    '&:hover': { 
-                      bgcolor: formData.locationValid ? '#e2e8f0' : '#fecaca', 
-                      borderColor: formData.locationValid ? '#cbd5e1' : '#ef4444' 
+                    bgcolor: "#f1f5f9",
+                    boxShadow: "0 1px 4px rgba(30,41,59,0.03)",
+                    "&:hover": { bgcolor: "#e2e8f0" },
+                    "&.Mui-focused": {
+                      boxShadow: "0 0 0 2px #64748b44",
+                      borderColor: "#475569",
                     },
-                    '&.Mui-focused': { 
-                      boxShadow: formData.locationValid ? '0 0 0 2px #475569' : '0 0 0 2px #ef4444', 
-                      borderColor: formData.locationValid ? '#475569' : '#ef4444'
-                    },
-                    height: 56,
-                    pl: 2,
                   },
                 }}
-              />
+                InputLabelProps={{ sx: { fontWeight: 600, color: "#334155", letterSpacing: 0.3 } }}
+              >
+                {filteredPickupLocations.map((loc) => (
+                  <MenuItem key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </MenuItem>
+                ))}
+              </TextField>
               {/* Energy, Engine, Transmission */}
               <Box sx={{ display: "flex", gap: 2 }}>
                 <TextField
@@ -1689,20 +1312,6 @@ function PostCarDialog({ open, onClose }) {
                             d="M7.5 5c0-1 .8-1.5 1.7-1.2l.3.1c.4.2.7.6.7 1.1v3.5"
                             stroke="#64748b"
                             strokeWidth="1.4"
-                            strokeLinecap="round"
-                          />
-                          <path
-                            d="M9.5 8.5c-.7 1.1-1.3 2.2-1.3 3.7V15c0 .6.4 1 1 1h5.2c.6 0 1-.4 1-1v-1.2c0-.6-.4-1.3-1-1.5l-2.2-.7c-.5-.1-.8-.6-.8-1.1V8.5"
-                            stroke="#64748b"
-                            strokeWidth="1.4"
-                            strokeLinejoin="round"
-                            fill="#fff"
-                          />
-                          <circle cx="8.5" cy="12.2" r="0.7" fill="#e2e8f0" stroke="#64748b" strokeWidth="1.1" />
-                          <path
-                            d="M10.5 15h3"
-                            stroke="#64748b"
-                            strokeWidth="1.2"
                             strokeLinecap="round"
                           />
                         </svg>
@@ -1922,24 +1531,16 @@ function PostCarDialog({ open, onClose }) {
                 <TextField
                   required
                   fullWidth
-                  label="Price Per Day (€)"
+                  label="Price per Day (DZD)"
                   name="price"
                   type="number"
                   inputProps={{ min: 0 }}
                   value={formData.price}
                   onChange={handleChange}
-                  InputLabelProps={{
-                    sx: { fontWeight: 600, color: "#334155", letterSpacing: 0.3 },
-                  }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <svg width="20" height="20" fill="none" style={{ marginRight: 4 }}>
-                          <rect width="20" height="20" rx="10" fill="#e2e8f0" />
-                          <text x="6" y="15" fontSize="11" fill="#64748b">
-                            €
-                          </text>
-                        </svg>
+                        <Typography sx={{ color: "#64748b", fontWeight: 600 }}>DZD</Typography>
                       </InputAdornment>
                     ),
                     sx: {
@@ -1953,6 +1554,7 @@ function PostCarDialog({ open, onClose }) {
                       },
                     },
                   }}
+                  InputLabelProps={{ sx: { fontWeight: 600, color: "#334155", letterSpacing: 0.3 } }}
                 />
               </Box>
               {/* Car Features */}
@@ -1996,7 +1598,7 @@ function PostCarDialog({ open, onClose }) {
                     borderRadius: 2,
                     bgcolor: "#f8fafc",
                     border: "1px solid #e2e8f0",
-                    boxShadow: "inset 0 1px 5px rgba(100,116,139,0.05)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                   }}
                 >
                   {carFeatures.map((feature) => (
@@ -2085,7 +1687,14 @@ function PostCarDialog({ open, onClose }) {
                       strokeWidth="1.4"
                       strokeLinecap="round"
                     />
-                    <rect x="5.5" y="12" width="13" height="3" rx="1.5" fill="#64748b" />
+                    <rect
+                      x="5.5"
+                      y="12"
+                      width="13"
+                      height="3"
+                      rx="1.5"
+                      fill="#64748b"
+                    />
                     <circle cx="8.5" cy="17.5" r="1.5" fill="#fff" />
                     <circle cx="15.5" cy="17.5" r="1.5" fill="#fff" />
                   </svg>
@@ -2133,222 +1742,80 @@ function PostCarDialog({ open, onClose }) {
         </Alert>
       </Snackbar>
 
-      {/* Map Dialog */}
+      {/* Commented out Map Dialog to remove reference to LocationMarker */}
+      {/*
       <Dialog
         open={mapDialogOpen}
         onClose={handleCloseMapDialog}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            boxShadow: "0 12px 50px -12px rgba(30,41,59,0.25)",
-            height: "80vh",
-            maxHeight: "700px",
-          },
-        }}
+        fullScreen={window.innerWidth < 600}
       >
-        <DialogTitle
-          sx={{
-            p: 0,
-            bgcolor: "#475569",
-            borderBottom: "1px solid #334155",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            color: "white",
-            height: 64,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", p: 2 }}>
-            <LocationOnIcon sx={{ mr: 1.5, fontSize: 24 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600, letterSpacing: 0.3 }}>
-              Select Pickup Location
-            </Typography>
-          </Box>
+        <DialogTitle sx={{ bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
+            Set Pickup Location
+          </Typography>
           <IconButton
             onClick={handleCloseMapDialog}
-            sx={{
-              color: "white",
-              mr: 1,
-              "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-            }}
+            sx={{ position: 'absolute', top: 8, right: 8, color: '#64748b' }}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        
-        <DialogContent sx={{ p: 0, position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {/* Service Area Warning Banner */}
-          <Box sx={{ 
-            bgcolor: '#475569', 
-            color: 'white',
-            p: 2,
-            borderBottom: '1px solid #334155',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-          }}>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              <strong>Important:</strong> We currently only offer service in valid Algerian wilayas.
-            </Typography>
-          </Box>
-          
-          {/* Map */}
-          <Box sx={{ flex: 1, position: 'relative' }}>
-            <MapContainer
-              center={formData.location || [36.7529, 3.0420]}
-              zoom={formData.location ? 15 : 6}
-              style={{ height: "100%", width: "100%" }}
-              ref={mapRef}
-              zoomControl={true}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              <LocationMarker
-                position={formData.location}
-                setPosition={(pos) =>
-                  setFormData((prev) => ({ ...prev, location: pos }))
-                }
-              />
-            </MapContainer>
-
-            <SearchControl
-              onLocationFound={(location) =>
-                setFormData((prev) => ({ ...prev, location }))
-              }
-              mapRef={mapRef}
+        <DialogContent sx={{ p: 0, height: window.innerWidth < 600 ? 'calc(100vh - 56px)' : '70vh' }}>
+          <MapContainer
+            center={formData.location || [36.737232, 3.086472]}
+            zoom={13}
+            style={{ height: '100%', width: '100%' }}
+            ref={mapRef}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-
-            <Box
+            <LocationMarker
+              position={formData.location}
+              setPosition={handleLocationSelect}
+            />
+          </MapContainer>
+          <SearchControl onLocationFound={handleLocationSelect} mapRef={mapRef} />
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 16,
+              right: 16,
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+            }}
+          >
+            <Fab
+              size="small"
+              color="primary"
+              onClick={handleUseCurrentLocation}
               sx={{
-                position: "absolute",
-                bottom: 16,
-                right: 16,
-                zIndex: 1000,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
+                boxShadow: '0 4px 12px rgba(30,41,59,0.2)',
+                '&:hover': { bgcolor: '#1e293b' },
               }}
             >
-              <Button
-                variant="contained"
-                onClick={handleUseCurrentLocation}
-                startIcon={<MyLocationIcon />}
-                sx={{
-                  borderRadius: 3,
-                  bgcolor: "#475569",
-                  color: "white",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  py: 1.2,
-                  px: 2.5,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  "&:hover": {
-                    bgcolor: "#334155",
-                    boxShadow: "0 6px 16px rgba(0,0,0,0.2)",
-                    transform: "translateY(-2px)",
-                  },
-                  transition: "all 0.2s ease",
-                  mb: 1,
-                }}
-              >
-                Use My Location
-              </Button>
-              <Paper
-                sx={{
-                  p: 1,
-                  borderRadius: 2,
-                  bgcolor: "rgba(255,255,255,0.9)",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                  display: formData.location ? "block" : "none",
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "#475569",
-                    fontWeight: 500,
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <LocationOnIcon sx={{ fontSize: 14, mr: 0.5, color: "#64748b" }} />
-                  {formData.location ? "Location selected" : ""}
-                </Typography>
-              </Paper>
-            </Box>
+              <MyLocationIcon />
+            </Fab>
           </Box>
         </DialogContent>
-
-        <DialogActions
-          sx={{
-            p: 2.5,
-            borderTop: "1px solid #e2e8f0",
-            bgcolor: "#f8fafc",
-            display: "flex",
-            justifyContent: "space-between",
-          }}
-        >
-          <Box>
-            {formData.location && (
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "#475569",
-                  display: "flex",
-                  alignItems: "center",
-                  fontWeight: 500,
-                }}
-              >
-                <LocationOnIcon sx={{ fontSize: 18, mr: 0.8, color: "#64748b" }} />
-                Location selected
-              </Typography>
-            )}
-          </Box>
-          <Box sx={{ display: "flex", gap: 1.5 }}>
-            <Button
-              onClick={handleCloseMapDialog}
-              sx={{
-                color: "#64748b",
-                textTransform: "none",
-                fontWeight: 600,
-                px: 2.5,
-                "&:hover": { bgcolor: "#f1f5f9" },
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleCloseMapDialog}
-              disabled={!formData.location}
-              sx={{
-                bgcolor: "#475569",
-                color: "white",
-                textTransform: "none",
-                fontWeight: 600,
-                px: 3,
-                py: 1,
-                borderRadius: 2,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                "&:hover": {
-                  bgcolor: "#334155",
-                  boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
-                },
-                "&.Mui-disabled": { bgcolor: "#94a3b8", color: "#f1 hicieraf5f9" },
-              }}
-            >
-              Confirm Location
-            </Button>
-          </Box>
+        <DialogActions sx={{ px: 3, py: 2, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+          <Button
+            onClick={handleCloseMapDialog}
+            color="primary"
+            variant="contained"
+            disabled={!formData.location || !formData.locationValid}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          >
+            Confirm Location
+          </Button>
         </DialogActions>
       </Dialog>
+      */}
     </>
   );
 }

@@ -20,6 +20,7 @@ import messageRoutes from "./routes/message.routes.js";
 import ratingRoutes from "./routes/rating.routes.js"; // Import rating routes
 import feedbackRoutes from "./routes/feedback.routes.js"; // Import feedback routes
 import adminRoutes from "./routes/admin.routes.js"; // Import admin routes
+import scheduledCleanup from "./cron/cleanup.js";
 
 
 // Load environment variables
@@ -166,6 +167,9 @@ app.get('/', (req, res) => {
 
 // Centralized error handling middleware
 app.use(errorHandler);
+
+// Start the scheduled cleanup job
+scheduledCleanup();
 
 // Start the server and connect to MongoDB
 httpServer.listen(PORT, async () => {

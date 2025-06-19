@@ -137,6 +137,7 @@ export default function AllOffersPage() {
   // Reference for scrolling to top of offers
   const offersTopRef = useRef(null);
   const [offers, setOffers] = useState([]);
+  const [filtersReady, setFiltersReady] = useState(false);
   const [currentUser, setCurrentUser] = useState(null); // Added for current user
   const [userCars, setUserCars] = useState([]); // Added to store user's cars
   const locationObj = useLocation();
@@ -206,14 +207,33 @@ export default function AllOffersPage() {
       newFilters.wilaya = wilayaParam;
     }
     
+    // Set car type if category param exists in URL
+    if (categoryFilter) {
+      newFilters.carType = categoryFilter;
+    }  
+    
     // Only update if we have new filters to add
-    if (startDate || endDate || wilayaParam) {
+    if (startDate || endDate || wilayaParam || categoryFilter) {
       setSidebarFilters(newFilters);
     }
+    // Do not mark ready here; wait until sidebarFilters has been updated to ensure carType present
   }, [locationObj.search]); // Only run when URL changes
+
+  // Once sidebarFilters reflect the URL params (especially carType) mark ready
+  useEffect(() => {
+    if (categoryFilter) {
+      if (sidebarFilters.carType === categoryFilter) {
+        setFiltersReady(true);
+      }
+    } else {
+      // No category filter in URL, ready immediately after first sync
+      setFiltersReady(true);
+    }
+  }, [sidebarFilters, categoryFilter]);
 
   useEffect(() => {
     const fetchOffers = async () => {
+      if (!filtersReady) return;
       try {
         const queryParams = new URLSearchParams({
           brand: sidebarFilters.brand || '',
@@ -283,8 +303,26 @@ export default function AllOffersPage() {
           };
         });
 
-        setOffers(enhancedData);
-        console.log('Enhanced car data with features and locations:', enhancedData);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize today to the start of the day
+        console.log('Today\'s date for filtering (normalized):', today);
+        const filteredCars = enhancedData.filter(car => {
+          if (!car.availability || car.availability.length === 0) {
+            console.log(`Car ${car._id} has no availability data, included by default`);
+            return true;
+          }
+          const hasValidDate = car.availability.some(period => {
+            const toDate = new Date(period.toDate);
+            toDate.setHours(0, 0, 0, 0); // Normalize toDate to the start of the day
+            console.log(`Car ${car._id} has toDate:`, period.toDate, 'parsed as (normalized)', toDate);
+            return toDate >= today;
+          });
+          console.log(`Car ${car._id} filtered:`, hasValidDate ? 'Included' : 'Excluded');
+          return hasValidDate;
+        });
+
+        setOffers(filteredCars);
+        console.log('Enhanced car data with features and locations:', filteredCars);
       } catch (error) {
         console.error('Error fetching offers:', error.message);
       }
@@ -303,7 +341,7 @@ export default function AllOffersPage() {
     return () => {
       window.removeEventListener('carRemoved', handleCarRemoved);
     };
-  }, [sidebarFilters, search]);
+  }, [sidebarFilters, search, filtersReady]);
 
   const filteredOffers = React.useMemo(() => {
     let tempOffers = [...offers];
@@ -317,7 +355,8 @@ export default function AllOffersPage() {
     // Apply category filter from URL query param first
     if (categoryFilter) {
       tempOffers = tempOffers.filter(offer =>
-        offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase()
+        (offer.carType && offer.carType.toLowerCase() === categoryFilter.toLowerCase()) ||
+        (offer.category && offer.category.toLowerCase() === categoryFilter.toLowerCase())
       );
     }
 
@@ -690,21 +729,22 @@ export default function AllOffersPage() {
                       position: 'absolute',
                       top: 0,
                       left: 0,
-                      width: '100%',
-                      height: '4px',
-                      background: 'linear-gradient(90deg, #475569, #64748b)',
-                      opacity: 0,
-                      transition: 'opacity 0.3s ease',
-                    },
-                    '&:focus-within::before': {
-                      opacity: 1
+                      right: 0,
+                      bottom: 0,
+                      borderRadius: '16px',
+                      boxShadow: [
+                        '0 10px 15px -3px rgba(15, 23, 42, 0.08)',
+                        '0 4px 6px -2px rgba(15, 23, 42, 0.05)',
+                        '0 25px 50px -12px rgba(15, 23, 42, 0.25)'
+                      ].join(', '),
+                      zIndex: -1
                     },
                     '&::after': {
                       content: '""',
                       position: 'absolute',
-                      bottom: 0,
-                      left: '10%',
-                      right: '10%',
+                      bottom: 6,
+                      left: '5%',
+                      right: '5%',
                       bottom: 0,
                       borderRadius: '16px',
                       boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.18)',
@@ -1010,11 +1050,11 @@ export default function AllOffersPage() {
                           content: '""',
                           position: 'absolute',
                           bottom: -8,
-                          left: '30%',
-                          width: '40%',
-                          height: 2,
+                          left: 0,
+                          width: '30px',
+                          height: '2px',
                           background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.5), transparent)',
-                          borderRadius: 2
+                          borderRadius: '1px'
                         }
                       }}>
                         No cars match your filters
@@ -1258,7 +1298,7 @@ export default function AllOffersPage() {
                                       left: 0,
                                       width: '30px',
                                       height: '2px',
-                                      background: 'linear-gradient(90deg, #475569, rgba(71, 85, 105, 0.2))',
+                                      background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.5), transparent)',
                                       borderRadius: '1px'
                                     }
                                   }}
@@ -1680,7 +1720,7 @@ export default function AllOffersPage() {
                             }}>
                               <Chip
                                 icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
-                                label={`From: ${formatDateDMY(offer.availabilityStart || offer.availableFrom)}`}
+                                label={`From: ${dayjs(offer.availabilityStart).format('MMMM D, YYYY')}`}
                                 size="small"
                                 sx={{
                                   bgcolor: 'rgba(226, 232, 240, 0.5)',
@@ -1697,7 +1737,7 @@ export default function AllOffersPage() {
                               />
                               <Chip
                                 icon={<CalendarMonthIcon sx={{ color: '#64748b', fontSize: '0.8rem' }} />}
-                                label={`To: ${formatDateDMY(offer.availabilityEnd || offer.availableTo)}`}
+                                label={`To: ${dayjs(offer.availabilityEnd).format('MMMM D, YYYY')}`}
                                 size="small"
                                 sx={{
                                   bgcolor: 'rgba(226, 232, 240, 0.5)',
@@ -1798,7 +1838,7 @@ export default function AllOffersPage() {
                   background: 'linear-gradient(135deg, #334155, #1e293b)',
                   opacity: 0.2,
                   filter: 'blur(20px)',
-                  transform: 'translateZ(0)',
+                  transform: 'translateZ(0)', // Force GPU acceleration
                   zIndex: 0
                 }} />
                 
@@ -1852,7 +1892,19 @@ export default function AllOffersPage() {
                         color: '#475569', 
                         fontWeight: 600,
                         fontSize: '0.9rem',
-                        letterSpacing: '0.2px'
+                        letterSpacing: '0.2px',
+                        position: 'relative',
+                        textShadow: '0 1px 1px rgba(15, 23, 42, 0.05)',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          bottom: -2,
+                          left: 0,
+                          width: '30px',
+                          height: '2px',
+                          background: 'linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.5), transparent)',
+                          borderRadius: '1px'
+                        }
                       }}>
                         Showing <Box component="span" sx={{ fontWeight: 700, color: '#334155' }}>
                           {page * rowsPerPage + 1}-{Math.min(filteredOffers.length, (page + 1) * rowsPerPage)}
