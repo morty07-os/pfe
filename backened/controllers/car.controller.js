@@ -122,6 +122,23 @@ export const deleteCar = async (req, res) => {
   }
 };
 
+// Get car details by ID
+export const getCarDetails = async (req, res) => {
+  try {
+    const car = await Car.findById(req.params.carId)
+      .populate('owner', 'firstName lastName avatar phone');
+    
+    if (!car) {
+      return res.status(404).json({ message: "Car not found" });
+    }
+    
+    res.json(car);
+  } catch (error) {
+    console.error("Error fetching car details:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Update car booking status
 export const updateCarBookingStatus = async (req, res) => {
   try {

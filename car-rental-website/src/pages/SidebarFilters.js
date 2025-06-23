@@ -262,7 +262,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
       case 'seatsRange':
         return <AirlineSeatReclineExtraIcon fontSize="small" />;
       case 'doorsRange':
-        return <DoorFrontIcon fontSize="small" />;
+        return <DoorFrontIcon fontSize="small" sx={{ transform: 'rotate(90deg)' }} />;
       case 'priceRange':
         return <AttachMoneyIcon fontSize="small" />;
       case 'availableFrom':
@@ -1176,7 +1176,7 @@ export default function SidebarFilters({ filters, onFilterChange, stylish, onClo
         {/* Doors Section */}
         <FilterSection 
           title="Doors Range" 
-          icon={<DoorFrontIcon sx={{ color: '#455a64', fontSize: '1.1rem' }} />}
+          icon={<DoorFrontIcon sx={{ color: '#455a64', transform: 'rotate(90deg)', fontSize: '1.1rem' }} />}
         >
           <Box sx={{ px: 1, mt: 1, position: 'relative' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>

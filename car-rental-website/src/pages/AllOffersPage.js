@@ -1570,7 +1570,11 @@ export default function AllOffersPage() {
                                   }}
                                 />
                                 <Chip
-                                  icon={<MeetingRoomIcon sx={{ color: '#475569', fontSize: '0.8rem' }} />}
+                                  icon={<DoorFrontIcon sx={{ 
+                                    color: '#475569', 
+                                    transform: 'rotate(90deg)',
+                                    fontSize: '1.2rem'
+                                  }} />}
                                   label={`${offer.doors} Doors`}
                                   size="small"
                                   sx={{
@@ -1775,7 +1779,47 @@ export default function AllOffersPage() {
                                   gap: 0.75,
                                   maxWidth: '100%'
                                 }}>
-                                  {/* Feature chips would go here */}
+                                  {console.log('Car features data for offer:', offer.features)}
+                                  {offer.features && Object.keys(offer.features).length > 0 ? (
+                                    Object.entries(offer.features).map(([key, value]) => {
+                                      if (value === true) {
+                                        const feature = carFeatures.find(f => f.id === key);
+                                        if (feature) {
+                                          return (
+                                            <Tooltip title={feature.label} key={key}>
+                                              <Box sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                bgcolor: 'rgba(71, 85, 105, 0.2)',
+                                                color: '#334155',
+                                                borderRadius: 1,
+                                                p: 0.5,
+                                                minWidth: 24,
+                                                height: 24,
+                                                justifyContent: 'center',
+                                                border: '1px solid rgba(71, 85, 105, 0.3)',
+                                                '&:hover': {
+                                                  bgcolor: 'rgba(71, 85, 105, 0.3)',
+                                                  transform: 'scale(1.1)'
+                                                },
+                                                transition: 'all 0.2s ease'
+                                              }}>
+                                                <MiscellaneousServicesIcon sx={{ 
+                                                  fontSize: '0.9rem',
+                                                  color: '#475569'
+                                                }} />
+                                              </Box>
+                                            </Tooltip>
+                                          );
+                                        }
+                                      }
+                                      return null;
+                                    })
+                                  ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                      No features listed
+                                    </Typography>
+                                  )}
                                 </Box>
                               </Box>
                             )}

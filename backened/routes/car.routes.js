@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { createCar, getCars, updateCar, deleteCar, updateCarBookingStatus } from "../controllers/car.controller.js";
+import { createCar, getCars, getCarDetails, updateCar, deleteCar, updateCarBookingStatus } from "../controllers/car.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import Car from "../models/car.models.js";
 import cloudinary from "cloudinary";
@@ -20,6 +20,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Car routes from controller
 router.post("/add", ProtectedRoute(), upload.single("image"), createCar); // Adjusted for single image if needed
 router.get("/list", getCars);
+router.get("/details/:carId", getCarDetails);
 router.put("/update/:id", ProtectedRoute(), upload.single("image"), updateCar);
 router.delete("/delete/:id", ProtectedRoute(), deleteCar);
 

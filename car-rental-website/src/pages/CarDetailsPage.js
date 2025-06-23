@@ -27,10 +27,12 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'; // ADDED IMPORT
 import RnF_user from '../components/RnF_user';
-import EventSeatIcon from '@mui/icons-material/EventSeat';
-import DoorFrontIcon from '@mui/icons-material/DoorFront';
+import AirlineSeatReclineNormalIcon from '@mui/icons-material/AirlineSeatReclineNormal'; // More realistic car seat icon
+import DoorFrontIcon from '@mui/icons-material/DoorFront'; // More specific car door icon
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import ElectricCarIcon from '@mui/icons-material/ElectricCar';
+import EvStationIcon from '@mui/icons-material/EvStation';
+import OilBarrelIcon from '@mui/icons-material/OilBarrel'; // Fuel tank icon
 import SettingsIcon from '@mui/icons-material/Settings';
 import TuneIcon from '@mui/icons-material/Tune';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -166,15 +168,15 @@ export default function CarDetailsPage() {
 
   // Get appropriate fuel icon based on energy type
   const getFuelIcon = (energyType) => {
-    if (!energyType) return <LocalGasStationIcon />;
-    
-    const type = energyType.toLowerCase();
-    if (type.includes('electric') || type.includes('hybrid')) {
-      return <ElectricCarIcon sx={{ color: '#10b981' }} />;
-    } else if (type.includes('diesel')) {
-      return <LocalGasStationIcon sx={{ color: '#6366f1' }} />;
-    } else {
-      return <LocalGasStationIcon sx={{ color: '#475569' }} />;
+    switch (energyType?.toLowerCase()) {
+      case 'diesel':
+        return <OilBarrelIcon sx={{ color: '#607d8b' }} />;
+      case 'electric':
+        return <ElectricCarIcon sx={{ color: '#607d8b' }} />;
+      case 'hybrid':
+        return <EvStationIcon sx={{ color: '#607d8b' }} />;
+      default: // Essence
+        return <OilBarrelIcon sx={{ color: '#607d8b' }} />;
     }
   };
   
@@ -757,7 +759,7 @@ export default function CarDetailsPage() {
                       p: { xs: 2, sm: 3 },
                       borderRadius: 2,
                       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                      border: '1px solid rgba(100,116,139,0.15)',
+                      border: '1px solid #e2e8f0',
                       boxShadow: '0 6px 18px rgba(71, 85, 105, 0.12)',
                       backdropFilter: 'blur(6px)',
                     }}>
@@ -842,7 +844,10 @@ export default function CarDetailsPage() {
                           >
                             <Tooltip title="Passenger Capacity" arrow>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <EventSeatIcon sx={{ color: '#475569' }} />
+                                <AirlineSeatReclineNormalIcon sx={{ 
+                                  color: '#475569',
+                                  fontSize: '1.2rem'
+                                }} />
                                 <Box>
                                   <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
                                     {car.seats} Seats
@@ -873,7 +878,11 @@ export default function CarDetailsPage() {
                           >
                             <Tooltip title="Number of Doors" arrow>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <DoorFrontIcon sx={{ color: '#475569' }} />
+                                <DoorFrontIcon sx={{ 
+                                  color: '#475569', 
+                                  transform: 'rotate(90deg)',
+                                  fontSize: '1.2rem'
+                                }} />
                                 <Box>
                                   <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#475569' }}>
                                     {car.doors} Doors
@@ -949,6 +958,50 @@ export default function CarDetailsPage() {
                           </Paper>
                         </Grid>
                       </Grid>
+                      
+                      <Divider sx={{ my: 3, borderColor: '#e2e8f0' }} />
+                      
+                      {/* Car Features Section */}
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          mb: 2,
+                          fontWeight: 700,
+                          color: '#1e293b',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                        }}
+                      >
+                        <AcUnitIcon sx={{ color: '#475569' }} /> 
+                        Vehicle Features
+                      </Typography>
+                      
+                      {car.features && car.features.length > 0 ? (
+                        <Grid container spacing={1.5}>
+                          {car.features.map((feature, index) => (
+                            <Grid item xs="auto" key={index}>
+                              <Chip
+                                label={feature}
+                                size="small"
+                                sx={{
+                                  bgcolor: 'rgba(241, 245, 249, 0.7)',
+                                  color: '#475569',
+                                  fontWeight: 500,
+                                  borderRadius: 1,
+                                  px: 1,
+                                  '& .MuiChip-label': { px: 1 },
+                                }}
+                              />
+                            </Grid>
+                          ))}
+                        </Grid>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          No additional features listed for this vehicle.
+                        </Typography>
+                      )}
                       
                       <Divider sx={{ my: 3, borderColor: '#e2e8f0' }} />
                       
@@ -1065,7 +1118,7 @@ export default function CarDetailsPage() {
                                 const ownerId = typeof car.owner === 'string' ? car.owner : (car.owner._id || '');
                                 const ownerName = typeof car.owner === 'string' ? 
                                   (car.ownerName || 'Owner') : 
-                                  (car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : (car.ownerName || 'Unknown Owner'));
+                                  (car.owner ? `${car.owner.firstName || ''} ${car.owner.lastName || ''}` : 'Owner');
                                 
                                 handleOpenUserRatingDialog(ownerId, ownerName);
                               }}
