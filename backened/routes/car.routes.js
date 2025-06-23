@@ -251,8 +251,6 @@ router.get("/getcars", async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize to the start of the day
 
-    query['availability.toDate'] = { $gte: today };
-
     const cars = await Car.find(query)
       .select("-__v")
       .populate("owner", "firstName lastName -_id");
