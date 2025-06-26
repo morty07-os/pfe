@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Container, TextField, Button, CircularProgress, Alert, Divider
 } from '@mui/material';
-import { styled, alpha } from '@mui/material/styles';
+import { styled, alpha, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { fetchOptions } from '../utils/apiConfig';
@@ -195,6 +195,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 }));
 
 const EditProfilePage = () => {
+  const theme = useTheme();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
