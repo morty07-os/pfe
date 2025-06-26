@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import QuickSearch from './components/QuickSearch';
 import CarTypesCarousel from './components/CarTypesCarousel';
 import MapSection from './components/MapSection';
+import Chatbot from './components/Chatbot';
 
 import AllOffersPage from './pages/AllOffersPage';
 import OfferDetailsPage from './pages/OfferDetailsPage';
@@ -71,6 +72,7 @@ function App() {
       <BrowserRouter>
         <div className="App">
           <AppRoutes />
+          <Chatbot />
         </div>
       </BrowserRouter>
     </LocalizationProvider>

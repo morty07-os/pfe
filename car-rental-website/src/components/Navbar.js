@@ -39,11 +39,57 @@ import { PostCarDialog } from './PostCarDialog';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
 
+const styles = {
+  '@keyframes slideIn': {
+    '0%': { transform: 'scaleY(0)' },
+    '100%': { transform: 'scaleY(1)' }
+  },
+  '@keyframes pulse': {
+    '0%': { transform: 'scale(1)', opacity: 1 },
+    '50%': { transform: 'scale(1.05)', opacity: 0.8 },
+    '100%': { transform: 'scale(1)', opacity: 1 }
+  },
+  '@keyframes fadeIn': {
+    '0%': { opacity: 0, transform: 'translateY(10px)' },
+    '100%': { opacity: 1, transform: 'translateY(0)' }
+  },
+  '@keyframes bounce': {
+    '0%, 100%': { transform: 'scale(1)' },
+    '50%': { transform: 'scale(1.02)' }
+  },
+  '@keyframes ripple': {
+    '0%': { transform: 'scale(0)', opacity: 1 },
+    '100%': { transform: 'scale(4)', opacity: 0 }
+  },
+  '@keyframes float': {
+    '0%, 100%': { transform: 'translateY(0)' },
+    '50%': { transform: 'translateY(-3px)' }
+  },
+  '@keyframes glow': {
+    '0%': { filter: 'drop-shadow(0 0 5px rgba(52, 152, 219, 0))' },
+    '50%': { filter: 'drop-shadow(0 0 10px rgba(52, 152, 219, 0.5))' },
+    '100%': { filter: 'drop-shadow(0 0 5px rgba(52, 152, 219, 0))' }
+  },
+  '@keyframes spring': {
+    '0%': { transform: 'scale(1)' },
+    '30%': { transform: 'scale(1.1)' },
+    '70%': { transform: 'scale(0.95)' },
+    '100%': { transform: 'scale(1)' }
+  }
+};
+
 const buttonStyles = (iconColor) => ({
   color: iconColor,
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1.5)',
   '&:hover': {
     color: '#3498db',
     cursor: 'pointer',
+    transform: 'scale(1.15)',
+    filter: 'drop-shadow(0 2px 4px rgba(52, 152, 219, 0.3))',
+    animation: '$glow 2s ease infinite'
+  },
+  '&:active': {
+    transform: 'scale(0.95)'
   }
 });
 
@@ -307,17 +353,61 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
 
   return (
     <>
-      <AppBar position="relative" sx={{ backgroundColor: '#000', zIndex: 1200, ...sx }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
+      <AppBar position="relative" sx={{ 
+        backgroundColor: '#000', 
+        zIndex: 1200, 
+        transition: 'all 0.4s ease-out',
+        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+        ...sx 
+      }}>
+        <Toolbar sx={{
+          justifyContent: 'space-between',
+          '& .MuiIconButton-root': {
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            '&:hover': {
+              transform: 'translateY(-2px) rotate(2deg)',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                width: '5px',
+                height: '5px',
+                background: 'rgba(255,255,255,0.4)',
+                borderRadius: '50%',
+                transform: 'translate(-50%, -50%)',
+                animation: '$ripple 0.6s ease-out forwards'
+              }
+            },
+            '&:active': {
+              transform: 'scale(0.95)'
+            }
+          }
+        }}>
           <IconButton
             size="large"
             edge="start"
             color="inherit"
             aria-label="menu"
-            sx={{ color: '#fff' }}
             onClick={() => setDrawerOpen(true)}
+            sx={{
+              mr: 2,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: drawerOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+              '&:hover': {
+                animation: '$pulse 0.5s ease',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                transform: drawerOpen ? 'rotate(90deg) scale(1.1)' : 'rotate(45deg) scale(1.1)'
+              }
+            }}
           >
-            <MenuIcon sx={{ color: '#fff' }} />
+            <MenuIcon sx={{ 
+              color: '#fff',
+              transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: 'rotate(0deg)'
+            }} />
           </IconButton>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -325,7 +415,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             <Tooltip title="Home" arrow placement="bottom">
               <IconButton 
                 color="inherit" 
-                sx={{ color: '#fff' }}
+                sx={buttonStyles('#fff')}
                 onClick={() => navigate('/')}
               >
                 <HomeIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
@@ -335,7 +425,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             <Tooltip title="Browse Cars" arrow placement="bottom">
               <IconButton 
                 color="inherit" 
-                sx={{ color: '#fff' }}
+                sx={buttonStyles('#fff')}
                 onClick={() => navigate('/offers')}
               >
                 <DirectionsCarIcon sx={{ color: '#fff', fontSize: '1.5rem' }} />
@@ -350,7 +440,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             >
               <IconButton 
                 color="inherit" 
-                sx={{ color: '#fff' }}
+                sx={buttonStyles('#fff')}
                 onClick={handlePostCarClick}
               >
                 <AddCircleIcon sx={{ 
@@ -360,20 +450,24 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
               </IconButton>
             </Tooltip>
             {/* Messages icon removed */}
-            <IconButton
-              color="inherit"
-              sx={{
-                color: '#fff',
-                '&:hover': {
-                  color: '#3498db',
-                  cursor: 'pointer',
-                },
-                transition: 'color 0.3s ease',
-              }}
-              onClick={handleAccountClick}
-            >
-              <AccountCircleIcon sx={{ color: '#fff' }} />
-            </IconButton>
+            <Tooltip title="Account" arrow placement="bottom">
+              <IconButton
+                onClick={handleAccountClick}
+                sx={{
+                  ...buttonStyles('#fff'),
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1.5)',
+                  transform: Boolean(anchorEl) ? 'rotate(180deg)' : 'rotate(0deg)',
+                  '&:hover': {
+                    animation: '$pulse 0.5s ease'
+                  }
+                }}
+              >
+                {isLoggedIn ? 
+                  <AccountCircleIcon sx={{ fontSize: '1.5rem' }} /> : 
+                  <LoginIcon sx={{ fontSize: '1.5rem' }} />
+                }
+              </IconButton>
+            </Tooltip>
             <Menu
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
@@ -385,6 +479,37 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
               transformOrigin={{
                 vertical: 'top',
                 horizontal: 'right',
+              }}
+              sx={{
+                '& .MuiPaper-root': {
+                  backgroundColor: '#0f172a',
+                  color: '#e2e8f0',
+                  borderRadius: '12px',
+                  minWidth: '200px',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                  animation: '$bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  transformOrigin: 'top right',
+                  overflow: 'hidden',
+                  '& .MuiMenuItem-root': {
+                    transition: 'all 0.3s ease',
+                    '&:nth-of-type(1)': { animation: '$fadeIn 0.3s 0.1s both' },
+                    '&:nth-of-type(2)': { animation: '$fadeIn 0.3s 0.2s both' },
+                    '&:nth-of-type(3)': { animation: '$fadeIn 0.3s 0.3s both' },
+                    '&:hover': {
+                      backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'linear-gradient(90deg, rgba(52,152,219,0.1) 0%, rgba(155,89,182,0.1) 100%)',
+                        animation: '$slideIn 0.4s ease-out'
+                      }
+                    }
+                  }
+                }
               }}
             >
               {isLoggedIn ? [
@@ -451,15 +576,15 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
             boxShadow: '0 10px 30px rgba(15, 23, 42, 0.2)',
             borderRadius: '12px',
             border: '1px solid rgba(255, 255, 255, 0.1)',
-            '& .MuiAlert-icon': {
-              color: '#fff',
-              opacity: 0.9,
-              fontSize: '1.5rem'
-            },
             '& .MuiAlert-message': {
               fontSize: '1.1rem',
               fontWeight: 500,
               textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+            },
+            '& .MuiAlert-icon': {
+              fontSize: '1.5rem',
+              color: '#fff',
+              opacity: 0.9,
             },
             '& .MuiAlert-action': {
               color: '#fff',
@@ -504,7 +629,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  background: 'linear-gradient(90deg, rgba(100, 116, 139, 0.15), transparent)',
+                  background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.15), transparent)',
                   opacity: 0,
                   transform: 'scale(0.8)',
                   transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -563,7 +688,7 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   width: 5,
                   height: '70%',
                   background: 'linear-gradient(to bottom, #94a3b8, #e2e8f0)',
-                  borderRadius: '0 6px 6px 0',
+                  borderRadius: '0 4px 4px 0',
                   boxShadow: '2px 0 12px rgba(148, 163, 184, 0.4)',
                   animation: 'gradientFlow 3s infinite alternate',
                 }
@@ -605,9 +730,12 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                 height: 2,
                 background: 'linear-gradient(to right, #94a3b8, #e2e8f0)',
                 transform: 'scaleX(0)',
-                transformOrigin: 'left center',
                 opacity: 0,
-                transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease'
+                transition: 'transform 0.6s ease, opacity 0.4s ease'
+              },
+              '&:hover::after': {
+                width: '100%',
+                opacity: 1
               }
             },
           },
@@ -694,63 +822,18 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
               zIndex: 1,
             }
           }}>
-            <Box sx={{
-              width: 80,
-              height: 80,
-              borderRadius: '22px',
-              bgcolor: 'rgba(30, 41, 59, 0.3)',
-              backdropFilter: 'blur(14px)',
-              border: '1px solid rgba(71, 85, 105, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mb: 3.5,
-              boxShadow: '0 16px 50px rgba(2, 6, 23, 0.4)',
-              position: 'relative',
-              overflow: 'hidden',
-              transform: 'translateZ(0)',
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                top: '-50%',
-                left: '-50%',
-                right: '-50%',
-                bottom: '-50%',
-                background: 'linear-gradient(45deg, transparent, rgba(100, 116, 139, 0.3), transparent)',
-                transform: 'rotate(45deg)',
-                animation: 'shimmer 3s infinite',
-              }
-            }}>
-              <Box sx={{
-                width: 70,
-                height: 70,
-                borderRadius: '18px',
-                bgcolor: '#1e293b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                zIndex: 1,
-                boxShadow: '0 8px 30px rgba(2, 6, 23, 0.7)',
-                transform: 'translateZ(0)',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  borderRadius: '18px',
-                  background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.15) 0%, transparent 100%)',
+            <Box 
+              component="img"
+              sx={{
+                height: 40,
+                mr: 2,
+                transition: 'transform 0.3s ease',
+                '&:hover': {
+                  transform: 'perspective(500px) rotateY(10deg)',
+                  animation: '$glow 2s ease infinite'
                 }
-              }}>
-                <DirectionsCarIcon sx={{ 
-                  fontSize: 36, 
-                  color: '#e2e8f0',
-                  filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))'
-                }} />
-              </Box>
-            </Box>
+              }}
+            />
             <Typography 
               variant="h6" 
               component="div" 
@@ -824,6 +907,16 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   '&:hover': {
                     backgroundColor: 'rgba(51, 65, 85, 0.2)',
                     transform: 'translateX(6px)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      height: '100%',
+                      width: 3,
+                      background: 'linear-gradient(to bottom, #3498db, #9b59b6)',
+                      animation: '$slideIn 0.3s ease-out forwards'
+                    }
                   },
                   '&.Mui-selected': {
                     backgroundColor: 'rgba(51, 65, 85, 0.3)',
@@ -846,7 +939,10 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                     color: '#94a3b8',
                     transition: 'all 0.3s ease',
                     '.Mui-selected &': { color: '#e2e8f0' },
-                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                    '&:hover': { 
+                      color: '#e2e8f0', 
+                      transform: 'scale(1.1)' 
+                    }
                   }} />
                 </ListItemIcon>
                 <ListItemText 
@@ -872,6 +968,16 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   '&:hover': {
                     backgroundColor: 'rgba(51, 65, 85, 0.2)',
                     transform: 'translateX(6px)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      height: '100%',
+                      width: 3,
+                      background: 'linear-gradient(to bottom, #3498db, #9b59b6)',
+                      animation: '$slideIn 0.3s ease-out forwards'
+                    }
                   },
                   '&.Mui-selected': {
                     backgroundColor: 'rgba(51, 65, 85, 0.3)',
@@ -894,7 +1000,10 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                     color: '#94a3b8',
                     transition: 'all 0.3s ease',
                     '.Mui-selected &': { color: '#e2e8f0' },
-                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                    '&:hover': { 
+                      color: '#e2e8f0', 
+                      transform: 'scale(1.1)' 
+                    }
                   }} />
                 </ListItemIcon>
                 <ListItemText 
@@ -920,6 +1029,16 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   '&:hover': {
                     backgroundColor: 'rgba(51, 65, 85, 0.2)',
                     transform: 'translateX(6px)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      height: '100%',
+                      width: 3,
+                      background: 'linear-gradient(to bottom, #3498db, #9b59b6)',
+                      animation: '$slideIn 0.3s ease-out forwards'
+                    }
                   },
                   '&.Mui-selected': {
                     backgroundColor: 'rgba(51, 65, 85, 0.3)',
@@ -942,7 +1061,10 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                     color: '#94a3b8',
                     transition: 'all 0.3s ease',
                     '.Mui-selected &': { color: '#e2e8f0' },
-                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                    '&:hover': { 
+                      color: '#e2e8f0', 
+                      transform: 'scale(1.1)' 
+                    }
                   }} />
                 </ListItemIcon>
                 <ListItemText 
@@ -968,6 +1090,16 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   '&:hover': {
                     backgroundColor: 'rgba(51, 65, 85, 0.2)',
                     transform: 'translateX(6px)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      height: '100%',
+                      width: 3,
+                      background: 'linear-gradient(to bottom, #3498db, #9b59b6)',
+                      animation: '$slideIn 0.3s ease-out forwards'
+                    }
                   },
                   '&.Mui-selected': {
                     backgroundColor: 'rgba(51, 65, 85, 0.3)',
@@ -990,7 +1122,10 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                     color: '#94a3b8',
                     transition: 'all 0.3s ease',
                     '.Mui-selected &': { color: '#e2e8f0' },
-                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                    '&:hover': { 
+                      color: '#e2e8f0', 
+                      transform: 'scale(1.1)' 
+                    }
                   }} />
                 </ListItemIcon>
                 <ListItemText 
@@ -1022,6 +1157,16 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   '&:hover': {
                     backgroundColor: 'rgba(51, 65, 85, 0.2)',
                     transform: 'translateX(6px)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      height: '100%',
+                      width: 3,
+                      background: 'linear-gradient(to bottom, #3498db, #9b59b6)',
+                      animation: '$slideIn 0.3s ease-out forwards'
+                    }
                   },
                   '&.Mui-selected': {
                     backgroundColor: 'rgba(51, 65, 85, 0.3)',
@@ -1044,7 +1189,10 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                     color: '#94a3b8',
                     transition: 'all 0.3s ease',
                     '.Mui-selected &': { color: '#e2e8f0' },
-                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                    '&:hover': { 
+                      color: '#e2e8f0', 
+                      transform: 'scale(1.1)' 
+                    }
                   }} />
                 </ListItemIcon>
                 <ListItemText 
@@ -1070,6 +1218,16 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                   '&:hover': {
                     backgroundColor: 'rgba(51, 65, 85, 0.2)',
                     transform: 'translateX(6px)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      height: '100%',
+                      width: 3,
+                      background: 'linear-gradient(to bottom, #3498db, #9b59b6)',
+                      animation: '$slideIn 0.3s ease-out forwards'
+                    }
                   },
                   '&.Mui-selected': {
                     backgroundColor: 'rgba(51, 65, 85, 0.3)',
@@ -1092,7 +1250,10 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                     color: '#94a3b8',
                     transition: 'all 0.3s ease',
                     '.Mui-selected &': { color: '#e2e8f0' },
-                    'ListItem:hover &': { color: '#e2e8f0', transform: 'scale(1.1)' }
+                    '&:hover': { 
+                      color: '#e2e8f0', 
+                      transform: 'scale(1.1)' 
+                    }
                   }} />
                 </ListItemIcon>
                 <ListItemText 
@@ -1125,7 +1286,11 @@ const Navbar = ({ sx = {}, iconColor = '#fff' }) => {
                 fontSize: '0.7rem',
                 color: '#94a3b8',
                 display: 'block',
-                mb: 0.5
+                mb: 0.5,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  color: '#e2e8f0'
+                }
               }}>
                 ConnectDZ v1.0.0
               </Typography>

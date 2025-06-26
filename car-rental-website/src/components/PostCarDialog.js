@@ -297,6 +297,21 @@ const carFeatures = [
   },
 ];
 
+const dialogStyles = {
+  '@keyframes fadeIn': {
+    '0%': { opacity: 0, transform: 'translateY(20px) scale(0.98)' },
+    '100%': { opacity: 1, transform: 'translateY(0) scale(1)' }
+  },
+  '@keyframes subtleBounce': {
+    '0%, 100%': { transform: 'translateY(0)' },
+    '50%': { transform: 'translateY(-3px)' }
+  },
+  '@keyframes ripple': {
+    '0%': { transform: 'scale(0.8)', opacity: 0.5 },
+    '100%': { transform: 'scale(1.2)', opacity: 0 }
+  }
+};
+
 function PostCarDialog({ open, onClose }) {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -652,12 +667,18 @@ function PostCarDialog({ open, onClose }) {
         onClose={onClose}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            boxShadow: "0 12px 50px -12px rgba(30,41,59,0.25)",
-            bgcolor: "#f8fafc",
-          },
+        sx={{
+          '& .MuiDialog-paper': {
+            animation: '$fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+            transformOrigin: 'center bottom',
+            backdropFilter: 'blur(12px)',
+            backgroundColor: 'rgba(248, 250, 252, 0.95)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            '&:hover': {
+              boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.3)'
+            }
+          }
         }}
       >
         <Box
@@ -994,7 +1015,7 @@ function PostCarDialog({ open, onClose }) {
                             strokeWidth="1.2"
                           />
                           <path d="M10 10l4.2-4.2" stroke="#64748b" strokeWidth="1.1" />
-                          <circle cx="10" cy="10" r="2.2" fill="#e2e8f0" stroke="#64748b" strokeWidth="1.1" />
+                          <circle cx="10" cy="10" r="2.2" fill="#64748b" />
                         </svg>
                       </InputAdornment>
                     ),
@@ -1558,7 +1579,36 @@ function PostCarDialog({ open, onClose }) {
                 />
               </Box>
               {/* Car Features */}
-              <Box sx={{ mt: 3 }}>
+              <Box sx={{
+                mt: 3,
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: 1,
+                '& .MuiButton-root': {
+                  position: 'relative',
+                  overflow: 'hidden',
+                  transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  '&:hover': {
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 10px 20px rgba(0,0,0,0.1)'
+                  },
+                  '&.Mui-selected': {
+                    transform: 'scale(1.05)',
+                    boxShadow: '0 15px 30px rgba(0,0,0,0.15)',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      width: '100%',
+                      height: '100%',
+                      background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%)',
+                      transform: 'translate(-50%, -50%)',
+                      animation: '$ripple 0.6s ease-out forwards'
+                    }
+                  }
+                }
+              }}>
                 <Typography
                   variant="subtitle2"
                   sx={{
