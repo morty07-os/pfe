@@ -72,7 +72,9 @@ const userSchema = new mongoose.Schema({
     },
     rejectionReason: {
         type: String
-    }
+    },
+    updateInfoToken: String,
+    updateInfoTokenExpires: Date,
 }, {
     timestamps: true
 });

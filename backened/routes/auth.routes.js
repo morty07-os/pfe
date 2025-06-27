@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword, updateProfile, checkStatus } from "../controllers/auth.controller.js";
+import { login, signup, logout, getMe, refreshToken, verifyEmail, resendVerificationCode, forgotPassword, verifyResetCode, resetPassword, updateProfile, checkStatus, requestUpdateInfo, confirmUpdateInfo } from "../controllers/auth.controller.js";
 import { ProtectedRoute } from "../midleware/ProtectedRoute.js";
 import { adminAuth } from "../midleware/adminAuth.js"; // Import adminAuth middleware
 import { createCar, getCars, updateCar, deleteCar } from "../controllers/car.controller.js";
@@ -86,8 +86,10 @@ router.get("/admin/dashboard", ProtectedRoute(), adminAuth(), (req, res) => {
     res.status(200).json({ message: "Welcome to the admin dashboard!" });
 });
 
-
 // Payment route
 //router.post("/payments", ProtectedRoute, processPayment); // Process a payment
+
+router.post("/request-update-info", ProtectedRoute(), requestUpdateInfo);
+router.post("/confirm-update-info", ProtectedRoute(), confirmUpdateInfo);
 
 export default router;

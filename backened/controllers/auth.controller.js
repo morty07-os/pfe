@@ -808,3 +808,88 @@ export const checkStatus = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
+
+// Request update info (send confirmation code)
+export const requestUpdateInfo = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { newEmail, newPhone, newFirstName, newLastName, newResidence } = req.body;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        // Generate 6-digit code
+        const updateCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedUpdateCode = await bcrypt.hash(updateCode, 10);
+        const updateCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+        user.updateInfoToken = hashedUpdateCode;
+        user.updateInfoTokenExpires = updateCodeExpires;
+        // Temporarily store new info in user doc (not persisted until confirmed)
+        user._pendingUpdate = {
+            newEmail,
+            newPhone,
+            newFirstName,
+            newLastName,
+            newResidence
+        };
+        await user.save();
+        // Send email
+        await sendEmail(
+            newEmail || user.email,
+            'Confirm Your Information Update',
+            `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2 style="color: #475569;">Confirm Your Information Update</h2>
+                <p>You requested to update your account information. Please use the following 6-digit code to confirm:</p>
+                <h3 style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; display: inline-block; letter-spacing: 2px;">${updateCode}</h3>
+                <p>This code is valid for 10 minutes.</p>
+                <p>If you did not request this, please ignore this email.</p>
+                <p>Best regards,<br>The Car Rental Team</p>
+            </div>`
+        );
+        res.status(200).json({ message: "Confirmation code sent to your email." });
+    } catch (error) {
+        console.error("Error in requestUpdateInfo:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Confirm update info (apply changes)
+export const confirmUpdateInfo = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { confirmationCode } = req.body;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        if (!user.updateInfoToken || !user.updateInfoTokenExpires) {
+            return res.status(400).json({ error: "No update code found or it has expired. Please request a new one." });
+        }
+        if (user.updateInfoTokenExpires < Date.now()) {
+            user.updateInfoToken = undefined;
+            user.updateInfoTokenExpires = undefined;
+            user._pendingUpdate = undefined;
+            await user.save();
+            return res.status(400).json({ error: "Update code has expired. Please request a new one." });
+        }
+        const isCodeValid = await bcrypt.compare(confirmationCode, user.updateInfoToken);
+        if (!isCodeValid) {
+            return res.status(400).json({ error: "Invalid confirmation code" });
+        }
+        // Apply pending updates
+        const pending = user._pendingUpdate || {};
+        if (pending.newEmail) user.email = pending.newEmail;
+        if (pending.newPhone) user.phone = pending.newPhone;
+        if (pending.newFirstName) user.firstName = pending.newFirstName;
+        if (pending.newLastName) user.lastName = pending.newLastName;
+        if (pending.newResidence) user.residence = pending.newResidence;
+        user.updateInfoToken = undefined;
+        user.updateInfoTokenExpires = undefined;
+        user._pendingUpdate = undefined;
+        await user.save();
+        res.status(200).json({ message: "Information updated successfully." });
+    } catch (error) {
+        console.error("Error in confirmUpdateInfo:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+};
