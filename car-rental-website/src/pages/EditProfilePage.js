@@ -11,10 +11,6 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import BadgeIcon from '@mui/icons-material/Badge';
 import { keyframes } from '@mui/system';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'https://pfe-uhbw.onrender.com';
 
@@ -213,9 +209,6 @@ const EditProfilePage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [confirmationCode, setConfirmationCode] = useState('');
-  const [pendingUpdate, setPendingUpdate] = useState(null);
 
   const fetchProfile = async () => {
     try {
@@ -276,43 +269,6 @@ const EditProfilePage = () => {
       return;
     }
 
-    // If only phone is changed (info update with confirmation)
-    if (formData.phone !== (profile?.phone || '')) {
-      const updateInfo = {
-        newPhone: formData.phone,
-        // Add more fields if needed
-      };
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/');
-          return;
-        }
-        const response = await fetch(`${apiUrl}/api/auth/request-update-info`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(updateInfo),
-        });
-        const result = await response.json();
-        if (response.ok) {
-          setPendingUpdate(updateInfo);
-          setShowConfirmDialog(true);
-          setMessage({ type: 'info', text: 'A confirmation code has been sent to your email.' });
-        } else {
-          setMessage({ type: 'error', text: result.error || 'Failed to request update.' });
-        }
-      } catch (error) {
-        setMessage({ type: 'error', text: 'An error occurred while requesting the update.' });
-      } finally {
-        setIsSubmitting(false);
-      }
-      return;
-    }
-
-    // Otherwise, handle password/license changes as before
     const updateFormData = new FormData();
     updateFormData.append('phone', formData.phone);
     if (formData.licenceFront) {
@@ -325,6 +281,7 @@ const EditProfilePage = () => {
         updateFormData.append('currentPassword', formData.currentPassword);
         updateFormData.append('newPassword', formData.newPassword);
     }
+
 
     try {
       const token = localStorage.getItem('token');
@@ -564,59 +521,6 @@ const EditProfilePage = () => {
           </GlassPaper>
         </Container>
       </Box>
-      <Dialog open={showConfirmDialog} onClose={() => setShowConfirmDialog(false)}>
-        <DialogTitle>Enter Confirmation Code</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Confirmation Code"
-            value={confirmationCode}
-            onChange={e => setConfirmationCode(e.target.value)}
-            fullWidth
-            margin="normal"
-          />
-          {message.text && (
-            <Alert severity={message.type} sx={{ mt: 2 }}>
-              {message.text}
-            </Alert>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowConfirmDialog(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={async () => {
-              setIsSubmitting(true);
-              setMessage({ type: '', text: '' });
-              try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${apiUrl}/api/auth/confirm-update-info`, {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ confirmationCode }),
-                });
-                const result = await response.json();
-                if (response.ok) {
-                  setMessage({ type: 'success', text: result.message || 'Profile updated successfully!' });
-                  setShowConfirmDialog(false);
-                  fetchProfile(); // Refresh profile info
-                } else {
-                  setMessage({ type: 'error', text: result.error || 'Invalid or expired code.' });
-                }
-              } catch (error) {
-                setMessage({ type: 'error', text: 'An error occurred while confirming the update.' });
-              } finally {
-                setIsSubmitting(false);
-              }
-            }}
-            disabled={isSubmitting || !confirmationCode}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };
