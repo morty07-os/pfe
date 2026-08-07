@@ -1,0 +1,81 @@
+/* Map marker styles */
+.blue-grey-marker {
+  filter: hue-rotate(200deg) saturate(0.8) brightness(0.9);
+}
+
+.red-marker {
+  filter: hue-rotate(320deg) saturate(1.5) brightness(1.2);
+  transform: scale(1.2);
+  z-index: 1000 !important;
+}
+
+/* Add a subtle pulsing effect to the selected marker */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.red-marker {
+  animation: pulse 1.5s infinite;
+}
+
+/* Ensure the selected marker is always on top */
+.leaflet-marker-icon.red-marker {
+  z-index: 1000 !important;
+}
+
+/* Car marker styles */
+.car-marker-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.car-marker-icon svg {
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+/* Highlighted car marker styles */
+.highlighted-car-marker {
+  z-index: 1000 !important;
+}
+
+.highlighted-car-marker svg {
+  filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.7));
+  animation: pulse 1.5s infinite;
+}
+
+/* Custom cluster icon styles */
+.marker-cluster-small {
+  background-color: rgba(71, 85, 105, 0.6) !important;
+}
+
+.marker-cluster-small div {
+  background-color: rgba(71, 85, 105, 0.8) !important;
+  color: white !important;
+}
+
+.marker-cluster-medium {
+  background-color: rgba(51, 65, 85, 0.6) !important;
+}
+
+.marker-cluster-medium div {
+  background-color: rgba(51, 65, 85, 0.8) !important;
+  color: white !important;
+}
+
+.marker-cluster-large {
+  background-color: rgba(30, 41, 59, 0.6) !important;
+}
+
+.marker-cluster-large div {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+  color: white !important;
+}

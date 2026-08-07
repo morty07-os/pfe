@@ -1,0 +1,767 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { 
+  Box, 
+  Container, 
+  Typography, 
+  Paper, 
+  IconButton, 
+  Grid, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem,
+  Button,
+  TextField,
+  Autocomplete,
+  Chip,
+  useMediaQuery,
+  useTheme
+} from '@mui/material';
+import Navbar from '../components/Navbar';
+import QuickSearch from '../components/QuickSearch';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import LayersIcon from '@mui/icons-material/Layers';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+
+// Import wilaya configuration
+import { wilayasConfig, pickupLocationsConfig } from '../data/wilayasConfig';
+
+// Leaflet imports
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap, ZoomControl } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix Leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
+
+// Custom marker icon for car rental locations
+const carRentalIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Custom icon to highlight a selected/centered location
+const highlightIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [30, 50],
+  iconAnchor: [15, 50],
+  popupAnchor: [1, -40],
+  shadowSize: [41, 41]
+});
+
+// Custom marker icon for user location
+const userLocationIcon = new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/128/684/684908.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -35],
+  shadowSize: [41, 41],
+  className: 'blue-grey-icon'
+});
+
+// Helper component to recenter map when city changes
+function ChangeMapView({ center, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    if (map) { // Ensure map instance exists
+      map.setView(center, zoom);
+    }
+  }, [map, center, zoom]); // Dependencies: map, center, zoom
+  return null;
+}
+
+// Render highlighted marker later
+
+  
+function MapControls() {
+  const map = useMap();
+  
+  const handleZoomIn = () => {
+    console.log('handleZoomIn called in MapControls. map:', map);
+    if (map) {
+      map.zoomIn();
+    }
+  };
+  
+  const handleZoomOut = () => {
+    console.log('handleZoomOut called in MapControls. map:', map);
+    if (map) {
+      map.zoomOut();
+    }
+  };
+  
+  const handleMyLocation = () => {
+    console.log('handleMyLocation called in MapControls');
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('User location:', latitude, longitude);
+          map.setView([latitude, longitude], 15);
+          window.dispatchEvent(new CustomEvent('updateUserLocation', { detail: { lat: latitude, lng: longitude } }));
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        }
+      );
+    } else {
+      console.error('Geolocation is not supported by this browser.');
+    }
+  };
+  
+  return (
+    <Box 
+      sx={{ 
+        position: 'absolute', 
+        bottom: 16, 
+        left: 16, 
+        display: 'flex', 
+        flexDirection: 'column',
+        gap: 1,
+        zIndex: 1000
+      }}
+    >
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: 1, 
+          borderRadius: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1
+        }}
+      >
+        <IconButton 
+          size="small" 
+          sx={{ color: '#475569' }}
+          onClick={handleZoomIn}
+        >
+          <ZoomInIcon />
+        </IconButton>
+        <IconButton 
+          size="small" 
+          sx={{ color: '#475569' }}
+          onClick={handleZoomOut}
+        >
+          <ZoomOutIcon />
+        </IconButton>
+      </Paper>
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: 1, 
+          borderRadius: 2
+        }}
+      >
+        <IconButton 
+          size="small" 
+          sx={{ color: '#475569' }}
+          onClick={handleMyLocation}
+        >
+          <MyLocationIcon />
+        </IconButton>
+      </Paper>
+    </Box>
+  );
+}
+
+const MapPage = () => {
+  const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [selectedWilaya, setSelectedWilaya] = useState(null);
+  const [mapCenter, setMapCenter] = useState([36.7538, 3.0588]); // Default center (Algiers)
+  const [mapZoom, setMapZoom] = useState(6); // Start with a wider view of Algeria
+  const [userLocation, setUserLocation] = useState(null); // Store user's location
+  const [highlightedLocation, setHighlightedLocation] = useState(null);
+  const mapRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredWilayas, setFilteredWilayas] = useState([]);
+
+  // Parse URL params to set wilaya on first load or whenever URL changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const idParam = params.get('wilayaId');
+    const locIdParam = params.get('locId');
+    const latParam = params.get('lat');
+    const lngParam = params.get('lng');
+    const nameParam = params.get('wilaya');
+
+    if (idParam) {
+      const byId = wilayasConfig.find(w => String(w.id) === idParam);
+      if (byId) {
+        setSelectedWilaya(byId);
+        return;
+      }
+    }
+    if (latParam && lngParam) {
+      const lat = parseFloat(latParam);
+      const lng = parseFloat(lngParam);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        setMapCenter([lat, lng]);
+        setMapZoom(14);
+        console.log('Setting highlightedLocation with lat/lng', lat, lng);
+        setHighlightedLocation({ position: [lat, lng], name: nameParam || 'Selected Location' });
+        // If wilaya param exists set selectedWilaya so overlay card hides
+        if (nameParam) {
+          const lower = decodeURIComponent(nameParam).toLowerCase();
+          const wilayaMatch = wilayasConfig.find(w => w.name.toLowerCase().replace(/[^a-z]/g,'') === lower.replace(/[^a-z]/g,''));
+          if (wilayaMatch) setSelectedWilaya(wilayaMatch);
+        }
+      }
+    } else if (locIdParam) {
+      // search pickupLocationsConfig
+      const loc = Object.values(pickupLocationsConfig).flat().find(l => String(l.id) === locIdParam);
+      if (loc) {
+        setMapCenter(loc.position);
+        setMapZoom(14);
+        console.log('Setting highlightedLocation with locId', loc);
+        setHighlightedLocation({ position: loc.position, name: loc.name });
+        // also set wilaya if not set
+        const wilayaEntry = wilayasConfig.find(w => w.name === Object.keys(pickupLocationsConfig).find(k => pickupLocationsConfig[k].some(p => p.id === loc.id)));
+        if (wilayaEntry) setSelectedWilaya(wilayaEntry);
+      }
+    } else if (nameParam) {
+      const lower = decodeURIComponent(nameParam).toLowerCase();
+      const byName = wilayasConfig.find(w => w.name.toLowerCase().replace(/[^a-z]/g,'') === lower.replace(/[^a-z]/g,''));
+      if (byName) {
+        setSelectedWilaya(byName);
+      }
+    }
+  }, [location.search]);
+  
+  // Get available wilayas from config
+  const availableWilayas = wilayasConfig.filter(wilaya => wilaya.available);
+  
+  // Get pickup locations from config
+  const pickupLocations = pickupLocationsConfig;
+  
+  // Get wilayaId from URL params
+  const params = new URLSearchParams(location.search);
+  const wilayaId = params.get('wilayaId');
+  const wilayaQuery = params.get('wilaya');
+
+  // Filter wilayas based on search query and availability
+  useEffect(() => {
+    if (wilayaId) {
+      const foundById = wilayasConfig.find(w => String(w.id) === wilayaId);
+      if (foundById) setSelectedWilaya(foundById);
+    } else if (wilayaQuery) {
+      const filtered = wilayasConfig.filter(wilaya => 
+        wilaya.name.toLowerCase().includes(wilayaQuery.toLowerCase())
+      );
+      setFilteredWilayas(filtered);
+    } else if (searchQuery) {
+      const filtered = wilayasConfig.filter(wilaya => 
+        wilaya.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredWilayas(filtered);
+    } else {
+      setFilteredWilayas(wilayasConfig);
+    }
+  }, [searchQuery]);
+  
+  // Update map center when wilaya changes
+  useEffect(() => {
+    if (selectedWilaya) {
+      setMapCenter(selectedWilaya.coordinates);
+      setMapZoom(12); // Zoom in when a wilaya is selected
+    } else {
+      // Default view of Algeria when no wilaya is selected
+      setMapCenter([28.0339, 1.6596]); // Center of Algeria
+      setMapZoom(6);
+    }
+  }, [selectedWilaya]);
+  
+  // Handle wilaya selection
+  const handleWilayaChange = (event, newValue) => {
+    setSelectedWilaya(newValue);
+  };
+  
+  const handleMyLocation = () => {
+    console.log('handleMyLocation called in MapPage');
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('User location:', latitude, longitude);
+          setUserLocation([latitude, longitude]); // Update state with user's location
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        }
+      );
+    } else {
+      console.error('Geolocation is not supported by this browser.');
+    }
+  };
+  
+  useEffect(() => {
+    const handleUpdateUserLocation = (event) => {
+      const { lat, lng } = event.detail;
+      setUserLocation([lat, lng]);
+      setMapCenter([lat, lng]);
+      setMapZoom(15);
+    };
+
+    window.addEventListener('updateUserLocation', handleUpdateUserLocation);
+    return () => window.removeEventListener('updateUserLocation', handleUpdateUserLocation);
+  }, []);
+
+  return (
+    <>
+      <Navbar />
+      <QuickSearch noBackground />
+      <Box sx={{
+        width: '100%',
+        mt: 6, // Increased top margin
+        pb: 8
+      }}>
+        <Container maxWidth={false} disableGutters sx={{ 
+          minHeight: '80vh',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {/* Page Title */}
+          
+          {/* Wilaya Selector */}
+          <Box sx={{ width: '95%', mx: 'auto', mb: 4, maxWidth: '1200px' }}>
+            <Paper 
+              elevation={3} 
+              sx={{ 
+                p: { xs: 2, sm: 3 },
+                borderRadius: 4,
+                backgroundColor: '#ffffff',
+                boxShadow: '0 12px 28px rgba(15, 23, 42, 0.07)',
+                border: '1px solid #e2e8f0',
+                transition: 'box-shadow 0.3s ease',
+                '&:hover': {
+                  boxShadow: '0 16px 32px rgba(15, 23, 42, 0.12)'
+                }
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <Box 
+                  sx={{ 
+                    bgcolor: '#e2e8f0', 
+                    borderRadius: '50%', 
+                    p: 1, 
+                    mr: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <FilterAltIcon sx={{ color: '#475569', fontSize: 24 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155', lineHeight: 1.2 }}>
+                    Select a Wilaya
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                    Choose from available locations or search by name
+                  </Typography>
+                </Box>
+              </Box>
+              
+              <Autocomplete
+                id="wilaya-selector"
+                options={wilayasConfig}
+                getOptionLabel={(option) => option.name}
+                getOptionDisabled={(option) => !option.available}
+                value={selectedWilaya}
+                onChange={handleWilayaChange}
+                disableClearable={false}
+                openOnFocus
+                blurOnSelect
+                renderOption={(props, option) => (
+                  <MenuItem 
+                    {...props} 
+                    disabled={!option.available}
+                    sx={{
+                      opacity: option.available ? 1 : 0.5,
+                      '&.Mui-disabled': {
+                        opacity: 0.5
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                      <Typography>{option.name}</Typography>
+                      {option.available ? (
+                        <Chip 
+                          size="small" 
+                          label="Available" 
+                          sx={{ 
+                            bgcolor: '#475569', 
+                            color: 'white',
+                            fontSize: '0.7rem',
+                            height: 20
+                          }} 
+                        />
+                      ) : (
+                        <Chip 
+                          size="small" 
+                          label="Coming Soon" 
+                          sx={{ 
+                            bgcolor: '#e2e8f0', 
+                            color: '#64748b',
+                            fontSize: '0.7rem',
+                            height: 20
+                          }} 
+                        />
+                      )}
+                    </Box>
+                  </MenuItem>
+                )}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="Search for a wilaya" 
+                    placeholder="Type to search or select from the list"
+                    variant="outlined"
+                    size="medium"
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <SearchIcon sx={{ color: '#475569', mr: 1 }} />
+                          {params.InputProps.startAdornment}
+                        </>
+                      )
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: '#cbd5e1',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#94a3b8',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#475569',
+                        },
+                      },
+                    }}
+                  />
+                )}
+              />
+              
+              {selectedWilaya && (
+                <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid #e2e8f0' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <LocationOnIcon sx={{ color: '#475569', mr: 1 }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#334155' }}>
+                      Available Pickup Locations in {selectedWilaya.name}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 1.5 }}>
+                    {pickupLocations[selectedWilaya.name]?.map((location) => (
+                      <Chip 
+                        key={location.id}
+                        label={location.name}
+                        icon={<LocationOnIcon />}
+                        clickable
+                        sx={{ 
+                          bgcolor: '#f1f5f9', 
+                          color: '#475569',
+                          borderRadius: '8px',
+                          py: 0.5,
+                          border: '1px solid #e2e8f0',
+                          '&:hover': {
+                            bgcolor: '#e2e8f0',
+                            boxShadow: '0 2px 5px rgba(71, 85, 105, 0.1)'
+                          },
+                          '& .MuiChip-icon': {
+                            color: '#475569'
+                          }
+                        }}
+                        onClick={() => {
+                          setMapCenter(location.position);
+                          setMapZoom(15);
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Paper>
+          </Box>
+          
+          <Box sx={{ width: '95%', height: '100%', mx: 'auto', maxWidth: '1200px' }}>
+            <Box
+              sx={{
+                width: '100%',
+                height: '100%',
+                overflow: 'hidden',
+                borderRadius: 3,
+                boxShadow: '0 10px 25px rgba(71, 85, 105, 0.08)',
+                border: '1px solid #e2e8f0'
+              }}
+            >
+              
+              {/* Leaflet Map */}
+              <Box 
+                sx={{ 
+                  flexGrow: 1, 
+                  position: 'relative',
+                  width: '100%',
+                  '& .leaflet-container': {
+                    height: '600px',
+                    width: '100%',
+                    zIndex: 1,
+                    borderRadius: '0 0 12px 12px',
+                    boxShadow: 'inset 0 0 20px rgba(0,0,0,0.1)'
+                  },
+                  '& .leaflet-popup-content-wrapper': {
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+                    overflow: 'hidden'
+                  },
+                  '& .leaflet-popup-content': {
+                    margin: '8px 12px',
+                    minWidth: isMobile ? '180px' : '220px'
+                  },
+                  '& .leaflet-popup-tip': {
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.15)'
+                  }
+                }}
+              >
+                <MapContainer 
+                  center={mapCenter} 
+                  zoom={mapZoom} 
+                  minZoom={3}
+                  maxZoom={18}
+                  style={{ height: '600px', width: '100%' }}
+                  zoomControl={false}
+                  whenCreated={(mapInstance) => {
+                    console.log('MapContainer whenCreated - mapInstance:', mapInstance);
+                    mapRef.current = mapInstance;
+                    console.log('MapContainer whenCreated - mapRef.current set to:', mapRef.current);
+                  }}
+                  onZoomEnd={() => {
+                    if (mapRef.current) {
+                      setMapZoom(mapRef.current.getZoom());
+                    }
+                  }}
+                >
+                  <ChangeMapView center={mapCenter} zoom={mapZoom} />
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                  />
+                  
+                  {highlightedLocation && (
+                    <>
+                      <Marker position={highlightedLocation.position} icon={highlightIcon} riseOnHover>
+                        <Popup>{highlightedLocation.name}</Popup>
+                      </Marker>
+                      <CircleMarker center={highlightedLocation.position} pathOptions={{color:'#dc2626', fillColor:'#dc2626'}} radius={10}>
+                        <Popup>{highlightedLocation.name}</Popup>
+                      </CircleMarker>
+                    </>
+                  )}
+                  {/* Display markers for the selected wilaya */}
+                  {selectedWilaya && pickupLocations[selectedWilaya.name] && 
+                    pickupLocations[selectedWilaya.name].map((location) => (
+                      <Marker 
+                        key={location.id} 
+                        position={location.position}
+                        icon={carRentalIcon}
+                      >
+                        <Popup>
+                          <Box sx={{ p: 1.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#334155' }}>
+                              {location.name}
+                            </Typography>
+                            <Typography variant="body2" sx={{ mb: 2, color: '#64748b' }}>
+                              {location.address}
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              fullWidth
+                              startIcon={<DirectionsCarIcon />}
+                              sx={{ 
+                                color: '#475569',
+                                borderColor: '#475569',
+                                fontWeight: 600,
+                                borderRadius: '8px',
+                                '&:hover': {
+                                  borderColor: '#334155',
+                                  backgroundColor: 'rgba(71, 85, 105, 0.1)'
+                                },
+                                '& .MuiButton-startIcon': {
+                                  color: '#475569'
+                                }
+                              }}
+                              onClick={() => window.location.href = `/offers?wilaya=${encodeURIComponent(selectedWilaya.name)}`}
+                            >
+                              Find Cars
+                            </Button>
+                          </Box>
+                        </Popup>
+                      </Marker>
+                    ))
+                  }
+                  
+                  {/* Display marker for user's location if available */}
+                  {userLocation && (
+                    <Marker 
+                      position={userLocation} 
+                      icon={userLocationIcon}
+                    >
+                      <Popup>
+                        <Box sx={{ p: 1.5 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#334155' }}>
+                            Your Location
+                          </Typography>
+                        </Box>
+                      </Popup>
+                    </Marker>
+                  )}
+                  
+                  {/* Update map view when center changes */}
+                  <ChangeMapView center={mapCenter} zoom={mapZoom} />
+                  
+                  {/* Custom map controls */}
+                  <MapControls />
+                </MapContainer>
+                
+                {/* Overlay for when no wilaya is selected */}
+                {!selectedWilaya && (
+                  <Box 
+                    sx={{ 
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(241, 245, 249, 0.85)',
+                      backdropFilter: 'blur(4px)',
+                      zIndex: 1000
+                    }}
+                  >
+                    <Box 
+                      sx={{ 
+                        p: { xs: 3, sm: 4 },
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                        borderRadius: 6,
+                        maxWidth: 420,
+                        textAlign: 'center',
+                        boxShadow: '0 20px 45px rgba(15, 23, 42, 0.12)',
+                        border: '1px solid #e2e8f0',
+                        backdropFilter: 'blur(12px)',
+                        position: 'relative',
+                        transition: 'transform 0.4s ease, box-shadow 0.4s ease',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          inset: 0,
+                          borderRadius: 6,
+                          padding: '2px',
+                          background: 'linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%)',
+                          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                          WebkitMaskComposite: 'xor',
+                          maskComposite: 'exclude',
+                          zIndex: -1
+                        },
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 25px 55px rgba(15, 23, 42, 0.18)'
+                        }
+                      }}
+                    >
+                      <Box 
+                        sx={{ 
+                          width: 84,
+                          height: 84,
+                          borderRadius: '50%',
+                          background: 'radial-gradient(circle at 30% 30%, #e2e8f0 0%, #cbd5e1 70%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          mx: 'auto',
+                          mb: 3,
+                          boxShadow: 'inset 0 0 0 2px #e2e8f0'
+                        }}
+                      >
+                        <LocationOnIcon sx={{ fontSize: 40, color: '#475569' }} />
+                      </Box>
+                      <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#334155' }}>
+                        Explore Available Locations
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 3, color: '#64748b' }}>
+                        Select a wilaya from the dropdown below to view available car rental pickup points on the map
+                      </Typography>
+                      <FormControl fullWidth>
+                        <InputLabel id="city-select-overlay-label">Wilaya</InputLabel>
+                        <Select
+                          labelId="city-select-overlay-label"
+                          id="city-select-overlay"
+                          value={selectedWilaya ? selectedWilaya.id : ''}
+                          label="Wilaya"
+                          onChange={(e) => {
+                            const selected = wilayasConfig.find(w => w.id === e.target.value);
+                            if (selected && selected.available) {
+                              setSelectedWilaya(selected);
+                            }
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#cbd5e1',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#475569',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#94a3b8',
+                            },
+                            '& .MuiSvgIcon-root': {
+                              color: '#475569',
+                            }
+                          }}
+                        >
+                          {wilayasConfig.filter(wilaya => wilaya.available).map((wilaya) => (
+                            <MenuItem key={wilaya.id} value={wilaya.id}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <LocationOnIcon sx={{ color: '#475569', fontSize: 20 }} />
+                                <Typography>{wilaya.name}</Typography>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
+    </>
+  );
+};
+
+export default MapPage;

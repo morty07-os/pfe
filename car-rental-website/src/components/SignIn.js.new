@@ -1,0 +1,317 @@
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  IconButton,
+  InputAdornment,
+  useTheme,
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
+import { useNavigate } from 'react-router-dom';
+import ForgotPasswordDialog from './ForgotPasswordDialog';
+
+const SignIn = ({ open, onClose, onSwitchToSignUp, onSuccess }) => {
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState('');
+  const [message, setMessage] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage('');
+
+    try {
+      const response = await fetch('http://localhost:5001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setMessage('Sign in successful');
+        localStorage.setItem('token', result.token);
+        onClose();
+        
+        const userName = result.user?.firstName || 'User';
+        if (onSuccess) {
+          onSuccess(userName);
+        }
+        
+        window.dispatchEvent(new Event('loginStateChanged'));
+      } else {
+        setMessage(result.error || 'Sign in failed');
+      }
+    } catch (error) {
+      setMessage('Sign in failed');
+      console.error("Error during sign in:", error.message);
+    }
+  };
+
+  return (
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: '0 12px 50px -12px rgba(0,0,0,0.15)',
+          overflow: 'hidden',
+          border: '1px solid #e2e8f0'
+        }
+      }}
+    >
+      <Box sx={{
+        position: 'relative',
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+        p: 3,
+        color: 'white',
+      }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, letterSpacing: '-0.5px' }}>
+          Welcome Back
+        </Typography>
+        <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.95rem' }}>
+          Sign in to continue your journey
+        </Typography>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{
+            position: 'absolute',
+            right: 12,
+            top: 12,
+            color: 'rgba(255,255,255,0.9)',
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            '&:hover': { 
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              color: 'white'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
+
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              required
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              variant="outlined"
+              onFocus={() => setFocused('email')}
+              onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon 
+                      sx={{ 
+                        color: focused === 'email' ? '#2563eb' : '#64748b',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#2563eb',
+                    borderWidth: '1px',
+                  },
+                },
+              }}
+            />
+            <TextField
+              required
+              fullWidth
+              label="Password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={handleChange}
+              variant="outlined"
+              onFocus={() => setFocused('password')}
+              onBlur={() => setFocused('')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon 
+                      sx={{ 
+                        color: focused === 'password' ? '#2563eb' : '#64748b',
+                        transition: 'color 0.3s ease'
+                      }} 
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      sx={{ 
+                        color: showPassword ? '#2563eb' : '#64748b',
+                        '&:hover': {
+                          backgroundColor: 'rgba(37, 99, 235, 0.05)'
+                        }
+                      }}
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': {
+                    borderColor: '#94a3b8',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#2563eb',
+                    borderWidth: '1px',
+                  },
+                },
+              }}
+            />
+            <Button
+              variant="text"
+              onClick={() => setShowForgotPassword(true)}
+              sx={{
+                alignSelf: 'flex-end',
+                color: '#64748b',
+                fontSize: '0.875rem',
+                textTransform: 'none',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                '&:hover': {
+                  backgroundColor: 'rgba(100, 116, 139, 0.08)',
+                  color: '#2563eb',
+                  textDecoration: 'none',
+                },
+                transition: 'all 0.2s ease',
+                fontWeight: 500,
+              }}
+            >
+              Forgot Password?
+            </Button>
+          </Box>
+          {message && (
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: message === 'Sign in successful' ? '#16a34a' : '#dc2626', 
+                mt: 2, 
+                fontWeight: 500 
+              }}
+            >
+              {message}
+            </Typography>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ 
+          justifyContent: 'space-between', 
+          p: 3, 
+          pt: 2,
+          borderTop: '1px solid #e2e8f0',
+          backgroundColor: '#f8fafc'
+        }}>
+          <Button
+            onClick={onSwitchToSignUp}
+            color="primary"
+            sx={{ 
+              textTransform: 'none', 
+              fontWeight: 500,
+              color: '#475569',
+              '&:hover': {
+                backgroundColor: 'rgba(37, 99, 235, 0.04)',
+                color: '#2563eb'
+              },
+              transition: 'all 0.2s ease',
+              padding: '6px 8px',
+              fontSize: '0.9375rem'
+            }}
+          >
+            Don't have an account? <Box component="span" sx={{ color: '#2563eb', fontWeight: 600, ml: 0.5 }}>Sign Up</Box>
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={!formData.email || !formData.password}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              borderRadius: 2,
+              px: 3,
+              py: 1.5,
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              boxShadow: '0 1px 2px 0 rgba(37, 99, 235, 0.05)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
+                boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.1), 0 4px 6px -2px rgba(37, 99, 235, 0.05)'
+              },
+              '&.Mui-disabled': {
+                background: '#e2e8f0',
+                color: '#94a3b8',
+                boxShadow: 'none'
+              },
+              transition: 'all 0.2s ease',
+              fontSize: '0.9375rem',
+              letterSpacing: '0.01em'
+            }}
+          >
+            Sign In
+          </Button>
+        </DialogActions>
+      </form>
+
+      <ForgotPasswordDialog
+        open={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        onSwitchToSignIn={() => {
+          setShowForgotPassword(false);
+          onClose();
+        }}
+      />
+    </Dialog>
+  );
+};
+
+export default SignIn;

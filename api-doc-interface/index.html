@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Rental API Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1e293b;
+            --secondary: #475569;
+            --accent: #6366f1;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        nav {
+            background-color: var(--card-bg);
+            width: 260px;
+            height: calc(100vh - 80px);
+            position: fixed;
+            top: 80px;
+            left: 0;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            padding: 1.5rem 0;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        nav a {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            color: var(--text);
+            text-decoration: none;
+            border-left: 4px solid transparent;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+        nav a i {
+            margin-right: 0.75rem;
+            color: var(--secondary);
+        }
+        nav a:hover, nav a.active {
+            background-color: rgba(99, 102, 241, 0.05);
+            color: var(--accent);
+            border-left: 4px solid var(--accent);
+            font-weight: 600;
+        }
+        main {
+            margin-left: 260px;
+            padding: 2rem;
+            max-width: 1000px;
+        }
+        section {
+            margin-bottom: 2.5rem;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+        section:hover {
+            transform: translateY(-5px);
+        }
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-top: 0;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        h2 i {
+            margin-right: 0.75rem;
+            color: var(--accent);
+        }
+        h3 {
+            font-size: 1.4rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+        .endpoint {
+            background-color: rgba(248, 250, 252, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease;
+        }
+        .endpoint:hover {
+            transform: translateY(-3px);
+        }
+        .method {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            margin-right: 0.75rem;
+            font-size: 0.85rem;
+            min-width: 60px;
+            text-align: center;
+        }
+        .method.get { background-color: var(--success); }
+        .method.post { background-color: var(--info); }
+        .method.put { background-color: var(--warning); }
+        .method.patch { background-color: #8b5cf6; }
+        .method.delete { background-color: var(--danger); }
+        .path {
+            font-family: monospace;
+            background-color: rgba(0,0,0,0.03);
+            padding: 0.3rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            color: var(--primary);
+        }
+        pre {
+            background-color: #1f2937;
+            border-radius: 8px;
+            padding: 1rem;
+            overflow: auto;
+            margin: 1rem 0;
+            color: #e2e8f0;
+        }
+        code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .param-table th {
+            background-color: rgba(248, 250, 252, 0.8);
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        .param-table td {
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+        .auth-required {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+        }
+        .auth-required::before {
+            content: "🔒";
+            margin-right: 0.4rem;
+        }
+        .expand-btn {
+            background-color: transparent;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-weight: 500;
+            padding: 0.4rem 0.75rem;
+            margin-top: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.9rem;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+        .expand-btn:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        .expand-btn i {
+            margin-left: 0.4rem;
+            transition: transform 0.2s ease;
+        }
+        .expand-btn.active i {
+            transform: rotate(180deg);
+        }
+        .response-content, .request-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .response-content.expanded, .request-content.expanded {
+            display: block;
+        }
+        .response-content p {
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+        .search-box {
+            margin: 0 1.5rem 1.5rem;
+            position: sticky;
+            top: 1.5rem;
+            z-index: 10;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background-color: var(--card-bg);
+            transition: all 0.2s ease;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+            nav {
+                width: 100%;
+                height: auto;
+                position: relative;
+                top: 0;
+            }
+            main {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Car Rental API Documentation</h1>
+    </header>
+    <div class="container">
+        <nav>
+            <div class="search-box">
+                <input type="text" placeholder="Search endpoints..." onkeyup="searchEndpoints(this.value)">
+            </div>
+            <ul id="nav-menu">
+                <li><a href="#overview" class="active"><i class="fas fa-info-circle"></i> Overview</a></li>
+                <li><a href="#authentication"><i class="fas fa-lock"></i> Authentication</a></li>
+                <li><a href="#cars"><i class="fas fa-car-side"></i> Cars</a></li>
+                <li><a href="#bookings"><i class="fas fa-calendar-check"></i> Bookings</a></li>
+                <li><a href="#messaging"><i class="fas fa-envelope"></i> Messaging</a></li>
+                <li><a href="#ratings"><i class="fas fa-star"></i> Ratings</a></li>
+                <li><a href="#admin"><i class="fas fa-user-shield"></i> Admin</a></li>
+                <li><a href="#errors"><i class="fas fa-exclamation-triangle"></i> Errors</a></li>
+                <li><a href="#models"><i class="fas fa-database"></i> Models</a></li>
+            </ul>
+        </nav>
+        <main>
+            <section id="overview">
+                <h2><i class="fas fa-info-circle"></i> Overview</h2>
+                <p>Interactive documentation for the Car Rental Website API, built with Node.js and Express, using MongoDB. Supports user authentication, car listings, bookings, and more.</p>
+                <h3>Base URL</h3>
+                <pre><code>https://pfe-uhbw.onrender.com/api</code></pre>
+                <p>Local: <code>http://localhost:5001/api</code></p>
+                <h3>Authentication</h3>
+                <p>Most endpoints require JWT authentication. Include token in header:</p>
+                <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+                <h3>Rate Limits</h3>
+                <p>API is rate limited to 100 requests per minute per IP address.</p>
+                <h3>Content Types</h3>
+                <p>Supports <code>application/json</code> for most endpoints and <code>multipart/form-data</code> for file uploads.</p>
+            </section>
+            
+            <section id="authentication">
+                <h2><i class="fas fa-lock"></i> Authentication</h2>
+                <p>Manage user registration, login, and profile access with these endpoints.</p>
+                <div class="endpoint">
+                    <h3><span class="method post">POST</span> <span class="path">/auth/register</span></h3>
+                    <p>Register a new user and get a JWT token.</p>
+                    <div class="auth-required">Authentication: Not required</div>
+                    <button class="expand-btn" onclick="toggleRequest(this, 'auth-register-request')">Request <i class="fas fa-chevron-down"></i></button>
+                    <div id="auth-register-request" class="request-content">
+                        <pre><code>{
+  "firstName": "string (2-50 chars)",
+  "lastName": "string (2-50 chars)",
+  "email": "string (valid email format)",
+  "password": "string (min 6 chars)",
+  "phone": "string (valid phone number)"
+}</code></pre>
+                        <p><strong>Note:</strong> Email must be unique, password min. 6 chars.</p>
+                    </div>
+                    <button class="expand-btn" onclick="toggleResponse(this, 'auth-register-response')">Responses <i class="fas fa-chevron-down"></i></button>
+                    <div id="auth-register-response" class="response-content">
+                        <p><strong>201 Created:</strong> User created, returns user data and token.</p>
+                        <pre><code>{
+  "token": "string (JWT)",
+  "user": {
+    "id": "string",
+    "firstName": "string",
+    "lastName": "string",
+    "email": "string",
+    "phone": "string",
+    "role": "user"
+  }
+}</code></pre>
+                        <p><strong>400 Bad Request:</strong> Email exists or invalid data.</p>
+                        <pre><code>{
+  "error": "string (error message)",
+  "details": {
+    "field": "string (name of invalid field)",
+    "message": "string (validation error)"
+  }
+}</code></pre>
+                    </div>
+                </div>
+                <div class="endpoint">
+                    <h3><span class="method post">POST</span> <span class="path">/auth/login</span></h3>
+                    <p>Login user and obtain JWT token for protected endpoints.</p>
+                    <div class="auth-required">Authentication: Not required</div>
+                    <button class="expand-btn" onclick="toggleRequest(this, 'auth-login-request')">Request <i class="fas fa-chevron-down"></i></button>
+                    <div id="auth-login-request" class="request-content">
+                        <pre><code>{
+  "email": "string",
+  "password": "string"
+}</code></pre>
+                    </div>
+                    <button class="expand-btn" onclick="toggleResponse(this, 'auth-login-response')">Responses <i class="fas fa-chevron-down"></i></button>
+                    <div id="auth-login-response" class="response-content">
+                        <p><strong>200 OK:</strong> Login successful, returns user data and token.</p>
+                        <p><strong>401 Unauthorized:</strong> Invalid credentials.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="cars">
+                <h2><i class="fas fa-car-side"></i> Cars</h2>
+                <p>Manage car listings, search, and details with these endpoints.</p>
+                <div class="endpoint">
+                    <h3><span class="method get">GET</span> <span class="path">/cars</span></h3>
+                    <p>Retrieve car listings with optional filters for search.</p>
+                    <div class="auth-required">Authentication: Not required</div>
+                    <p><strong>Pagination:</strong> Supports <code>page</code> and <code>limit</code> query parameters (default: page=1, limit=10)</p>
+                    <button class="expand-btn" onclick="toggleRequest(this, 'cars-get-query')">Query Params <i class="fas fa-chevron-down"></i></button>
+                    <div id="cars-get-query" class="request-content">
+                        <table class="param-table"><thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+                            <tr><td>brand</td><td>string</td><td>No</td><td>Filter by car brand (case insensitive)</td></tr>
+                            <tr><td>energy</td><td>string</td><td>No</td><td>Filter by energy type (Essence, Diesel, Electric, Hybrid)</td></tr>
+                            <tr><td>minPrice</td><td>number</td><td>No</td><td>Minimum price per day (in local currency)</td></tr>
+                            <tr><td>maxPrice</td><td>number</td><td>No</td><td>Maximum price per day (in local currency)</td></tr>
+                            <tr><td>startDate</td><td>date</td><td>No</td><td>Availability start (YYYY-MM-DD format)</td></tr>
+                            <tr><td>endDate</td><td>date</td><td>No</td><td>Availability end (YYYY-MM-DD format)</td></tr>
+                            <tr><td>page</td><td>number</td><td>No</td><td>Page number for pagination (default: 1)</td></tr>
+                            <tr><td>limit</td><td>number</td><td>No</td><td>Items per page (default: 10, max: 50)</td></tr>
+                        </tbody></table>
+                    </div>
+                    <button class="expand-btn" onclick="toggleResponse(this, 'cars-get-response')">Responses <i class="fas fa-chevron-down"></i></button>
+                    <div id="cars-get-response" class="response-content">
+                        <p><strong>200 OK:</strong> Array of car objects with pagination metadata.</p>
+                        <pre><code>{
+  "cars": [
+    {
+      "_id": "string",
+      "carName": "string",
+      "brand": "string",
+      "price": number,
+      "energy": "string",
+      "available": boolean,
+      "images": ["string (URL)"]
+    }
+  ],
+  "total": number,
+  "page": number,
+  "pages": number,
+  "limit": number
+}</code></pre>
+                    </div>
+                </div>
+                <div class="endpoint">
+                    <h3><span class="method post">POST</span> <span class="path">/cars</span></h3>
+                    <p>Create a new car listing with images.</p>
+                    <div class="auth-required">Authentication: Required</div>
+                    <p><strong>Content-Type:</strong> multipart/form-data</p>
+                    <button class="expand-btn" onclick="toggleRequest(this, 'cars-post-request')">Request <i class="fas fa-chevron-down"></i></button>
+                    <div id="cars-post-request" class="request-content">
+                        <table class="param-table"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>
+                            <tr><td>carName</td><td>String</td><td>Required. Car name</td></tr>
+                            <tr><td>brand</td><td>String</td><td>Required. Brand name</td></tr>
+                            <tr><td>price</td><td>Number</td><td>Required. Price per day</td></tr>
+                            <tr><td>file</td><td>File</td><td>Required. Car images</td></tr>
+                        </tbody></table>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="bookings">
+                <h2><i class="fas fa-calendar-check"></i> Bookings</h2>
+                <p>Handle car rental bookings with these endpoints.</p>
+                <div class="endpoint">
+                    <h3><span class="method post">POST</span> <span class="path">/bookings</span></h3>
+                    <p>Create a new booking request for a car.</p>
+                    <div class="auth-required">Authentication: Required</div>
+                    <button class="expand-btn" onclick="toggleRequest(this, 'bookings-post-request')">Request <i class="fas fa-chevron-down"></i></button>
+                    <div id="bookings-post-request" class="request-content">
+                        <pre><code>{
+  "carId": "string",
+  "startDate": "date",
+  "endDate": "date",
+  "totalPrice": number
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="messaging">
+                <h2><i class="fas fa-envelope"></i> Messaging</h2>
+                <p>Communicate with other users via these endpoints.</p>
+                <div class="endpoint">
+                    <h3><span class="method post">POST</span> <span class="path">/messages</span></h3>
+                    <p>Send a message to another user.</p>
+                    <div class="auth-required">Authentication: Required</div>
+                    <button class="expand-btn" onclick="toggleRequest(this, 'messages-post-request')">Request <i class="fas fa-chevron-down"></i></button>
+                    <div id="messages-post-request" class="request-content">
+                        <pre><code>{
+  "receiverId": "string",
+  "content": "string"
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="ratings">
+                <h2><i class="fas fa-star"></i> Ratings</h2>
+                <p>Submit feedback and ratings for cars or users.</p>
+                <div class="endpoint">
+                    <h3><span class="method post">POST</span> <span class="path">/ratings</span></h3>
+                    <p>Submit a rating and feedback after rental.</p>
+                    <div class="auth-required">Authentication: Required</div>
+                    <button class="expand-btn" onclick="toggleRequest(this, 'ratings-post-request')">Request <i class="fas fa-chevron-down"></i></button>
+                    <div id="ratings-post-request" class="request-content">
+                        <pre><code>{
+  "bookingId": "string",
+  "rating": number,
+  "comment": "string"
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="admin">
+                <h2><i class="fas fa-user-shield"></i> Admin</h2>
+                <p>Administrative endpoints for managing platform content.</p>
+                <div class="endpoint">
+                    <h3><span class="method get">GET</span> <span class="path">/admin/cars/pending</span></h3>
+                    <p>Get list of cars pending approval.</p>
+                    <div class="auth-required">Authentication: Required (admin)</div>
+                </div>
+            </section>
+            
+            <section id="errors">
+                <h2><i class="fas fa-exclamation-triangle"></i> Errors</h2>
+                <p>All error responses follow this format:</p>
+                <pre><code>{
+  "message": "Error description"
+}</code></pre>
+                <p>Common error codes:</p>
+                <ul>
+                    <li><strong>400 Bad Request</strong>: Invalid input data.</li>
+                    <li><strong>401 Unauthorized</strong>: Authentication failed.</li>
+                    <li><strong>403 Forbidden</strong>: No permission.</li>
+                    <li><strong>404 Not Found</strong>: Resource not found.</li>
+                    <li><strong>500 Server Error</strong>: Internal server issue.</li>
+                </ul>
+            </section>
+            
+            <section id="models">
+                <h2><i class="fas fa-database"></i> Models</h2>
+                <h3>Car Model</h3>
+                <pre><code>{
+  "_id": "string",
+  "carName": "string",
+  "brand": "string",
+  "price": number
+}</code></pre>
+                <h3>User Model</h3>
+                <pre><code>{
+  "_id": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "email": "string"
+}</code></pre>
+            </section>
+        </main>
+    </div>
+    
+    <script>
+        function toggleRequest(button, contentId) {
+            const content = document.getElementById(contentId);
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                button.classList.remove('active');
+            } else {
+                content.classList.add('expanded');
+                button.classList.add('active');
+            }
+        }
+        function toggleResponse(button, contentId) {
+            toggleRequest(button, contentId);
+        }
+        function searchEndpoints(value) {
+            console.log('Searching for:', value);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

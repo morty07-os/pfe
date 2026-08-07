@@ -1,0 +1,82 @@
+import './App.css';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import QuickSearch from './components/QuickSearch';
+import CarTypesCarousel from './components/CarTypesCarousel';
+import MapSection from './components/MapSection';
+import Chatbot from './components/Chatbot';
+
+import AllOffersPage from './pages/AllOffersPage';
+import OfferDetailsPage from './pages/OfferDetailsPage';
+import ProfilePage from './pages/ProfilePage';
+import CarDetailsPage from './pages/CarDetailsPage';
+import BookingPage from './pages/BookingPage';
+import ConversationPage from './pages/ConversationPage';
+import ConversationListPage from './pages/ConversationListPage';
+import CategoriesPage from './pages/CategoriesPage';
+import DealsPage from './pages/DealsPage';
+import AboutPage from './pages/AboutPage';
+import FaqPage from './pages/FaqPage';
+import ContactPage from './pages/ContactPage';
+import ReviewsPage from './pages/ReviewsPage';
+import AddCarPage from './pages/AddCarPage';
+import VerificationPage from './pages/VerificationPage';
+import MapPage from './pages/MapPage';
+import EditProfilePage from './pages/EditProfilePage';
+import AdminWelcomePage from './pages/AdminWelcomePage';
+import PendingPage from './pages/PendingPage';
+
+// Routes component to handle navigation
+const AppRoutes = () => {
+  const location = useLocation();
+  
+  return (
+      <Routes location={location}>
+            <Route path="/" element={
+              <>
+                <Navbar sx={{ backgroundColor: '#111', color: '#fff' }} iconColor="#fff" />
+                <QuickSearch />
+                <CarTypesCarousel />
+                <MapSection />
+              </>
+            } />
+
+            <Route path="/offers" element={<AllOffersPage />} />
+            <Route path="/offer/:offerId" element={<OfferDetailsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/edit-profile" element={<EditProfilePage />} />
+            <Route path="/car-details/:carId" element={<CarDetailsPage />} />
+            <Route path="/booking/:carId" element={<BookingPage />} />
+            <Route path="/conversation/:carId/:ownerId" element={<ConversationPage />} />
+            <Route path="/messages" element={<ConversationListPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/deals" element={<DealsPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/faq" element={<FaqPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
+            <Route path="/add-car" element={<AddCarPage />} />
+            <Route path="/verify-email" element={<VerificationPage />} />
+            <Route path="/pending" element={<PendingPage />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/admin" element={<AdminWelcomePage />} /> {/* Add Admin route */}
+      </Routes>
+  );
+};
+
+function App() {
+  return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <BrowserRouter>
+        <div className="App">
+          <AppRoutes />
+          <Chatbot />
+        </div>
+      </BrowserRouter>
+    </LocalizationProvider>
+  );
+}
+
+export default App;
